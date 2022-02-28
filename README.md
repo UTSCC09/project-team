@@ -37,6 +37,12 @@ An application that allows users to browse locations on an interactive map and r
     - For extra features like 360° views
     - Geocoding
         - To convert common spatial search parameters (such as addresses) to usable coordinates
+- [Javascript](https://www.javascript.com/)
+    - Backend language
+- [MongoDB](https://www.mongodb.com/)
+    - NoSQL DB for backend server
+    - [Has support for geospatial queries](https://docs.mongodb.com/manual/geospatial-queries/)
+        - Allows for quick storage and retrieval of coordinate objects
 
 ## Technical Challenges
 1. Figuring out how to visiually mark locations on map and display those markers to users
