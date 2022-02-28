@@ -21,7 +21,8 @@ An application that allows users to browse locations on an interactive map and r
 - Users can rate locations
 - Users can leave reviews about locations
 - Users can search locations by tags and sort them based on ratings
-- Users are provided with recommendations of locations based on their preferences (rating history) 
+- Users are provided with recommendations of locations based on their preferences (rating history)
+- Users can search for locations within a given radius/region 
 
 
 ## Technology Stack
