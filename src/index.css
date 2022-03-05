@@ -18,6 +18,67 @@
     left: 0;
     margin: 12px;
     border-radius: 4px;
+}
+#account-form-containter {
+
+    margin: auto;
+    margin-top: 10%;
+    width: 300px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 15px 25px rgba(0,0,0,.6);
+}
+/*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
+#overlay {
+    position: absolute;
+    display: none;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 2;
+    cursor: pointer;
+    text-align: center;
   }
-  
+  .account-form-title {
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 100px;
+    height: 50px;
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 0px;
+
+  }
+  /* fonts (Lemon milk) for login/signup: https://www.fontspace.com/popular/fonts?p=5 */
+  #login {
+      background-image: url("./media/login.png");
+  }
+  #signup {
+      background-image: url("./media/signup.png");
+      width: 125px;
+  }
+  #login-container{
+      overflow: auto;
+      position: relative;
+      margin-top: 5px;
+  }
+  #create-account {
+      text-transform: none;
+  }
+  #account-form-buttons{
+      display: flex;
+      flex-direction: column;
+  }
+  #submit-cancel{
+      display: flex;
+      flex-direction: row;
+      margin: auto;
+  }
+  #form-button{
+      margin: auto;
+  }
   
