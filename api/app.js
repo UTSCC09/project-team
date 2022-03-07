@@ -4,7 +4,9 @@ const bcrypt = require('bcrypt');
 
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
+const locationResolver = require('./db/resolvers/location-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
+const locationSchema = require('./graphql/schemas/location-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -23,6 +25,12 @@ const { graphqlHTTP } = require('express-graphql');
 app.use('/graphql', graphqlHTTP({
     schema: userSchema.schema,
     rootValue: userResolver,
+    graphiql: true
+}));
+
+app.use('/location', graphqlHTTP({
+    schema: locationSchema.schema,
+    rootValue: locationResolver,
     graphiql: true
 }));
 
