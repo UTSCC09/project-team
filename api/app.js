@@ -1,37 +1,10 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
-const expressGraphQL = require('express-graphql').graphqlHTTP;
-const {
-    GraphQLSchema,
-    GraphQLObjectType,
-    GraphQLString,
-    buildSchema
-} = require('graphql');
 
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
-
-var schema = buildSchema(`
-    input UserInput {
-        username: String
-        password: String
-    }
-
-    type User {
-        username: String
-        password: String
-    }
-
-    type Mutation {
-        createUser(input: UserInput): User
-    }
-
-    type Query {
-        signin(input: UserInput): User
-    }
-
-`);
+const userSchema = require('./graphql/schemas/user-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -48,7 +21,7 @@ const cookie = require('cookie');
 const { graphqlHTTP } = require('express-graphql');
 
 app.use('/graphql', graphqlHTTP({
-    schema: schema,
+    schema: userSchema.schema,
     rootValue: userResolver,
     graphiql: true
 }));
