@@ -10,6 +10,7 @@ import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText'
 import DoneIcon from '@mui/icons-material/Done';
+import Chip from '@mui/material/Chip';
 import Input from '@mui/material/Input'
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -17,6 +18,9 @@ import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import Tags from './tags.js'
 import InputTags from './tags.js'
+import ReactTags from 'react-tag-autocomplete'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -33,8 +37,16 @@ export default class App extends React.PureComponent {
           signedIn: false,
           addingLocation: false,
           locationName: null,
-          movingMarker: false
+          locationDescription: null,
+          movingMarker: false,
+          category:[],
+          tags: null,
+          suggestions: [
+            { id: 1, name: "Attraction" },
+            { id: 2, name: "Government" }
+          ]
         };
+        this.reactTags = React.createRef();
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
@@ -47,14 +59,35 @@ export default class App extends React.PureComponent {
         this.addLocation = this.addLocation.bind(this);
         this.handleLocationName = this.handleLocationName.bind(this);
         this.doneMarker = this.doneMarker.bind(this);
+        this.handleLocationDescription = this.handleLocationDescription.bind(this);
+    }
+    onDelete (i) {
+      const tags = this.state.tags.slice(0)
+      tags.splice(i, 1)
+      this.setState({ tags })
+    }
+    TagComponent({tag, removeButtonText, onDelete}) {
+      return (
+        <Chip label={tag.name} variant="outlined" onDelete={onDelete} />
+      )
+    }
+    SuggestionComponent({ item, query }) {
+      return (
+        <MenuItem value={item.name}>{item.name}</MenuItem>
+      )
+    }
+  
+    onAddition (tag) {
+      const tags = [].concat(this.state.tags, tag)
+      this.setState({ tags })
     }
 
     handleLocationName(event){
       this.setState({locationName: event.target.value});
     }
-
-    
-
+    handleLocationDescription(event){
+      this.setState({locationDescription: event.target.value});
+    }
     accountSettings() {
       this.setState({ accountForm: true })
       document.querySelector('#overlay').style.display='block' //add an overlay
@@ -111,6 +144,15 @@ export default class App extends React.PureComponent {
     handleMouseDownPassword(event){
       event.preventDefault();
     };
+    handleCategoryChange(event){
+      const {
+        target: { value },
+      } = event;
+      this.setState({category: typeof value === 'string' ? value.split(',') : value,})
+      console.log(this.state.category)
+      console.log(event);
+      this.setState({tags: event.target.value[0]})
+    }
 
     doneMarker(event){
       console.log(document.currentMarker);
@@ -118,13 +160,38 @@ export default class App extends React.PureComponent {
       this.setState({movingMarker: false});
     }
 
+
     addMarker(event){
-      this.setState({addingLocation: false, movingMarker: true})
+      //clear the category selection
+      this.setState({category: []});
+      this.setState({addingLocation: false, movingMarker: true});
+      console.log(this.state.tags);
       document.querySelector('#overlay').style.display='none'
-      let tn = "<img class='popup-image' src='https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_Toronto_Harbourfront7.jpg/800px-Toronto_-_ON_-_Toronto_Harbourfront7.jpg'></img>"
-     
-      let contents = "<div>" + this.state.locationName + "</div>";
-      //event.preventDefault();
+      let contents = `<div class="card">
+          <div class="card-header"
+        style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
+          >
+                <div class="card-header-bar">
+                  <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+                  <a href="#" class="btn-menu"><span class="sr-only">Menu</span></a>
+                </div>
+          </div>
+
+          <div class="card-body">
+              <h2 class="name">${this.state.locationName}</h2>
+              <h4 class="main-tag">${this.state.tags}</h4>
+              <div class="location-summary">${this.state.locationDescription}</div>
+          </div>
+
+          <div class="card-footer">
+              <div class="stats">
+                  <div class="stat">
+                    <span class="label">Likes</span>
+                    <span class="value">0</span>
+                  </div>
+              </div>
+          </div>
+      </div>`
       // Set marker options.
       const marker = new mapboxgl.Marker({
         color: "#FFFFFF",
@@ -136,7 +203,9 @@ export default class App extends React.PureComponent {
       document.currentMarker = marker;
     }
 
+
     render() {
+        const categories = ['Attraction', 'Government', 'Restaurant', 'asasa', 'fghjgshjd', 'fdhjkhjkfdhjk'];
         const { lng, lat, zoom } = this.state;
         let usernameHelper;
         let passwordElement = <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
@@ -203,7 +272,6 @@ export default class App extends React.PureComponent {
            
            toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Already have an account? Sign in.</Button>;
 
-
         }
         else{
           submitFormBtn = this.state.addingLocation ?  <Button type='submit' className='form-button' variant="contained" sx={{
@@ -220,6 +288,16 @@ export default class App extends React.PureComponent {
           formTitle = this.state.addingLocation?  <div className='account-form-title' id='new-location'></div> : <div className='account-form-title' id='login'></div>;
           usernameHelper = null;
           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
+        }
+        const ITEM_HEIGHT = 48;
+        const ITEM_PADDING_TOP = 8;
+        const MenuProps = {
+          PaperProps: {
+            style: {
+              maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+              width: 250,
+            },
+          },
         }
         let locationButton;
         let locationClick;
@@ -244,7 +322,7 @@ export default class App extends React.PureComponent {
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
             
-            <Box sx={{ "& > :not(style)": { m: 1 } }}>
+            <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
                 <Fab color="primary" aria-label="search">
                     <SearchIcon />
                 </Fab>
@@ -274,15 +352,51 @@ export default class App extends React.PureComponent {
             <div id='overlay'>
               {
                 this.state.addingLocation?
-                <form className='user-form' id='add-location-form' onSubmit={this.addMarker} sx={{ innerHeight: "400px"}}>
+                <div>
+                <form className='user-form' id='add-location-form' onSubmit={this.addMarker} >
                   <div id='form-title-container'>{ formTitle }</div>
                   <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
-                    <TextField onChange={this.handleLocationName} id='location-name' required={true} variant='outlined' label="LocationName">
+                    <TextField onChange={this.handleLocationName} id='location-name' required={true} variant='outlined' label="Location Name">
                     </TextField>
                   </FormControl>
+                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
+                  <TextField
+                    onChange={this.handleLocationDescription}
+                    id="outlined-multiline-static"
+                    label="Description"
+                    multiline
+                    rows={4}
+                  />
+                  </FormControl>
+                  <div>
+                    <FormControl sx={{m: 1, width: 231}}>
+                      <InputLabel>Tags</InputLabel>  
+                      <Select multiple={true} multiline={true} value={this.state.category} onChange={this.handleCategoryChange.bind(this)} input={<OutlinedInput label="tags"/>}
+                        renderValue={(selected) => (
+                          <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                            {selected.map((value) => (
+                              <Chip key={value} label={value} />
+                            ))}
+                          </Box>
+                        )}
+                        MenuProps={MenuProps}
+                        >
+                          {categories.map((name) => (
+                            <MenuItem
+                              key={name}
+                              value={name}
+                              >{name}
+                              </MenuItem>
+                          ))}
+                        </Select>
+                    </FormControl>
+                  </div>
+                  
                 { submitFormBtn }
                 
                 </form>
+                
+                </div>
                 :
                 null
               }
