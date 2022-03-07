@@ -9,26 +9,31 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText'
+import DoneIcon from '@mui/icons-material/Done';
 import Input from '@mui/material/Input'
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material'
-
+import Tags from './tags.js'
+import InputTags from './tags.js'
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
+
 export default class App extends React.PureComponent {
   // setting up mapbox with React: https://docs.mapbox.com/help/tutorials/use-mapbox-gl-js-with-react/
     constructor(props) {
         super(props);
-        console.log(this.state);
         this.state = {
           lng: -79.3754,
           lat: 43.6506,
           zoom: 12.3,
           accountForm: false,
           createAccount: false,
-          signedIn: false
+          signedIn: false,
+          addingLocation: false,
+          locationName: null,
+          movingMarker: false
         };
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
@@ -38,7 +43,18 @@ export default class App extends React.PureComponent {
         this.cancelAccount = this.cancelAccount.bind(this)
         this.toggleAccount = this.toggleAccount.bind(this)
         this.signOut = this.signOut.bind(this);
+        this.addMarker = this.addMarker.bind(this);
+        this.addLocation = this.addLocation.bind(this);
+        this.handleLocationName = this.handleLocationName.bind(this);
+        this.doneMarker = this.doneMarker.bind(this);
     }
+
+    handleLocationName(event){
+      this.setState({locationName: event.target.value});
+    }
+
+    
+
     accountSettings() {
       this.setState({ accountForm: true })
       document.querySelector('#overlay').style.display='block' //add an overlay
@@ -55,6 +71,10 @@ export default class App extends React.PureComponent {
       }))
     }
 
+    addLocation() {
+      document.querySelector('#overlay').style.display = 'block';
+      this.setState({ addingLocation: true });
+    }
 
     componentDidMount() {
         const { lng, lat, zoom } = this.state;
@@ -71,6 +91,7 @@ export default class App extends React.PureComponent {
               zoom: map.getZoom().toFixed(2)
             });
         });
+        this.map = map;
     }
     signIn(event){
       event.preventDefault();
@@ -90,9 +111,33 @@ export default class App extends React.PureComponent {
     handleMouseDownPassword(event){
       event.preventDefault();
     };
+
+    doneMarker(event){
+      console.log(document.currentMarker);
+      document.currentMarker.setDraggable(false);
+      this.setState({movingMarker: false});
+    }
+
+    addMarker(event){
+      this.setState({addingLocation: false, movingMarker: true})
+      document.querySelector('#overlay').style.display='none'
+      let tn = "<img class='popup-image' src='https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_Toronto_Harbourfront7.jpg/800px-Toronto_-_ON_-_Toronto_Harbourfront7.jpg'></img>"
+     
+      let contents = "<div>" + this.state.locationName + "</div>";
+      //event.preventDefault();
+      // Set marker options.
+      const marker = new mapboxgl.Marker({
+        color: "#FFFFFF",
+        draggable: true
+      }).setLngLat([this.state.lng, this.state.lat])
+        .setPopup(new mapboxgl.Popup().setHTML(contents))
+        .addTo(this.map)
+      marker.togglePopup();
+      document.currentMarker = marker;
+    }
+
     render() {
         const { lng, lat, zoom } = this.state;
-
         let usernameHelper;
         let passwordElement = <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
         <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
@@ -100,7 +145,7 @@ export default class App extends React.PureComponent {
             type={this.state.showPassword ? 'text' : 'password'}
             label="Password"
             value={this.state.password}
-            required='true'
+            required={true}
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
@@ -161,19 +206,40 @@ export default class App extends React.PureComponent {
 
         }
         else{
-          submitFormBtn = <Button type='submit' className='form-button' variant="contained" sx={{
+          submitFormBtn = this.state.addingLocation ?  <Button type='submit' className='form-button' variant="contained" sx={{
+            marginBottom: "10px",
+          }}>
+            Add
+          </Button>
+          :
+          <Button type='submit' className='form-button' variant="contained" sx={{
             marginRight: "5px",
           }}>
             Login
           </Button>
-          formTitle = <div className='account-form-title' id='login'></div>
+          formTitle = this.state.addingLocation?  <div className='account-form-title' id='new-location'></div> : <div className='account-form-title' id='login'></div>;
           usernameHelper = null;
           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
         }
+        let locationButton;
+        let locationClick;
+        let locationColor;
+        if (this.state.movingMarker) {
+          locationButton = <DoneIcon />
+          locationClick= this.doneMarker;
+          locationColor='success';
+        }
+        else {
+          locationButton=<AddLocationIcon />
+          locationClick=this.addLocation;
+          locationColor='default'
+        }
+ 
         /*FAB: https://mui.com/components/floating-action-button/ */
         /* input fields: https://mui.com/components/text-fields/ */
         return (
           <div>
+            
             <div className="sidebar">
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
@@ -195,8 +261,9 @@ export default class App extends React.PureComponent {
                 }
                 {
                   this.state.signedIn?
-                  <Fab aria-label="add">
-                    <AddLocationIcon />
+                  <Fab color={locationColor} onClick={ locationClick } aria-label="add">
+                    { locationButton }
+                    
                 </Fab>
                 :
                 null
@@ -205,16 +272,30 @@ export default class App extends React.PureComponent {
                 
             </Box>
             <div id='overlay'>
+              {
+                this.state.addingLocation?
+                <form className='user-form' id='add-location-form' onSubmit={this.addMarker} sx={{ innerHeight: "400px"}}>
+                  <div id='form-title-container'>{ formTitle }</div>
+                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
+                    <TextField onChange={this.handleLocationName} id='location-name' required={true} variant='outlined' label="LocationName">
+                    </TextField>
+                  </FormControl>
+                { submitFormBtn }
+                
+                </form>
+                :
+                null
+              }
               
               {
                 this.state.accountForm?
 
-                <form onSubmit={this.signIn} id='account-form-containter' sx={{
+                <form className='user-form' onSubmit={this.signIn} id='account-form-containter' sx={{
                   innerHeight: "350px",
                 }}>
-                  <div id='login-container'>{ formTitle }</div>
+                  <div id='form-title-container'>{ formTitle }</div>
                   <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
-                    <TextField id='username' required='true' variant='outlined' label="Username">
+                    <TextField id='username' required={true} variant='outlined' label="Username">
                     </TextField>
                     { usernameHelper }
                   </FormControl>

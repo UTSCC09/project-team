@@ -19,7 +19,7 @@
     margin: 12px;
     border-radius: 4px;
 }
-#account-form-containter {
+.user-form {
 
     margin: auto;
     margin-top: 10%;
@@ -61,7 +61,16 @@
       background-image: url("./media/signup.png");
       width: 125px;
   }
-  #login-container{
+  #new-location {
+      background-image: url("./media/newlocation.png");
+      width: 250px;
+      margin-top: 20px;
+  }
+  .popup-image {
+      max-width: 100px;
+      max-height: 100px;
+  }
+  #form-title-container{
       overflow: auto;
       position: relative;
       margin-top: 5px;
