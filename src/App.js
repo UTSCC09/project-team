@@ -20,6 +20,7 @@ import Tags from './tags.js'
 import InputTags from './tags.js'
 import ReactTags from 'react-tag-autocomplete'
 import MenuItem from '@mui/material/MenuItem'
+import { Autocomplete } from '@mui/material';
 import Select from '@mui/material/Select'
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
@@ -39,8 +40,7 @@ export default class App extends React.PureComponent {
           locationName: null,
           locationDescription: null,
           movingMarker: false,
-          category:[],
-          tags: null,
+          tags: [],
           suggestions: [
             { id: 1, name: "Attraction" },
             { id: 2, name: "Government" }
@@ -144,14 +144,11 @@ export default class App extends React.PureComponent {
     handleMouseDownPassword(event){
       event.preventDefault();
     };
-    handleCategoryChange(event){
-      const {
-        target: { value },
-      } = event;
-      this.setState({category: typeof value === 'string' ? value.split(',') : value,})
-      console.log(this.state.category)
-      console.log(event);
-      this.setState({tags: event.target.value[0]})
+    handleCategoryChange(event, value){
+      console.log(event.target);
+      console.log(value)
+            
+      this.setState({tags: value.length ? value[0] : []})
     }
 
     doneMarker(event){
@@ -163,7 +160,7 @@ export default class App extends React.PureComponent {
 
     addMarker(event){
       //clear the category selection
-      this.setState({category: []});
+      this.setState({tags: []});
       this.setState({addingLocation: false, movingMarker: true});
       console.log(this.state.tags);
       document.querySelector('#overlay').style.display='none'
@@ -368,29 +365,26 @@ export default class App extends React.PureComponent {
                     rows={4}
                   />
                   </FormControl>
-                  <div>
-                    <FormControl sx={{m: 1, width: 231}}>
-                      <InputLabel>Tags</InputLabel>  
-                      <Select multiple={true} multiline={true} value={this.state.category} onChange={this.handleCategoryChange.bind(this)} input={<OutlinedInput label="tags"/>}
-                        renderValue={(selected) => (
-                          <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
-                            {selected.map((value) => (
-                              <Chip key={value} label={value} />
-                            ))}
-                          </Box>
-                        )}
-                        MenuProps={MenuProps}
-                        >
-                          {categories.map((name) => (
-                            <MenuItem
-                              key={name}
-                              value={name}
-                              >{name}
-                              </MenuItem>
-                          ))}
-                        </Select>
-                    </FormControl>
-                  </div>
+                  <FormControl required={true} sx={{ m: 1, width: 231}}>
+
+                  <Autocomplete
+                    multiple
+                    id="tags-outlined"
+                    options={categories}
+                    onChange={this.handleCategoryChange.bind(this)}
+                    getOptionLabel={(option) => option}
+                    filterSelectedOptions
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={/*https://stackoverflow.com/questions/62645466/how-to-make-autocomplete-field-of-material-ui-required*/
+                        this.state.tags.length===0 ? "Select Tags" : 'Select Tags'}
+                        required={this.state.tags.length === 0}
+                        placeholder="Tags"
+                      />
+                    )}
+                  />
+                  </FormControl>
                   
                 { submitFormBtn }
                 
