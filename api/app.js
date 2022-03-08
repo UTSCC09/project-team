@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt');
 
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
-const locationResolver = require('./db/resolvers/location-resolver');
+const pinResolver = require('./db/resolvers/pin-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
-const locationSchema = require('./graphql/schemas/location-schema');
+const pinSchema = require('./graphql/schemas/pin-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -28,9 +28,9 @@ app.use('/graphql', graphqlHTTP({
     graphiql: true
 }));
 
-app.use('/location', graphqlHTTP({
-    schema: locationSchema.schema,
-    rootValue: locationResolver,
+app.use('/pin', graphqlHTTP({
+    schema: pinSchema.schema,
+    rootValue: pinResolver,
     graphiql: true
 }));
 
