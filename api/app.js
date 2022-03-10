@@ -5,8 +5,10 @@ const bcrypt = require('bcrypt');
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
 const pinResolver = require('./db/resolvers/pin-resolver');
+const commentResolver = require('./db/resolvers/comment-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
 const pinSchema = require('./graphql/schemas/pin-schema');
+const commentSchema = require('./graphql/schemas/comment-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -22,7 +24,7 @@ app.use(session({
 const cookie = require('cookie');
 const { graphqlHTTP } = require('express-graphql');
 
-app.use('/graphql', graphqlHTTP({
+app.use('/user', graphqlHTTP({
     schema: userSchema.schema,
     rootValue: userResolver,
     graphiql: true
@@ -31,6 +33,12 @@ app.use('/graphql', graphqlHTTP({
 app.use('/pin', graphqlHTTP({
     schema: pinSchema.schema,
     rootValue: pinResolver,
+    graphiql: true
+}));
+
+app.use('/comment', graphqlHTTP({
+    schema: commentSchema.schema,
+    rootValue: commentResolver,
     graphiql: true
 }));
 
