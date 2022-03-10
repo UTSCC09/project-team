@@ -9,27 +9,44 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText'
+import DoneIcon from '@mui/icons-material/Done';
+import Chip from '@mui/material/Chip';
 import Input from '@mui/material/Input'
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material'
-
+import Tags from './tags.js'
+import InputTags from './tags.js'
+import ReactTags from 'react-tag-autocomplete'
+import MenuItem from '@mui/material/MenuItem'
+import { Autocomplete } from '@mui/material';
+import Select from '@mui/material/Select'
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
+
 export default class App extends React.PureComponent {
   // setting up mapbox with React: https://docs.mapbox.com/help/tutorials/use-mapbox-gl-js-with-react/
     constructor(props) {
         super(props);
-        console.log(this.state);
         this.state = {
           lng: -79.3754,
           lat: 43.6506,
           zoom: 12.3,
           accountForm: false,
           createAccount: false,
-          signedIn: false
+          signedIn: false,
+          addingLocation: false,
+          locationName: null,
+          locationDescription: null,
+          movingMarker: false,
+          tags: [],
+          suggestions: [
+            { id: 1, name: "Attraction" },
+            { id: 2, name: "Government" }
+          ]
         };
+        this.reactTags = React.createRef();
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
@@ -38,6 +55,38 @@ export default class App extends React.PureComponent {
         this.cancelAccount = this.cancelAccount.bind(this)
         this.toggleAccount = this.toggleAccount.bind(this)
         this.signOut = this.signOut.bind(this);
+        this.addMarker = this.addMarker.bind(this);
+        this.addLocation = this.addLocation.bind(this);
+        this.handleLocationName = this.handleLocationName.bind(this);
+        this.doneMarker = this.doneMarker.bind(this);
+        this.handleLocationDescription = this.handleLocationDescription.bind(this);
+    }
+    onDelete (i) {
+      const tags = this.state.tags.slice(0)
+      tags.splice(i, 1)
+      this.setState({ tags })
+    }
+    TagComponent({tag, removeButtonText, onDelete}) {
+      return (
+        <Chip label={tag.name} variant="outlined" onDelete={onDelete} />
+      )
+    }
+    SuggestionComponent({ item, query }) {
+      return (
+        <MenuItem value={item.name}>{item.name}</MenuItem>
+      )
+    }
+  
+    onAddition (tag) {
+      const tags = [].concat(this.state.tags, tag)
+      this.setState({ tags })
+    }
+
+    handleLocationName(event){
+      this.setState({locationName: event.target.value});
+    }
+    handleLocationDescription(event){
+      this.setState({locationDescription: event.target.value});
     }
     accountSettings() {
       this.setState({ accountForm: true })
@@ -55,6 +104,10 @@ export default class App extends React.PureComponent {
       }))
     }
 
+    addLocation() {
+      document.querySelector('#overlay').style.display = 'block';
+      this.setState({ addingLocation: true });
+    }
 
     componentDidMount() {
         const { lng, lat, zoom } = this.state;
@@ -71,6 +124,7 @@ export default class App extends React.PureComponent {
               zoom: map.getZoom().toFixed(2)
             });
         });
+        this.map = map;
     }
     signIn(event){
       event.preventDefault();
@@ -90,9 +144,66 @@ export default class App extends React.PureComponent {
     handleMouseDownPassword(event){
       event.preventDefault();
     };
-    render() {
-        const { lng, lat, zoom } = this.state;
+    handleCategoryChange(event, value){
+      console.log(event.target);
+      console.log(value)
+            
+      this.setState({tags: value.length ? value[0] : []})
+    }
 
+    doneMarker(event){
+      console.log(document.currentMarker);
+      document.currentMarker.setDraggable(false);
+      this.setState({movingMarker: false});
+    }
+
+
+    addMarker(event){
+      //clear the category selection
+      this.setState({tags: []});
+      this.setState({addingLocation: false, movingMarker: true});
+      console.log(this.state.tags);
+      document.querySelector('#overlay').style.display='none'
+      let contents = `<div class="card">
+          <div class="card-header"
+        style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
+          >
+                <div class="card-header-bar">
+                  <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+                  <a href="#" class="btn-menu"><span class="sr-only">Menu</span></a>
+                </div>
+          </div>
+
+          <div class="card-body">
+              <h2 class="name">${this.state.locationName}</h2>
+              <h4 class="main-tag">${this.state.tags}</h4>
+              <div class="location-summary">${this.state.locationDescription}</div>
+          </div>
+
+          <div class="card-footer">
+              <div class="stats">
+                  <div class="stat">
+                    <span class="label">Likes</span>
+                    <span class="value">0</span>
+                  </div>
+              </div>
+          </div>
+      </div>`
+      // Set marker options.
+      const marker = new mapboxgl.Marker({
+        color: "#FFFFFF",
+        draggable: true
+      }).setLngLat([this.state.lng, this.state.lat])
+        .setPopup(new mapboxgl.Popup().setHTML(contents))
+        .addTo(this.map)
+      marker.togglePopup();
+      document.currentMarker = marker;
+    }
+
+
+    render() {
+        const categories = ['Attraction', 'Government', 'Restaurant', 'asasa', 'fghjgshjd', 'fdhjkhjkfdhjk'];
+        const { lng, lat, zoom } = this.state;
         let usernameHelper;
         let passwordElement = <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
         <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
@@ -100,7 +211,7 @@ export default class App extends React.PureComponent {
             type={this.state.showPassword ? 'text' : 'password'}
             label="Password"
             value={this.state.password}
-            required='true'
+            required={true}
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
@@ -158,27 +269,57 @@ export default class App extends React.PureComponent {
            
            toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Already have an account? Sign in.</Button>;
 
-
         }
         else{
-          submitFormBtn = <Button type='submit' className='form-button' variant="contained" sx={{
+          submitFormBtn = this.state.addingLocation ?  <Button type='submit' className='form-button' variant="contained" sx={{
+            marginBottom: "10px",
+          }}>
+            Add
+          </Button>
+          :
+          <Button type='submit' className='form-button' variant="contained" sx={{
             marginRight: "5px",
           }}>
             Login
           </Button>
-          formTitle = <div className='account-form-title' id='login'></div>
+          formTitle = this.state.addingLocation?  <div className='account-form-title' id='new-location'></div> : <div className='account-form-title' id='login'></div>;
           usernameHelper = null;
           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
         }
+        const ITEM_HEIGHT = 48;
+        const ITEM_PADDING_TOP = 8;
+        const MenuProps = {
+          PaperProps: {
+            style: {
+              maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+              width: 250,
+            },
+          },
+        }
+        let locationButton;
+        let locationClick;
+        let locationColor;
+        if (this.state.movingMarker) {
+          locationButton = <DoneIcon />
+          locationClick= this.doneMarker;
+          locationColor='success';
+        }
+        else {
+          locationButton=<AddLocationIcon />
+          locationClick=this.addLocation;
+          locationColor='default'
+        }
+ 
         /*FAB: https://mui.com/components/floating-action-button/ */
         /* input fields: https://mui.com/components/text-fields/ */
         return (
           <div>
+            
             <div className="sidebar">
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
             
-            <Box sx={{ "& > :not(style)": { m: 1 } }}>
+            <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
                 <Fab color="primary" aria-label="search">
                     <SearchIcon />
                 </Fab>
@@ -195,8 +336,9 @@ export default class App extends React.PureComponent {
                 }
                 {
                   this.state.signedIn?
-                  <Fab aria-label="add">
-                    <AddLocationIcon />
+                  <Fab color={locationColor} onClick={ locationClick } aria-label="add">
+                    { locationButton }
+                    
                 </Fab>
                 :
                 null
@@ -205,16 +347,63 @@ export default class App extends React.PureComponent {
                 
             </Box>
             <div id='overlay'>
+              {
+                this.state.addingLocation?
+                <div>
+                <form className='user-form' id='add-location-form' onSubmit={this.addMarker} >
+                  <div id='form-title-container'>{ formTitle }</div>
+                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
+                    <TextField onChange={this.handleLocationName} id='location-name' required={true} variant='outlined' label="Location Name">
+                    </TextField>
+                  </FormControl>
+                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
+                  <TextField
+                    onChange={this.handleLocationDescription}
+                    id="outlined-multiline-static"
+                    label="Description"
+                    multiline
+                    rows={4}
+                  />
+                  </FormControl>
+                  <FormControl required={true} sx={{ m: 1, width: 231}}>
+
+                  <Autocomplete
+                    multiple
+                    id="tags-outlined"
+                    options={categories}
+                    onChange={this.handleCategoryChange.bind(this)}
+                    getOptionLabel={(option) => option}
+                    filterSelectedOptions
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={/*https://stackoverflow.com/questions/62645466/how-to-make-autocomplete-field-of-material-ui-required*/
+                        this.state.tags.length===0 ? "Select Tags" : 'Select Tags'}
+                        required={this.state.tags.length === 0}
+                        placeholder="Tags"
+                      />
+                    )}
+                  />
+                  </FormControl>
+                  
+                { submitFormBtn }
+                
+                </form>
+                
+                </div>
+                :
+                null
+              }
               
               {
                 this.state.accountForm?
 
-                <form onSubmit={this.signIn} id='account-form-containter' sx={{
+                <form className='user-form' onSubmit={this.signIn} id='account-form-containter' sx={{
                   innerHeight: "350px",
                 }}>
-                  <div id='login-container'>{ formTitle }</div>
+                  <div id='form-title-container'>{ formTitle }</div>
                   <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
-                    <TextField id='username' required='true' variant='outlined' label="Username">
+                    <TextField id='username' required={true} variant='outlined' label="Username">
                     </TextField>
                     { usernameHelper }
                   </FormControl>
