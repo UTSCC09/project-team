@@ -6,9 +6,11 @@ const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
 const pinResolver = require('./db/resolvers/pin-resolver');
 const commentResolver = require('./db/resolvers/comment-resolver');
+const ratingResolver = require('./db/resolvers/rating-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
 const pinSchema = require('./graphql/schemas/pin-schema');
 const commentSchema = require('./graphql/schemas/comment-schema');
+const ratingSchema = require('./graphql/schemas/rating-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -27,6 +29,12 @@ const { graphqlHTTP } = require('express-graphql');
 app.use('/user', graphqlHTTP({
     schema: userSchema.schema,
     rootValue: userResolver,
+    graphiql: true
+}));
+
+app.use('/rating', graphqlHTTP({
+    schema: ratingSchema.schema,
+    rootValue: ratingResolver,
     graphiql: true
 }));
 
