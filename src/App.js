@@ -1,27 +1,23 @@
 import React from 'react';
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddLocationIcon from '@mui/icons-material/AddLocation'
 import LogoutIcon from '@mui/icons-material/Logout';
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel';
-import FormHelperText from '@mui/material/FormHelperText'
 import DoneIcon from '@mui/icons-material/Done';
 import Chip from '@mui/material/Chip';
-import Input from '@mui/material/Input'
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import Tags from './tags.js'
-import InputTags from './tags.js'
-import ReactTags from 'react-tag-autocomplete'
+import { Button } from '@mui/material';
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+import PinDropIcon from '@mui/icons-material/PinDrop';
 import MenuItem from '@mui/material/MenuItem'
-import { Autocomplete } from '@mui/material';
-import Select from '@mui/material/Select'
+import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
+import AddLocationForm from './components/addLocationForm.js'
+import UserForm from './components/UserForm.js'
+import LocationInfo from './components/LocationInfo.js'
+import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -40,6 +36,15 @@ export default class App extends React.PureComponent {
           locationName: null,
           locationDescription: null,
           movingMarker: false,
+          detailedLocation: false,
+          choosingType: false,
+          markerCount: 0,
+          currentLocationName: '',
+          renderedMarkers: [],
+          currentLocationTags:[],
+          currentLocationDescription:'',
+          newMarkers: [],
+          mainTag: '',
           tags: [],
           suggestions: [
             { id: 1, name: "Attraction" },
@@ -60,7 +65,13 @@ export default class App extends React.PureComponent {
         this.handleLocationName = this.handleLocationName.bind(this);
         this.doneMarker = this.doneMarker.bind(this);
         this.handleLocationDescription = this.handleLocationDescription.bind(this);
+        this.viewingLocation = this.viewingLocation.bind(this);
+        this.closingLocation = this.closingLocation.bind(this);
+        this.producePopup=this.producePopup.bind(this);
+        this.addRegion=this.addRegion.bind(this);
     }
+    
+    
     onDelete (i) {
       const tags = this.state.tags.slice(0)
       tags.splice(i, 1)
@@ -90,13 +101,10 @@ export default class App extends React.PureComponent {
     }
     accountSettings() {
       this.setState({ accountForm: true })
-      document.querySelector('#overlay').style.display='block' //add an overlay
-
     }
     cancelAccount () {
       this.setState( {accountForm: false} );
       this.setState({ createAccount: false });
-      document.querySelector('#overlay').style.display='none'
     }
     toggleAccount () {
       this.setState((prevState) => ({
@@ -105,7 +113,7 @@ export default class App extends React.PureComponent {
     }
 
     addLocation() {
-      document.querySelector('#overlay').style.display = 'block';
+      document.currentMarker && document.currentMarker.getPopup().remove()
       this.setState({ addingLocation: true });
     }
 
@@ -118,19 +126,39 @@ export default class App extends React.PureComponent {
           zoom: zoom
         });
         map.on('move', () => {
-            this.setState({
-              lng: map.getCenter().lng.toFixed(4),
-              lat: map.getCenter().lat.toFixed(4),
-              zoom: map.getZoom().toFixed(2)
-            });
+          this.setState({
+            lng: map.getCenter().lng.toFixed(4),
+            lat: map.getCenter().lat.toFixed(4),
+            zoom: map.getZoom().toFixed(2)
+          });
         });
-        this.map = map;
+        
+      let modes = MapboxDraw.modes;
+      modes.static = StaticMode;
+      const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        // Select which mapbox-gl-draw control buttons to add to the map.
+        // controls: {
+        // polygon: true,
+        // trash: true,
+        // },
+        modes: modes,
+        // Set mapbox-gl-draw to draw by default.
+        // The user does not have to click the polygon control button first.
+        //defaultMode: 'draw_polygon'
+        });
+
+
+      this.draw = draw;
+   
+      map.addControl(draw);
+      
+      this.map = map;
     }
     signIn(event){
       event.preventDefault();
       this.setState({signedIn: true});
       this.setState({accountForm: false})
-      document.querySelector('#overlay').style.display='none'
     };
     signOut(event) {
       this.setState({signedIn: false});
@@ -145,50 +173,88 @@ export default class App extends React.PureComponent {
       event.preventDefault();
     };
     handleCategoryChange(event, value){
-      console.log(event.target);
-      console.log(value)
+
             
-      this.setState({tags: value.length ? value[0] : []})
+      this.setState({tags: value.length ? value : []})
+      this.setState({mainTag: value.length ? value[0] : []})
     }
 
     doneMarker(event){
-      console.log(document.currentMarker);
-      document.currentMarker.setDraggable(false);
-      this.setState({movingMarker: false});
+      const lngTolerance = 0.002;
+      const latTolerance = 0.003;
+
+      this.map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
+        console.log(e);
+        for(let rendered of this.state.renderedMarkers){
+          console.log(Math.abs(e.lngLat.lng - rendered._lngLat.lng));
+          console.log(Math.abs(e.lngLat.lat - rendered._lngLat.lat));
+          if (Math.abs(e.lngLat.lng - rendered._lngLat.lng) <= lngTolerance && Math.abs(e.lngLat.lat - rendered._lngLat.lat) <= latTolerance) {
+            return;
+          }
+        }
+        
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(this.producePopup(this.state.locationName, '', this.state.locationDescription))
+          .addTo(this.map);
+      })
+      this.draw && this.draw.changeMode('static');
+      
+      for (let m of this.state.newMarkers){
+        m.setDraggable(false);
+      }
+      this.setState({newMarkers: []})
+      this.setState({movingMarker: false, choosingType: false, drawingRegion: false});
     }
 
+    viewingLocation(){
+      this.setState({detailedLocation: true, currentLocationDescription: document.locationDesc,
+      currentLocationName: document.locationName});
+    }
+    closingLocation(){
+      this.setState({detailedLocation: false});
+    }
 
+    deleteLocation(){
+      this.setState({detailedLocation: false});
+      document.currentMarker.remove();
+    }
+    producePopup(name, tag, desc){
+      return `<div class="card">
+                  <div class="card-header"
+                style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
+                  >
+                        <div class="card-header-bar">
+                          <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+                        </div>
+                  </div>
+
+                  <div class="card-body">
+                      <h2 class="name">${name}</h2>
+                      <h4 class="main-tag">${tag}</h4>
+                      <div class="location-summary">${desc}</div>
+                  </div>
+
+                  <div class="card-footer">
+                      <div class="stats">
+                          <div class="stat">
+                            <span class="label">Rating</span>
+                            <span class="value">-</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>`
+    }
     addMarker(event){
       //clear the category selection
-      this.setState({tags: []});
-      this.setState({addingLocation: false, movingMarker: true});
-      console.log(this.state.tags);
-      document.querySelector('#overlay').style.display='none'
-      let contents = `<div class="card">
-          <div class="card-header"
-        style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
-          >
-                <div class="card-header-bar">
-                  <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
-                  <a href="#" class="btn-menu"><span class="sr-only">Menu</span></a>
-                </div>
-          </div>
-
-          <div class="card-body">
-              <h2 class="name">${this.state.locationName}</h2>
-              <h4 class="main-tag">${this.state.tags}</h4>
-              <div class="location-summary">${this.state.locationDescription}</div>
-          </div>
-
-          <div class="card-footer">
-              <div class="stats">
-                  <div class="stat">
-                    <span class="label">Likes</span>
-                    <span class="value">0</span>
-                  </div>
-              </div>
-          </div>
-      </div>`
+      let currTags = this.state.tags;
+      this.setState({addingLocation: false, movingMarker: true, tags: []});
+      
+      let tag = this.state.mainTag
+      let name = this.state.locationName;
+      let desc = this.state.locationDescription;
+      /* card design: https://frontendresource.com/css-cards/ */
+      let contents = this.producePopup(name, tag, desc);
       // Set marker options.
       const marker = new mapboxgl.Marker({
         color: "#FFFFFF",
@@ -197,118 +263,71 @@ export default class App extends React.PureComponent {
         .setPopup(new mapboxgl.Popup().setHTML(contents))
         .addTo(this.map)
       marker.togglePopup();
+      this.setState(prevState => ({
+        newMarkers: [...prevState.newMarkers, marker]
+      }));
       document.currentMarker = marker;
+      let m = this.map;
+      marker.togglePopup = function(){
+        if(marker.getPopup().isOpen()){
+          marker.getPopup().remove();
+        } 
+        else{
+          document.currentMarker = marker;
+          marker.getPopup().addTo(m);
+        }
+      }
+      let more = document.createElement('button');
+      //more.id='more-btn';
+      more.className='btn-menu';
+      //more.innerHTML='See more'
+      more.onclick= function () {
+        document.locationName = name;
+        document.locationDesc = desc;
+        document.locationTag = currTags;
+        document.currentMarker = marker;
+        document.querySelector('.view-btn').click();
+      }
+      document.querySelector('.card-header-bar').append(more);
+
+      this.setState(prevState => ({
+        renderedMarkers: [...prevState.renderedMarkers, marker]
+      }));
+
+    }
+    
+    locationOptions(){
+      this.setState({choosingType: true});
     }
 
 
-    render() {
-        const categories = ['Attraction', 'Government', 'Restaurant', 'asasa', 'fghjgshjd', 'fdhjkhjkfdhjk'];
-        const { lng, lat, zoom } = this.state;
-        let usernameHelper;
-        let passwordElement = <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
-        <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-          <OutlinedInput id="outlined-adornment-password"
-            type={this.state.showPassword ? 'text' : 'password'}
-            label="Password"
-            value={this.state.password}
-            required={true}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={ this.handleClickShowPassword }
-                  onMouseDown={ this.handleMouseDownPassword }
-                  edge="end"
-                >
-                  {this.state.showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            }
-          />
-          {
-            this.state.createAccount?
-            <FormHelperText id="password-helper">8-16 characters</FormHelperText>
-            :
-            null
-          }
-        </FormControl>
-        let toggleForm;
-        let formTitle;
-        let submitFormBtn;
-        let confirmPasswordElement
-        if (this.state.createAccount) {   
-            submitFormBtn = <Button className='form-button' variant="contained" sx={{
-              marginRight: "5px",
-            }}>
-              Sign up
-            </Button>
-            formTitle = <div className='account-form-title' id='signup'></div>                   
-            usernameHelper = <FormHelperText id="username-helper">Create your username</FormHelperText>;
-            confirmPasswordElement= <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
-             <InputLabel htmlFor="outlined-adornment-password">Confirm Password</InputLabel>
-             <OutlinedInput id="outlined-adornment-password"
-               type={this.state.showPassword ? 'text' : 'password'}
-               label="ConfirmPassword"
-               value={this.state.password}
-               endAdornment={
-                 <InputAdornment position="end">
-                   <IconButton
-                     aria-label="toggle password visibility"
-                     onClick={ this.handleClickShowPassword }
-                     onMouseDown={ this.handleMouseDownPassword }
-                     edge="end"
-                   >
-                     {this.state.showPassword ? <VisibilityOff /> : <Visibility />}
-                   </IconButton>
-                 </InputAdornment>
-               }
-             />
-             <FormHelperText id="confirm-password-helper">Re-enter your password</FormHelperText>
-           </FormControl> 
-           
-           
-           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Already have an account? Sign in.</Button>;
+    addRegion(e){
+      //e.preventDefault();
+      this.setState({addingLocation:false, drawingRegion: true});
+      this.draw.changeMode('draw_polygon')
+      
+      return;
+    }
 
-        }
-        else{
-          submitFormBtn = this.state.addingLocation ?  <Button type='submit' className='form-button' variant="contained" sx={{
-            marginBottom: "10px",
-          }}>
-            Add
-          </Button>
-          :
-          <Button type='submit' className='form-button' variant="contained" sx={{
-            marginRight: "5px",
-          }}>
-            Login
-          </Button>
-          formTitle = this.state.addingLocation?  <div className='account-form-title' id='new-location'></div> : <div className='account-form-title' id='login'></div>;
-          usernameHelper = null;
-          toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
-        }
-        const ITEM_HEIGHT = 48;
-        const ITEM_PADDING_TOP = 8;
-        const MenuProps = {
-          PaperProps: {
-            style: {
-              maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-              width: 250,
-            },
-          },
-        }
+    render() {
+        const { lng, lat, zoom } = this.state;
+        
+        
         let locationButton;
         let locationClick;
         let locationColor;
-        if (this.state.movingMarker) {
+        if(this.state.choosingType){//if (this.state.movingMarker) {
           locationButton = <DoneIcon />
           locationClick= this.doneMarker;
           locationColor='success';
         }
         else {
           locationButton=<AddLocationIcon />
-          locationClick=this.addLocation;
+          locationClick=this.locationOptions.bind(this);
+          //locationClick=this.addLocation;
           locationColor='default'
         }
+
  
         /*FAB: https://mui.com/components/floating-action-button/ */
         /* input fields: https://mui.com/components/text-fields/ */
@@ -318,16 +337,26 @@ export default class App extends React.PureComponent {
             <div className="sidebar">
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
+            <Button sx={{display: 'none'}} className='view-btn' onClick={ this.viewingLocation }></Button>
             
             <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
                 <Fab color="primary" aria-label="search">
                     <SearchIcon />
                 </Fab>
                 {
+                  
                   this.state.signedIn?
-                  <Fab onClick={ this.signOut } color="error" aria-label="account">
+                  <div id='location-btn'>
+                  {
+                    (this.state.addingLocation || this.state.drawingRegion || this.state.movingMarker)?
+                    null
+                    :
+                    <Fab sx={{marginTop: '7px'}} onClick={ this.signOut } color="error" aria-label="account">
                     <LogoutIcon />
                   </Fab>
+                  }
+                  </div>
+
                   
                   :
                   <Fab onClick={ this.accountSettings } color="secondary" aria-label="account">
@@ -335,105 +364,66 @@ export default class App extends React.PureComponent {
                   </Fab>
                 }
                 {
+                  (this.state.signedIn && this.state.choosingType)?
+                    <div id='types'>
+                      <Fab onClick={ this.addLocation } sx={{m: 1}}>
+                        <PinDropIcon/>
+                      </Fab>
+
+                      <Fab onClick={ () => {this.setState({addingLocation: 'region'})} } sx={{m: 1}}>
+                            <HighlightAltIcon />
+                      </Fab>
+                    </div>
+                  
+                      :
+                    null
+                }
+
+                {
                   this.state.signedIn?
+                  
                   <Fab color={locationColor} onClick={ locationClick } aria-label="add">
                     { locationButton }
-                    
-                </Fab>
-                :
-                null
+                  </Fab>
+                  
+                  :
+                  null
                 }
+
                 
                 
             </Box>
-            <div id='overlay'>
-              {
-                this.state.addingLocation?
-                <div>
-                <form className='user-form' id='add-location-form' onSubmit={this.addMarker} >
-                  <div id='form-title-container'>{ formTitle }</div>
-                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
-                    <TextField onChange={this.handleLocationName} id='location-name' required={true} variant='outlined' label="Location Name">
-                    </TextField>
-                  </FormControl>
-                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
-                  <TextField
-                    onChange={this.handleLocationDescription}
-                    id="outlined-multiline-static"
-                    label="Description"
-                    multiline
-                    rows={4}
-                  />
-                  </FormControl>
-                  <FormControl required={true} sx={{ m: 1, width: 231}}>
+            {
+              (this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
+              <div id='overlay' >
 
-                  <Autocomplete
-                    multiple
-                    id="tags-outlined"
-                    options={categories}
-                    onChange={this.handleCategoryChange.bind(this)}
-                    getOptionLabel={(option) => option}
-                    filterSelectedOptions
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={/*https://stackoverflow.com/questions/62645466/how-to-make-autocomplete-field-of-material-ui-required*/
-                        this.state.tags.length===0 ? "Select Tags" : 'Select Tags'}
-                        required={this.state.tags.length === 0}
-                        placeholder="Tags"
-                      />
-                    )}
-                  />
-                  </FormControl>
-                  
-                { submitFormBtn }
-                
-                </form>
-                
-                </div>
+              {
+                this.state.detailedLocation?
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={document.currentMarker._lngLat} info={{name: this.state.currentLocationName, description: this.state.currentLocationDescription, locationTags: this.state.tags}} close={this.closingLocation} owner={'John'}></LocationInfo>
                 :
                 null
               }
+              {
+                this.state.addingLocation?
+                <AddLocationForm region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} tags={this.state.tags} categoryChange={this.handleCategoryChange.bind(this)} changeLocationDescription={this.handleLocationDescription} changeLocationName={this.handleLocationName}></AddLocationForm>
+                :
+                null
+              }
+
               
               {
                 this.state.accountForm?
 
-                <form className='user-form' onSubmit={this.signIn} id='account-form-containter' sx={{
-                  innerHeight: "350px",
-                }}>
-                  <div id='form-title-container'>{ formTitle }</div>
-                  <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
-                    <TextField id='username' required={true} variant='outlined' label="Username">
-                    </TextField>
-                    { usernameHelper }
-                  </FormControl>
- 
-                    
-                    { passwordElement }
-                  
-                    {
-                      this.state.createAccount?
-                      confirmPasswordElement
-                      :
-                      null
-                    }
-                  
-                    <div id='account-form-buttons'>
-                      <div id='submit-cancel'>
-                        { submitFormBtn }
-                        <Button className='form-button' variant="outlined" color="error" onClick={ this.cancelAccount }sx={{
-                          marginLeft: "5px",
-                        }}>
-                          Cancel
-                        </Button>
-                      </div>
-                      { toggleForm }
-                    </div>
-                </form>
+                <UserForm cancel={this.cancelAccount} onSignin={this.signIn} createAccount={true}></UserForm>
                 :
-                <div></div>
+                null
               }
+
+              
             </div>
+            :
+            null
+            }
             
             <div ref={this.mapContainer} className="map-container" />
           </div>
