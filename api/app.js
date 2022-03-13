@@ -5,8 +5,10 @@ const bcrypt = require('bcrypt');
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
 const pinResolver = require('./db/resolvers/pin-resolver');
+const polygonResolver = require('./db/resolvers/polygon-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
 const pinSchema = require('./graphql/schemas/pin-schema');
+const polygonSchema = require('./graphql/schemas/polygon-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -31,6 +33,12 @@ app.use('/graphql', graphqlHTTP({
 app.use('/pin', graphqlHTTP({
     schema: pinSchema.schema,
     rootValue: pinResolver,
+    graphiql: true
+}));
+
+app.use('/polygon', graphqlHTTP({
+    schema: polygonSchema.schema,
+    rootValue: polygonResolver,
     graphiql: true
 }));
 

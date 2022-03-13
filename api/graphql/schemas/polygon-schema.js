@@ -5,31 +5,33 @@ const {
     buildSchema
 } = require('graphql');
 
-const pinType = `
-    type Pin {
+const pinType = require('./pin-schema').pinType;
+
+const polygonType = `
+    type Polygon {
         _id: String
         type: String
-        features: pinFeatureSchema
+        features: polygonFeatureSchema
     }
 
-    type pinFeatureSchema {
+    type polygonFeatureSchema {
         type: String
-        properties: pinPropertySchema
-        geometry: pinGeometrySchema
+        properties: polygonPropertySchema
+        geometry: polygonGeometrySchema
     }
 
-    type pinGeometrySchema {
+    type polygonGeometrySchema {
         type: String
-        coordinates: [Float]
+        coordinates: [[[Float]]]
     }
 
-    type pinPropertySchema {
+    type polygonPropertySchema {
         name: String
     }
 `;
 
-let schema = buildSchema(`
-    input pinInput {
+let schema = buildSchema(pinType + polygonType + `
+    input polygonInput {
         type: String
         features: featureInput
     }
@@ -42,7 +44,7 @@ let schema = buildSchema(`
 
     input geometryInput {
         type: String
-        coordinates: [Float]
+        coordinates: [[[Float]]]
     }
 
     input propertyInput {
@@ -53,26 +55,17 @@ let schema = buildSchema(`
         _id: String
     }
 
-    input searchInput {
-        lat: Float
-        lon: Float
-        radius: Float
-    }
-    ` + pinType +
-    `
     type Mutation {
-        createPin(input: pinInput): Pin
+        createPolygon(input: polygonInput): Polygon
     }
 
     type Query {
-        getPin(input: idInput): Pin
-        getNear(input: searchInput): [Pin]
-        listPins(input: idInput): [Pin]
+        getPolygon(input: idInput): Polygon
+        getPinsWithin(input: idInput): [Pin]
     }
 
 `);
 
 module.exports = {
     schema,
-    pinType
 }
