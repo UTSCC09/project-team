@@ -62,7 +62,7 @@ let schema = buildSchema(`
     `
     type Mutation {
         createPin(input: pinInput): Pin
-        deletePin(input: idInput): null
+        deletePin(input: idInput): String
     }
 
     type Query {

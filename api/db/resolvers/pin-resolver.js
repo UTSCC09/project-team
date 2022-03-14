@@ -32,6 +32,7 @@ listPins = async function ({input}) {
 
 deletePin = function({input}) {
     const pin = Pin.deleteOne(input).exec();
+    return null;
 }
 
 module.exports = {
