@@ -11,6 +11,8 @@ const userSchema = require('./graphql/schemas/user-schema');
 const pinSchema = require('./graphql/schemas/pin-schema');
 const commentSchema = require('./graphql/schemas/comment-schema');
 const ratingSchema = require('./graphql/schemas/rating-schema');
+const polygonResolver = require('./db/resolvers/polygon-resolver');
+const polygonSchema = require('./graphql/schemas/polygon-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -47,6 +49,12 @@ app.use('/pin', graphqlHTTP({
 app.use('/comment', graphqlHTTP({
     schema: commentSchema.schema,
     rootValue: commentResolver,
+    graphiql: true
+}));
+
+app.use('/polygon', graphqlHTTP({
+    schema: polygonSchema.schema,
+    rootValue: polygonResolver,
     graphiql: true
 }));
 
