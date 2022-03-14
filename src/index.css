@@ -19,6 +19,14 @@
     margin: 12px;
     border-radius: 4px;
 }
+#location-info{
+  max-height: 100vh;
+  margin-top: 15px;
+}
+
+#street {
+  height: 500px;
+}
 .user-form {
 
     margin: auto;
@@ -31,7 +39,7 @@
 /*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
 #overlay {
     position: absolute;
-    display: none;
+    display: block;
     height: 100%;
     width: 100%;
     top: 0;
@@ -53,6 +61,14 @@
     margin-bottom: 0px;
 
   }
+  #types{
+    float: right;
+    margin-top: 0;
+  }
+  #location-btn {
+    float: right;
+    margin-top: 0;
+  }
   /* fonts (Lemon milk) for login/signup: https://www.fontspace.com/popular/fonts?p=5 */
   #login {
       background-image: url("./media/login.png");
@@ -65,6 +81,11 @@
       background-image: url("./media/newlocation.png");
       width: 250px;
       margin-top: 20px;
+  }
+  #new-region {
+    background-image: url("./media/newRegion.png");
+    width: 250px;
+    margin-top: 20px;
   }
   .popup-image {
       max-width: 100px;
@@ -163,7 +184,10 @@ body{
   margin-left:10px;
   margin-top:10px;
   float: left;
+  border: none;
+  cursor: pointer;
 }
+
 
 svg .polygon{
   fill: #fff;
