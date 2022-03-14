@@ -21,7 +21,7 @@ getNear = async function ({input}) {
                 }
             }
         }
-    })
+    });
     return pins;
 };
 
