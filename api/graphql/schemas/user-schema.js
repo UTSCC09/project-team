@@ -27,5 +27,5 @@ let schema = buildSchema(`
 `);
 
 module.exports = {
-    schema,
+    schema
 }

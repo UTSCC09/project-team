@@ -1,8 +1,8 @@
 const User = require('../models/user-model');
 
-createUser = function ({input}) {
-  const user = new User(input);
-  return user.save();
+createUser = async function ({input}) {
+  const user = await new User(input).save();
+  return user;
 };
 
 signin = async function ({input}) {

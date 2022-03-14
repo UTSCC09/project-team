@@ -5,9 +5,13 @@ const bcrypt = require('bcrypt');
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
 const pinResolver = require('./db/resolvers/pin-resolver');
-const polygonResolver = require('./db/resolvers/polygon-resolver');
+const commentResolver = require('./db/resolvers/comment-resolver');
+const ratingResolver = require('./db/resolvers/rating-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
 const pinSchema = require('./graphql/schemas/pin-schema');
+const commentSchema = require('./graphql/schemas/comment-schema');
+const ratingSchema = require('./graphql/schemas/rating-schema');
+const polygonResolver = require('./db/resolvers/polygon-resolver');
 const polygonSchema = require('./graphql/schemas/polygon-schema');
 
 const bodyParser = require('body-parser');
@@ -24,15 +28,27 @@ app.use(session({
 const cookie = require('cookie');
 const { graphqlHTTP } = require('express-graphql');
 
-app.use('/graphql', graphqlHTTP({
+app.use('/user', graphqlHTTP({
     schema: userSchema.schema,
     rootValue: userResolver,
+    graphiql: true
+}));
+
+app.use('/rating', graphqlHTTP({
+    schema: ratingSchema.schema,
+    rootValue: ratingResolver,
     graphiql: true
 }));
 
 app.use('/pin', graphqlHTTP({
     schema: pinSchema.schema,
     rootValue: pinResolver,
+    graphiql: true
+}));
+
+app.use('/comment', graphqlHTTP({
+    schema: commentSchema.schema,
+    rootValue: commentResolver,
     graphiql: true
 }));
 
