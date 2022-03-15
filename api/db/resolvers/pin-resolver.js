@@ -1,4 +1,8 @@
+const fs = require('fs');
+const path = require('path');
+
 const Pin = require('../models/pin-model');
+const Image = require('../models/image-model');
 
 createPin = async function ({input}) {
   const pin = await new Pin(input).save();
@@ -34,8 +38,18 @@ listPins = async function ({input}) {
     return pins;
 };
 
-deletePin = function({input}) {
-    const pin = Pin.deleteOne(input).exec();
+deletePin = async function({input}) {
+    const pin = await Pin.findOne(input).exec();
+    Pin.deleteOne(input).exec();
+    const images = await Image.find({pin: pin._id}).exec();
+    let upload_path = "";
+    console.log(images);
+    for (const image of images) {
+        Image.deleteOne({_id: image.id}).exec();
+        upload_path = path.join(__dirname, `/../../static/images/${image.image}`);
+        console.log(upload_path);
+        fs.unlinkSync(upload_path);
+    }
     return null;
 }
 

@@ -16,7 +16,8 @@ const polygonSchema = require('./graphql/schemas/polygon-schema');
 const {
     createImage,
     getImages,
-    getPhoto
+    getPhoto,
+    deleteImage
 } = require('./db/resolvers/image-resolver');
 const imageSchema = require('./graphql/schemas/image-schema');
 
@@ -82,7 +83,7 @@ app.use('/polygon', graphqlHTTP({
 
 app.use('/image/:id', graphqlHTTP({
     schema: imageSchema.schema,
-    rootValue: {getPhoto},
+    rootValue: {getPhoto, deleteImage},
     graphiql: true
 }));
 

@@ -21,7 +21,6 @@ let schema = buildSchema(`
     }
 
     type Photo {
-        _id: String
         url: String
     }
 
@@ -31,11 +30,12 @@ let schema = buildSchema(`
 
     type Mutation {
         createImage(input: ImageInput): Image
+        deleteImage: Image
     }
 
     type Query {
         getImages: [Image]
-        getPhoto: url: String
+        getPhoto: Photo
     }
 `);
 

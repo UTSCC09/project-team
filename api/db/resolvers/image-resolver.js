@@ -31,11 +31,22 @@ getImages = async function ({input}, context) {
 
 getPhoto = async function({input}, context) {
     const image = await Image.findOne({_id: context.params.id}).exec();
+    console.log(image);
     return ({url: "http://localhost:8000/images/" + image.image});
+}
+
+deleteImage = async function({input}, context) {
+    const image = await Image.findOne({_id: context.params.id}).exec();
+    const status = Image.deleteOne({_id: context.params.id}).exec();
+    const upload_path = path.join(__dirname, `/../../static/images/${image.image}`);
+    console.log(status, upload_path);
+    fs.unlinkSync(upload_path);
+    return null;
 }
 
 module.exports = {
   createImage,
   getImages,
-  getPhoto
+  getPhoto,
+  deleteImage
 }
