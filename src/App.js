@@ -29,6 +29,7 @@ export default class App extends React.PureComponent {
           lng: -79.3754,
           lat: 43.6506,
           zoom: 12.3,
+          initialZoom: 12.3,
           accountForm: false,
           createAccount: false,
           signedIn: false,
@@ -116,15 +117,29 @@ export default class App extends React.PureComponent {
             }
           }
         }
+        /* let index = t.state.renderedMarkers.findIndex(marker);
+        if (index !== -1) {
+          let updated = marker;
+
+        } */
       });
     }
 
-    getMarkers(t){
+    getMarkers(t, removeOld=false){
 
-      let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
+      //let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
       this.send('POST', "http://localhost:8000/pin/", body, function (err, markers) {
         console.log(markers);
-        for (let m of markers.data.listPins){
+        console.log(t.state.renderedMarkers);
+        if (removeOld) {
+          // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
+          let diff = t.state.renderedMarkers.filter(x => !markers.data.getNear.includes(x));
+          for (let x of diff) x.remove();
+        }
+        
+        for (let m of markers.data.getNear){
+          if(m in t.state.renderedMarkers) continue;
           console.log(m);
           const marker = new mapboxgl.Marker({
             color: "#FFFFFF",
@@ -154,23 +169,17 @@ export default class App extends React.PureComponent {
           }));
           
         }
-        /*  const marker = new mapboxgl.Marker({
-          color: "#FFFFFF",
-          draggable: true
-        }).setLngLat([this.state.lng, this.state.lat])
-          .setPopup(new mapboxgl.Popup().setHTML(contents))
-          .addTo(this.map)
-        marker.togglePopup();
-        this.setState(prevState => ({
-          newMarkers: [...prevState.newMarkers, marker]
-        })); */
       })
     }
 
-
-    
-    
-
+    removeRendered(){
+      console.log(this.state.renderedMarkers);
+      for (let r of this.state.renderedMarkers){
+        console.log(r);
+        if(!r._draggable)r.remove();
+      }
+      this.setState({renderedMarkers: []});
+    }
   
     onAddition (tag) {
       const tags = [].concat(this.state.tags, tag)
@@ -197,7 +206,8 @@ export default class App extends React.PureComponent {
     }
 
     addLocation() {
-      document.currentMarker && document.currentMarker.getPopup().remove()
+      console.log(this.state.currentMarker);
+      this.state.currentMarker && this.state.currentMarker.getPopup().remove()
       this.setState({ addingLocation: true });
     }
 
@@ -209,14 +219,35 @@ export default class App extends React.PureComponent {
           center: [lng, lat],
           zoom: zoom
         });
-        map.on('move', () => {
-          this.setState({
-            lng: map.getCenter().lng.toFixed(4),
-            lat: map.getCenter().lat.toFixed(4),
-            zoom: map.getZoom().toFixed(2)
-          });
+      map.on('move', () => {
+        this.setState({
+          lng: map.getCenter().lng.toFixed(4),
+          lat: map.getCenter().lat.toFixed(4),
+          zoom: map.getZoom().toFixed(2)
         });
-      this.getMarkers(this);
+      });
+      let t = this;
+      map.on('zoomstart', function () {
+        t.setState({initialZoom: map.getZoom()});
+      })
+      map.on('zoomend', function () {
+        console.log(map.getZoom());
+        if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) {
+          t.getMarkers(t);
+          console.log(t.state.renderedMarkers);
+        }
+        else if (map.getZoom() < 13.5) {
+          t.removeRendered(t);
+        }
+      });
+      map.on('dragend', function () {
+        if (map.getZoom() >= 13.5) {
+          //for(let m of t.state.renderedMarkers) m.remove();
+          //t.setState({renderedMarkers: []});
+          t.getMarkers(t, true);
+        }
+      })
+      //this.getMarkers(this);
       let modes = MapboxDraw.modes;
       modes.static = StaticMode;
       const draw = new MapboxDraw({
@@ -269,6 +300,9 @@ export default class App extends React.PureComponent {
 
       for(let m of this.state.newMarkers){
         this.createMarker(m, this);
+        this.setState(prevState => ({
+          renderedMarkers: [...prevState.renderedMarkers, m]
+        }));
       }
       this.map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         console.log(e);
@@ -305,9 +339,16 @@ export default class App extends React.PureComponent {
     deleteLocation(){
       console.log(this.state.currentMarker);
       let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
+      console.log(this.state.renderedMarkers.indexOf(this.state.currentMarker));
       let t = this;
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         if (res) {
+          let copy = [...t.state.renderedMarkers];
+          let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
+          if (index !== -1){
+            copy.splice(index, 1);
+            t.setState({renderedMarkers: copy});
+          }
           t.setState({detailedLocation: false});
           t.state.currentMarker.remove();
           t.setState({currentMarker: null});
@@ -387,14 +428,15 @@ export default class App extends React.PureComponent {
       this.setState(prevState => ({
         newMarkers: [...prevState.newMarkers, marker]
       }));
-      document.currentMarker = marker;
+      this.state.currentMarker = marker;
       let m = this.map;
+      let t = this;
       marker.togglePopup = function(){
         if(marker.getPopup().isOpen()){
           marker.getPopup().remove();
         } 
         else{
-          document.currentMarker = marker;
+          t.state.currentMarker = marker;
           marker.getPopup().addTo(m);
         }
       }
@@ -445,7 +487,7 @@ export default class App extends React.PureComponent {
         else {
           locationButton=<AddLocationIcon />
           locationClick=this.locationOptions.bind(this);
-          //locationClick=this.addLocation;
+
           locationColor='default'
         }
 
