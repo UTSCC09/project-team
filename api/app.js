@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
-
+const cors = require('cors');
 const db = require('./db/db');
 const userResolver = require('./db/resolvers/user-resolver');
 const pinResolver = require('./db/resolvers/pin-resolver');
@@ -17,7 +17,7 @@ const polygonSchema = require('./graphql/schemas/polygon-schema');
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
 app.use(bodyParser.json());
-
+app.use(cors());
 const session = require('express-session');
 app.use(session({
     secret: 'default secret to be changed',
