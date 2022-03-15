@@ -11,10 +11,14 @@ getPin = async function ({input}) {
 };
 
 getNear = async function ({input}) {
+    const radius = input.radius
+    if (radius > 2000){
+        console.log("Too large");
+    }
     const pins = await Pin.find({
         'features.geometry': {
             $near: {
-                $maxDistance: input.radius,
+                $maxDistance: radius,
                 $geometry: {
                     type: "Point",
                     coordinates: [input.lon, input.lat]

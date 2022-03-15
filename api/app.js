@@ -13,10 +13,24 @@ const commentSchema = require('./graphql/schemas/comment-schema');
 const ratingSchema = require('./graphql/schemas/rating-schema');
 const polygonResolver = require('./db/resolvers/polygon-resolver');
 const polygonSchema = require('./graphql/schemas/polygon-schema');
+const {
+    createImage,
+    getImages,
+    getPhoto
+} = require('./db/resolvers/image-resolver');
+const imageSchema = require('./graphql/schemas/image-schema');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
 app.use(bodyParser.json());
+
+app.use(express.static('static'));
+
+const {
+    GraphQLUpload,
+    graphqlUploadExpress
+} = require('graphql-upload');
+app.use(graphqlUploadExpress());
 
 const session = require('express-session');
 app.use(session({
@@ -40,6 +54,13 @@ app.use('/rating', graphqlHTTP({
     graphiql: true
 }));
 
+
+app.use('/pin/:id/image', graphqlHTTP({
+    schema: imageSchema.schema,
+    rootValue: {createImage, getImages},
+    graphiql: true
+}));
+
 app.use('/pin', graphqlHTTP({
     schema: pinSchema.schema,
     rootValue: pinResolver,
@@ -55,6 +76,13 @@ app.use('/comment', graphqlHTTP({
 app.use('/polygon', graphqlHTTP({
     schema: polygonSchema.schema,
     rootValue: polygonResolver,
+    graphiql: true
+}));
+
+
+app.use('/image/:id', graphqlHTTP({
+    schema: imageSchema.schema,
+    rootValue: {getPhoto},
     graphiql: true
 }));
 
