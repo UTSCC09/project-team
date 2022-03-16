@@ -16,6 +16,25 @@ listPolygons = async function ({input}) {
     return polygons;
 };
 
+getNear = async function ({input}) {
+    const radius = input.radius
+    if (radius > 2000){
+        console.log("Too large");
+    }
+    const polygons = await Polygon.find({
+        'features.geometry': {
+            $near: {
+                $maxDistance: radius,
+                $geometry: {
+                    type: "Point",
+                    coordinates: [input.lon, input.lat]
+                }
+            }
+        }
+    });
+    return polygons;
+};
+
 getPinsWithin = async function({input}) {
     const polygon = await Polygon.findOne(input).exec();
     const pins = await Pin.find({
