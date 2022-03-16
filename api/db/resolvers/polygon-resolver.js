@@ -11,15 +11,9 @@ getPolygon = async function ({input}) {
     return polygon;
 };
 
-const colorado = {
-  type: 'Polygon',
-  coordinates: [[
-    [-109, 41],
-    [-102, 41],
-    [-102, 37],
-    [-109, 37],
-    [-109, 41]
-  ]]
+listPolygons = async function ({input}) {
+    const polygons = await Polygon.find().exec();
+    return polygons;
 };
 
 getPinsWithin = async function({input}) {
@@ -39,5 +33,6 @@ getPinsWithin = async function({input}) {
 module.exports = {
   createPolygon,
   getPolygon,
+  listPolygons,
   getPinsWithin
 }
