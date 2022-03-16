@@ -25,6 +25,7 @@ const pinType = `
 
     type pinPropertySchema {
         name: String
+        description: String
     }
 `;
 
@@ -47,6 +48,7 @@ let schema = buildSchema(`
 
     input propertyInput {
         name: String
+        description: String
     }
 
     input idInput {
