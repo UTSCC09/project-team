@@ -44,6 +44,7 @@ export default class App extends React.PureComponent {
           currentLocationName: '',
           renderedMarkers: [],
           currentLocationTags:[],
+          newRegions: [],
           currentLocationDescription:'',
           newMarkers: [],
           mainTag: '',
@@ -74,6 +75,7 @@ export default class App extends React.PureComponent {
         this.send = this.send.bind(this);
         this.createMarker = this.createMarker.bind(this);
         this.getMarkers = this.getMarkers.bind(this);
+        this.getRegions = this.getRegions.bind(this);
 
     }
     send(method, url, data, callback){
@@ -117,12 +119,11 @@ export default class App extends React.PureComponent {
             }
           }
         }
-        /* let index = t.state.renderedMarkers.findIndex(marker);
-        if (index !== -1) {
-          let updated = marker;
-
-        } */
       });
+    }
+
+    getRegions(){
+
     }
 
     getMarkers(t, removeOld=false){
@@ -247,6 +248,7 @@ export default class App extends React.PureComponent {
           t.getMarkers(t, true);
         }
       })
+      
       //this.getMarkers(this);
       let modes = MapboxDraw.modes;
       modes.static = StaticMode;
@@ -262,6 +264,15 @@ export default class App extends React.PureComponent {
         // The user does not have to click the polygon control button first.
         //defaultMode: 'draw_polygon'
         });
+      map.on('draw.create', function (e) {
+        console.log(e.features);
+        e.features[0].name = t.state.locationName;
+        t.setState(prevState => ({
+          newRegions: [...prevState.newRegions, e.features[0]]
+        }));
+        t.setState({drawingRegion: false});
+        console.log(t.state.newRegions);
+      });
 
 
       this.draw = draw;
@@ -529,11 +540,11 @@ export default class App extends React.PureComponent {
                 {
                   (this.state.signedIn && this.state.choosingType)?
                     <div id='types'>
-                      <Fab onClick={ this.addLocation } sx={{m: 1}}>
+                      <Fab disabled={this.state.drawingRegion} onClick={ this.addLocation } sx={{m: 1}}>
                         <PinDropIcon/>
                       </Fab>
 
-                      <Fab onClick={ () => {this.setState({addingLocation: 'region'})} } sx={{m: 1}}>
+                      <Fab disabled={this.state.drawingRegion} onClick={ () => {this.setState({addingLocation: 'region'})} } sx={{m: 1}}>
                             <HighlightAltIcon />
                       </Fab>
                     </div>
