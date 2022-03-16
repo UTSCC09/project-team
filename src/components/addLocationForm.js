@@ -2,9 +2,81 @@ import React from 'react';
 import { Autocomplete } from '@mui/material';
 import FormControl from '@mui/material/FormControl'
 import TextField from '@mui/material/TextField';
+
+
+import axios from 'axios' 
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
 
 export default class addingLocationForm extends React.PureComponent{
+
+    constructor(props){
+      super(props);
+      this.handleImage = this.handleImage.bind(this);
+      this.sendFiles = this.sendFiles.bind(this);
+
+    }
+    send(method, url, data, callback){
+      var xhr = new XMLHttpRequest();
+      xhr.onload = function() {
+          if (xhr.status !== 200) callback("[" + xhr.status + "]" + xhr.responseText, null);
+          else callback(null, JSON.parse(xhr.responseText));
+      };
+      xhr.open(method, url, true);
+      if (!data) xhr.send();
+      else{
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          //xhr.setRequestHeader("Access-Control-Allow-Origin ","*");
+          xhr.send(JSON.stringify(data));
+      }
+    }
+    sendFiles(method, url, data, callback){
+      let formdata = new FormData();
+
+      formdata.append("operations", {"query": "mutation($file:Upload!){createImage(input:{title:\"test\",image:$file}){_id,title,image,pin}}"});
+      formdata.append("map", {"0":["variables.file"]});
+      formdata.append(0, data[0])
+      let xhr = new XMLHttpRequest();
+      
+      xhr.onload = function() {
+          if (xhr.status !== 200) callback("[" + xhr.status + "]" + xhr.responseText, null);
+          else callback(null, JSON.parse(xhr.responseText));
+      };
+      xhr.open(method, url, true);
+      //xhr.setRequestHeader('Content-Type', "multipart/form-data");
+      xhr.send(formdata);
+      //xhr.send(data);
+  }
+    handleImage(e){
+      console.log(e)
+      if (e.target.files && e.target.files[0]) {
+        let img = e.target.files[0];
+        let data = new FormData();
+        //let data = {};
+        data.append('operations', '{ "query" : "mutation($file:Upload!){createImage(input:{title: \"test\", image:$file}) {_id, title, image, pin}}"}');
+        //data.operations = {"query":"mutation($file:Upload!){createImage(input:{title: \"test\", image:$file}) {_id, title, image, pin}}"};
+        data.append('map', {"zero":["variables.file"]})
+        //data.map = {"0":["variables.file"]};
+        data.append('zero', img);
+        //data[0] = img
+        console.log(data);
+        axios({
+          method: "post",
+          url: "http://localhost:8000/pin/62310a56ca26b64f107de717/image/",
+          data: data,
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+          .then(function (res) {
+            console.log(res)
+          })
+          .catch(function(err){
+            console.error(err);
+          })
+        /* this.sendFiles("POST", "http://localhost:8000/pin/62310a56ca26b64f107de717/image/", data, function (err, res) {
+          if(res)console.log(res);
+        }) */
+
+      }
+    }
     
     render() {
         const categories = ['Attraction', 'Government', 'Restaurant', 'asasa', 'fghjgshjd', 'fdhjkhjkfdhjk'];
@@ -62,6 +134,7 @@ export default class addingLocationForm extends React.PureComponent{
                     rows={4}
                   />
                   </FormControl>
+                  <input type="file" name="myImage" onChange={this.handleImage} />
                   <FormControl required={true} sx={{ m: 1, width: 231}}>
                   
                   <Autocomplete
