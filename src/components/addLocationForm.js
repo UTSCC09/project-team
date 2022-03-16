@@ -2,7 +2,7 @@ import React from 'react';
 import { Autocomplete } from '@mui/material';
 import FormControl from '@mui/material/FormControl'
 import TextField from '@mui/material/TextField';
-
+import FormData from "form-data"
 
 import axios from 'axios' 
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
@@ -49,12 +49,17 @@ export default class addingLocationForm extends React.PureComponent{
     handleImage(e){
       console.log(e)
       if (e.target.files && e.target.files[0]) {
-        let img = e.target.files[0];
+        let img = {}
+        img.file = e.target.files[0];
+        
         let data = new FormData();
         //let data = {};
-        data.append('operations', '{ "query" : "mutation($file:Upload!){createImage(input:{title: \"test\", image:$file}) {_id, title, image, pin}}"}');
+        //data.append('operations', '{ "query" : "mutation($file:Upload!){createImage(input:{title: \\\"test\\\", image:$file}) {_id, title, image, pin}}"}');
+        const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
+        data.append("operations", JSON.stringify({ query }));
         //data.operations = {"query":"mutation($file:Upload!){createImage(input:{title: \"test\", image:$file}) {_id, title, image, pin}}"};
-        data.append('map', {"zero":["variables.file"]})
+        const map = {"zero":["variables.file"]}
+        data.append('map', JSON.stringify(map))
         //data.map = {"0":["variables.file"]};
         data.append('zero', img);
         //data[0] = img
@@ -63,7 +68,6 @@ export default class addingLocationForm extends React.PureComponent{
           method: "post",
           url: "http://localhost:8000/pin/62310a56ca26b64f107de717/image/",
           data: data,
-          headers: { "Content-Type": "multipart/form-data" },
         })
           .then(function (res) {
             console.log(res)
@@ -134,7 +138,7 @@ export default class addingLocationForm extends React.PureComponent{
                     rows={4}
                   />
                   </FormControl>
-                  <input type="file" name="myImage" onChange={this.handleImage} />
+                  <input type="file" name="myImage" onChange={this.props.imageChange} />
                   <FormControl required={true} sx={{ m: 1, width: 231}}>
                   
                   <Autocomplete

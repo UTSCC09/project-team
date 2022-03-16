@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios' 
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import Box from "@mui/material/Box";
@@ -18,6 +19,7 @@ import AddLocationForm from './components/addLocationForm.js'
 import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
+import sanitize from "sanitize-filename"
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -41,6 +43,7 @@ export default class App extends React.PureComponent {
           choosingType: false,
           markerCount: 0,
           currentMarker: null,
+          image: null,
           currentLocationName: '',
           renderedMarkers: [],
           currentLocationTags:[],
@@ -76,6 +79,8 @@ export default class App extends React.PureComponent {
         this.createMarker = this.createMarker.bind(this);
         this.getMarkers = this.getMarkers.bind(this);
         this.getRegions = this.getRegions.bind(this);
+        this.setImage = this.setImage.bind(this)
+        this.uploadImage = this.uploadImage.bind(this);
 
     }
     send(method, url, data, callback){
@@ -93,7 +98,28 @@ export default class App extends React.PureComponent {
       }
     }
 
-    
+    uploadImage(marker){
+        let data = new FormData();
+        const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
+        data.append("operations", JSON.stringify({ query }));
+        const map = {"zero":["variables.file"]}
+        data.append('map', JSON.stringify(map))
+        data.append('zero', marker.image);
+        let id = marker.id;
+        axios({
+          method: "post",
+          url: `http://localhost:8000/pin/${id}/image/`,
+          data: data,
+        })
+          .then(function (res) {
+            console.log(res)
+            marker.imageId = res.data.data.createImage._id;
+            console.log(marker);
+          })
+          .catch(function(err){
+            console.error(err);
+          })
+    }
 
     createMarker(marker, t){
       let lng = marker._lngLat.lng;
@@ -103,6 +129,7 @@ export default class App extends React.PureComponent {
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
+        
         marker.name = res.data.createPin.features.properties.name;
         marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
         marker.togglePopup = function(){
@@ -119,6 +146,8 @@ export default class App extends React.PureComponent {
             }
           }
         }
+        t.uploadImage(marker);
+
       });
     }
 
@@ -142,11 +171,12 @@ export default class App extends React.PureComponent {
         for (let m of markers.data.getNear){
           if(m in t.state.renderedMarkers) continue;
           console.log(m);
+          
           const marker = new mapboxgl.Marker({
             color: "#FFFFFF",
             draggable: false
           }).setLngLat(m.features.geometry.coordinates)
-            .setPopup(new mapboxgl.Popup().setHTML(t.producePopup(m.features.properties.name, '', '', m._id)))
+            .setPopup(new mapboxgl.Popup().setHTML(""))
             .addTo(t.map)
           
           marker.name = m.features.properties.name;
@@ -158,11 +188,40 @@ export default class App extends React.PureComponent {
             else{
               t.setState({currentMarker: marker})
               console.log(t.state.currentMarker);
-              marker.getPopup().addTo(t.map);
-              document.getElementById(m._id).onclick = function () {
-                t.setState({detailedLocation: true});
-                console.log(t.state.currentMarker);
-              }
+              axios({
+                method: "post",
+                url: `http://localhost:8000/pin/${marker.id}/image/`,
+                data: {"query": "query { getImages { _id, title, image, pin }}"}
+              }).then(function (res) {
+                console.log(res);
+                let imgId = res.data.data.getImages[0]._id;
+                axios({
+                method: "post",
+                url: `http://localhost:8000/image/${imgId}`,
+                data: {"query":"query { getPhoto { url }}"},
+              }).then(function (res2) {
+                console.log(res2)
+                let url = res2.data.data.getPhoto.url;
+                marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', '', m._id, url))
+                marker.getPopup().addTo(t.map);
+                document.getElementById(m._id).onclick = function () {
+                  t.setState({detailedLocation: true});
+                  console.log(t.state.currentMarker);
+                }
+              })
+              .catch(function(err){
+                console.error(err);
+              })
+              })
+              .catch(function (err) {
+                console.error(err);
+              })
+              let imgId = marker.imageId;
+              console.log(marker.imageId);
+              
+              //request to get image url
+              
+              
             }
           }
           t.setState(prevState => ({
@@ -348,9 +407,7 @@ export default class App extends React.PureComponent {
     }
 
     deleteLocation(){
-      console.log(this.state.currentMarker);
       let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
-      console.log(this.state.renderedMarkers.indexOf(this.state.currentMarker));
       let t = this;
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         if (res) {
@@ -367,10 +424,12 @@ export default class App extends React.PureComponent {
         }
       });
     }
-    producePopup(name, tag, desc, id){
+    producePopup(name, tag, desc, id, url){
+      console.log(url);
+      //let newurl = "http://localhost:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
       if (id) return `<div class="card">
                   <div class="card-header"
-                style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
+                style="background-image: url(${encodeURI(url)})"
                   >
                         <div class="card-header-bar">
                           <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
@@ -395,7 +454,7 @@ export default class App extends React.PureComponent {
               </div>`
       return `<div class="card">
       <div class="card-header"
-    style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
+    style="background-image: url(${url})"
       >
             <div class="card-header-bar">
               <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
@@ -427,7 +486,9 @@ export default class App extends React.PureComponent {
       let name = this.state.locationName;
       let desc = this.state.locationDescription;
       /* card design: https://frontendresource.com/css-cards/ */
-      let contents = this.producePopup(name, tag, desc);
+      let url = URL.createObjectURL(this.state.image);
+      console.log(url);
+      let contents = this.producePopup(name, tag, desc, null, url);
       // Set marker options.
       const marker = new mapboxgl.Marker({
         color: "#FFFFFF",
@@ -436,6 +497,8 @@ export default class App extends React.PureComponent {
         .setPopup(new mapboxgl.Popup().setHTML(contents))
         .addTo(this.map)
       marker.togglePopup();
+      marker.image = this.state.image;
+      console.log(marker.image);
       this.setState(prevState => ({
         newMarkers: [...prevState.newMarkers, marker]
       }));
@@ -483,6 +546,11 @@ export default class App extends React.PureComponent {
       return;
     }
 
+    setImage(e){
+      
+      console.log(e.target.files[0])
+      this.setState({image: e.target.files[0]});
+    }
     render() {
         const { lng, lat, zoom } = this.state;
         
@@ -579,7 +647,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.addingLocation?
-                <AddLocationForm region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} tags={this.state.tags} categoryChange={this.handleCategoryChange.bind(this)} changeLocationDescription={this.handleLocationDescription} changeLocationName={this.handleLocationName}></AddLocationForm>
+                <AddLocationForm imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} tags={this.state.tags} categoryChange={this.handleCategoryChange.bind(this)} changeLocationDescription={this.handleLocationDescription} changeLocationName={this.handleLocationName}></AddLocationForm>
                 :
                 null
               }
