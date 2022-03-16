@@ -61,6 +61,7 @@ let schema = buildSchema(pinType + polygonType + `
 
     type Query {
         getPolygon(input: idInput): Polygon
+        listPolygons(input: idInput): [Polygon]
         getPinsWithin(input: idInput): [Pin]
     }
 
