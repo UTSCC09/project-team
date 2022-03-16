@@ -20,6 +20,6 @@ const polygonSchema = new mongoose.Schema({
     features: {type: featureSchema, required: true}
 });
 
-polygonSchema.index({"features.geometry": '2dsphere'}, {unique: true})
+polygonSchema.index({"features.geometry": '2dsphere'}, {unique: false})
 
 module.exports = mongoose.model('Polygon', polygonSchema);

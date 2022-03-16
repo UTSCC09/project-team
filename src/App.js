@@ -39,6 +39,7 @@ export default class App extends React.PureComponent {
           detailedLocation: false,
           choosingType: false,
           markerCount: 0,
+          currentMarker: null,
           currentLocationName: '',
           renderedMarkers: [],
           currentLocationTags:[],
@@ -69,24 +70,107 @@ export default class App extends React.PureComponent {
         this.closingLocation = this.closingLocation.bind(this);
         this.producePopup=this.producePopup.bind(this);
         this.addRegion=this.addRegion.bind(this);
+        this.send = this.send.bind(this);
+        this.createMarker = this.createMarker.bind(this);
+        this.getMarkers = this.getMarkers.bind(this);
+
     }
+    send(method, url, data, callback){
+      var xhr = new XMLHttpRequest();
+      xhr.onload = function() {
+          if (xhr.status !== 200) callback("[" + xhr.status + "]" + xhr.responseText, null);
+          else callback(null, JSON.parse(xhr.responseText));
+      };
+      xhr.open(method, url, true);
+      if (!data) xhr.send();
+      else{
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          //xhr.setRequestHeader("Access-Control-Allow-Origin ","*");
+          xhr.send(JSON.stringify(data));
+      }
+    }
+
+    
+
+    createMarker(marker, t){
+      let lng = marker._lngLat.lng;
+      let lat = marker._lngLat.lat;
+      
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${t.state.locationName}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
+      this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
+        console.log(res);
+        marker.id=res.data.createPin._id;
+        marker.name = res.data.createPin.features.properties.name;
+        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
+        marker.togglePopup = function(){
+          if(marker.getPopup().isOpen()){
+            marker.getPopup().remove();
+          } 
+          else{
+            t.setState({currentMarker: marker})
+            console.log(t.state.currentMarker);
+            marker.getPopup().addTo(t.map);
+            document.getElementById(res.data.createPin._id).onclick = function () {
+              t.setState({detailedLocation: true});
+              console.log(t.state.currentMarker);
+            }
+          }
+        }
+      });
+    }
+
+    getMarkers(t){
+
+      let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
+      this.send('POST', "http://localhost:8000/pin/", body, function (err, markers) {
+        console.log(markers);
+        for (let m of markers.data.listPins){
+          console.log(m);
+          const marker = new mapboxgl.Marker({
+            color: "#FFFFFF",
+            draggable: false
+          }).setLngLat(m.features.geometry.coordinates)
+            .setPopup(new mapboxgl.Popup().setHTML(t.producePopup(m.features.properties.name, '', '', m._id)))
+            .addTo(t.map)
+          
+          marker.name = m.features.properties.name;
+          marker.id = m._id;
+          marker.togglePopup = function(){
+            if(marker.getPopup().isOpen()){
+              marker.getPopup().remove();
+            } 
+            else{
+              t.setState({currentMarker: marker})
+              console.log(t.state.currentMarker);
+              marker.getPopup().addTo(t.map);
+              document.getElementById(m._id).onclick = function () {
+                t.setState({detailedLocation: true});
+                console.log(t.state.currentMarker);
+              }
+            }
+          }
+          t.setState(prevState => ({
+            renderedMarkers: [...prevState.renderedMarkers, marker]
+          }));
+          
+        }
+        /*  const marker = new mapboxgl.Marker({
+          color: "#FFFFFF",
+          draggable: true
+        }).setLngLat([this.state.lng, this.state.lat])
+          .setPopup(new mapboxgl.Popup().setHTML(contents))
+          .addTo(this.map)
+        marker.togglePopup();
+        this.setState(prevState => ({
+          newMarkers: [...prevState.newMarkers, marker]
+        })); */
+      })
+    }
+
+
     
     
-    onDelete (i) {
-      const tags = this.state.tags.slice(0)
-      tags.splice(i, 1)
-      this.setState({ tags })
-    }
-    TagComponent({tag, removeButtonText, onDelete}) {
-      return (
-        <Chip label={tag.name} variant="outlined" onDelete={onDelete} />
-      )
-    }
-    SuggestionComponent({ item, query }) {
-      return (
-        <MenuItem value={item.name}>{item.name}</MenuItem>
-      )
-    }
+
   
     onAddition (tag) {
       const tags = [].concat(this.state.tags, tag)
@@ -132,7 +216,7 @@ export default class App extends React.PureComponent {
             zoom: map.getZoom().toFixed(2)
           });
         });
-        
+      this.getMarkers(this);
       let modes = MapboxDraw.modes;
       modes.static = StaticMode;
       const draw = new MapboxDraw({
@@ -183,6 +267,9 @@ export default class App extends React.PureComponent {
       const lngTolerance = 0.002;
       const latTolerance = 0.003;
 
+      for(let m of this.state.newMarkers){
+        this.createMarker(m, this);
+      }
       this.map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         console.log(e);
         for(let rendered of this.state.renderedMarkers){
@@ -216,16 +303,26 @@ export default class App extends React.PureComponent {
     }
 
     deleteLocation(){
-      this.setState({detailedLocation: false});
-      document.currentMarker.remove();
+      console.log(this.state.currentMarker);
+      let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
+      let t = this;
+      this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
+        if (res) {
+          t.setState({detailedLocation: false});
+          t.state.currentMarker.remove();
+          t.setState({currentMarker: null});
+          
+        }
+      });
     }
-    producePopup(name, tag, desc){
-      return `<div class="card">
+    producePopup(name, tag, desc, id){
+      if (id) return `<div class="card">
                   <div class="card-header"
                 style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
                   >
                         <div class="card-header-bar">
                           <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+                          <button id=${id} class="btn-menu"></button>
                         </div>
                   </div>
 
@@ -244,6 +341,30 @@ export default class App extends React.PureComponent {
                       </div>
                   </div>
               </div>`
+      return `<div class="card">
+      <div class="card-header"
+    style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_north_and_south_sides.jpg/1280px-White_House_north_and_south_sides.jpg)"
+      >
+            <div class="card-header-bar">
+              <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+            </div>
+      </div>
+
+      <div class="card-body">
+          <h2 class="name">${name}</h2>
+          <h4 class="main-tag">${tag}</h4>
+          <div class="location-summary">${desc}</div>
+      </div>
+
+      <div class="card-footer">
+          <div class="stats">
+              <div class="stat">
+                <span class="label">Rating</span>
+                <span class="value">-</span>
+              </div>
+          </div>
+      </div>
+  </div>`      
     }
     addMarker(event){
       //clear the category selection
@@ -277,7 +398,7 @@ export default class App extends React.PureComponent {
           marker.getPopup().addTo(m);
         }
       }
-      let more = document.createElement('button');
+      /* let more = document.createElement('button');
       //more.id='more-btn';
       more.className='btn-menu';
       //more.innerHTML='See more'
@@ -288,7 +409,7 @@ export default class App extends React.PureComponent {
         document.currentMarker = marker;
         document.querySelector('.view-btn').click();
       }
-      document.querySelector('.card-header-bar').append(more);
+      document.querySelector('.card-header-bar').append(more); */
 
       this.setState(prevState => ({
         renderedMarkers: [...prevState.renderedMarkers, marker]
@@ -399,7 +520,7 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={document.currentMarker._lngLat} info={{name: this.state.currentLocationName, description: this.state.currentLocationDescription, locationTags: this.state.tags}} close={this.closingLocation} owner={'John'}></LocationInfo>
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: "", locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
                 :
                 null
               }

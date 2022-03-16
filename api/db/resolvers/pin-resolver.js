@@ -30,9 +30,15 @@ listPins = async function ({input}) {
     return pins;
 };
 
+deletePin = function({input}) {
+    const pin = Pin.deleteOne(input).exec();
+    return null;
+}
+
 module.exports = {
   createPin,
   getPin,
   getNear,
-  listPins
+  listPins,
+  deletePin
 }

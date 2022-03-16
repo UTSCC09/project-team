@@ -20,6 +20,6 @@ const pinSchema = new mongoose.Schema({
     features: {type: featureSchema, required: true}
 });
 
-pinSchema.index({"features.geometry": '2dsphere'}, {unique: true})
+pinSchema.index({"features.geometry": '2dsphere'}, {unique: false})
 
 module.exports = mongoose.model('Pin', pinSchema);
