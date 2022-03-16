@@ -20,6 +20,7 @@ import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import sanitize from "sanitize-filename"
+import api from './api';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -656,7 +657,7 @@ export default class App extends React.PureComponent {
               {
                 this.state.accountForm?
 
-                <UserForm cancel={this.cancelAccount} onSignin={this.signIn} createAccount={true}></UserForm>
+                <UserForm cancel={this.cancelAccount} onSignIn={this.signIn} createAccount={true}></UserForm>
                 :
                 null
               }

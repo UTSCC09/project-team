@@ -40,6 +40,7 @@ export default class UserForm extends React.PureComponent{
           <OutlinedInput id="outlined-adornment-password"
             type={this.state.showPassword ? 'text' : 'password'}
             label="Password"
+            id="password"
             value={this.state.password}
             required={true}
             endAdornment={
@@ -67,7 +68,7 @@ export default class UserForm extends React.PureComponent{
         let submitFormBtn;
         let confirmPasswordElement
         if (this.state.createAccount) {   
-            submitFormBtn = <Button className='form-button' variant="contained" sx={{
+            submitFormBtn = <Button type='submit' className='form-button' variant="contained" sx={{
               marginRight: "5px",
             }}>
               Sign up
@@ -112,7 +113,7 @@ export default class UserForm extends React.PureComponent{
           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
         }
         return (
-        <form className='user-form' onSubmit={this.props.onSignin} id='account-form-containter' sx={{
+        <form className='user-form' onSubmit={this.props.onSignIn} id='account-form-containter' sx={{
             innerHeight: "350px",
           }}>
             <div id='form-title-container'>{ formTitle }</div>
