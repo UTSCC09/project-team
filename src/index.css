@@ -134,6 +134,7 @@ body{
   height: 380px; /* Remove for full width */
   margin:30px auto;
   margin-top: 0;
+  margin-bottom: 0;
   box-shadow: 0 0 100px rgba(0,0,0, .3);
   background-color: white;
 }
@@ -143,13 +144,13 @@ body{
   background-size: cover;
   background-position: top;
 }
-.card-header:after{
+/* .card-header:after{
   content:'';
   position: absolute;
   width: 100%;
   height: 100%;
   background: linear-gradient(to top, rgb(5,85,134), rgba(181,181,181, 0.1));
-}
+} */
 
 .card-header-bar{
   position: absolute;
