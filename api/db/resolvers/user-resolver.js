@@ -7,7 +7,7 @@ createUser = async function (input) {
   return user;
 };
 
-signin = async function (input) {
+signin = async function (input, context) {
   const user = await User.findOne(input).exec();
   if (!user) return { message: "No user found" };
   context.req.session.user = user;
