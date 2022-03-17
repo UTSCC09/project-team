@@ -19,6 +19,7 @@ import AddLocationForm from './components/addLocationForm.js'
 import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
+import RegionInfo from './components/RegionInfo.js'
 import sanitize from "sanitize-filename"
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
@@ -46,6 +47,7 @@ export default class App extends React.PureComponent {
           image: null,
           currentLocationName: '',
           renderedMarkers: [],
+          renderedRegions: [],
           currentLocationTags:[],
           newRegions: [],
           currentLocationDescription:'',
@@ -57,7 +59,7 @@ export default class App extends React.PureComponent {
             { id: 2, name: "Government" }
           ]
         };
-        this.reactTags = React.createRef();
+        //this.reactTags = React.createRef();
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
@@ -81,8 +83,65 @@ export default class App extends React.PureComponent {
         this.getRegions = this.getRegions.bind(this);
         this.setImage = this.setImage.bind(this)
         this.uploadImage = this.uploadImage.bind(this);
-
+        this.createRegion = this.createRegion.bind(this);
+        this.getImage = this.getImage.bind(this);
+        this.deleteRegion = this.deleteRegion.bind(this);
+        this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
     }
+
+    getPinsWithinRegion(){
+      
+      console.log(this.state.currentRegion.backId);
+      let t = this;
+      let body = {"query": `query { getPinsWithin(input: {_id: \"${this.state.currentRegion.backId}\"}) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+  
+      axios({
+        method: "post",
+        url: "http://localhost:8000/polygon/",
+        data: body
+      })
+      .then(function (res) {
+        console.log(res);
+        let p = [];
+        for (let r of res.data.data.getPinsWithin){
+          let x = axios({
+            method: "post",
+            url: `http://localhost:8000/pin/${r._id}/image/`,
+            data: {"query": "query { getImages { _id, title, image, pin }}"}
+          });
+          p.push(x)
+        }
+        Promise.all(p).then(function (vals) {
+          console.log(vals);
+          let p2 =[];
+          for (let i of vals){
+            let x = axios({
+              method: "post",
+              url: `http://localhost:8000/image/${i.data.data.getImages[0]._id}`,
+              data: {"query":"query { getPhoto { url }}"},
+            });
+            p2.push(x);
+          }
+          Promise.all(p2).then(function(imgs){
+            console.log(imgs);
+            let final = [];
+            for (let img of imgs){
+              final.push({img: encodeURI(img.data.data.getPhoto.url)})
+            }
+            t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: final});
+          })
+          
+        });
+        
+        
+
+      })
+      .catch(function (err) {
+        console.error(err);
+      })
+  
+    }
+
     send(method, url, data, callback){
       var xhr = new XMLHttpRequest();
       xhr.onload = function() {
@@ -98,7 +157,7 @@ export default class App extends React.PureComponent {
       }
     }
 
-    uploadImage(marker){
+    uploadImage(marker, res, t){
         let data = new FormData();
         const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
         data.append("operations", JSON.stringify({ query }));
@@ -115,6 +174,27 @@ export default class App extends React.PureComponent {
             console.log(res)
             marker.imageId = res.data.data.createImage._id;
             console.log(marker);
+            marker.togglePopup = function () {
+              axios({
+                method: "post",
+                url: `http://localhost:8000/image/${marker.imageId}`,
+                data: {"query":"query { getPhoto { url }}"},
+              }).then(function (res2) {
+                console.log(res2)
+                let url = res2.data.data.getPhoto.url;
+                marker.getPopup().setHTML(t.producePopup(marker.name, '', '', marker.id, url))
+                marker.getPopup().addTo(t.map);
+                document.getElementById(marker.id).onclick = function () {
+                  t.setState({detailedLocation: true});
+                  console.log(t.state.currentMarker);
+                }
+              })
+              .catch(function(err){
+                console.error(err);
+              })
+              
+            }
+            
           })
           .catch(function(err){
             console.error(err);
@@ -124,15 +204,16 @@ export default class App extends React.PureComponent {
     createMarker(marker, t){
       let lng = marker._lngLat.lng;
       let lat = marker._lngLat.lat;
+      console.log(marker);
       
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${t.state.locationName}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
         
         marker.name = res.data.createPin.features.properties.name;
         marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
-        marker.togglePopup = function(){
+        /* marker.togglePopup = function(){
           if(marker.getPopup().isOpen()){
             marker.getPopup().remove();
           } 
@@ -145,14 +226,80 @@ export default class App extends React.PureComponent {
               console.log(t.state.currentMarker);
             }
           }
-        }
-        t.uploadImage(marker);
+        } */
+        t.uploadImage(marker, res, t);
+        
 
       });
     }
+    createRegion(region, t){
+      let coord = JSON.stringify(region.geometry.coordinates[0])
+      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\"  } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      axios({
+        method: "post",
+        url: "http://localhost:8000/polygon/",
+        data: body
+      }).then(function (res) {
+        console.log(res);
+        region.backId = res.data.data.createPolygon._id
+        t.setState(prevState => ({
+          renderedRegions: [...prevState.renderedRegions, region]
+        }));
 
-    getRegions(){
+      })
+      .catch(function (err) {
+        console.error(err);
+      })
+    }
 
+    getRegions(t){
+      //let body = { "query": "query { listPolygons(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"};
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 5000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      axios({
+        method: "post",
+        url: "http://localhost:8000/polygon/",
+        data: body
+      }).then(function (res) {
+        console.log(res);
+        t.draw.changeMode('static');
+        let polygons = res.data.data.getNear;
+        for (let p of polygons){
+          let newRegion = p.features.geometry;
+          
+          let v = t.draw.add(newRegion);
+          newRegion.id = v[0];
+          newRegion.name = p.features.properties.name;
+          newRegion.backId = p._id;
+          t.setState(prevState => ({
+            renderedRegions: [...prevState.renderedRegions, newRegion]
+          }));
+          console.log(v);
+        }
+      })
+      .catch(function (err) {
+        console.error(err)
+      })
+
+    }
+
+    getImage(marker, m, imgId, t){
+      axios({
+        method: "post",
+        url: `http://localhost:8000/image/${imgId}`,
+        data: {"query":"query { getPhoto { url }}"},
+      }).then(function (res2) {
+        console.log(res2)
+        let url = res2.data.data.getPhoto.url;
+        marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', '', m._id, url))
+        marker.getPopup().addTo(t.map);
+        document.getElementById(m._id).onclick = function () {
+          t.setState({detailedLocation: true});
+          console.log(t.state.currentMarker);
+        }
+      })
+      .catch(function(err){
+        console.error(err);
+      })
     }
 
     getMarkers(t, removeOld=false){
@@ -182,6 +329,8 @@ export default class App extends React.PureComponent {
           marker.name = m.features.properties.name;
           marker.id = m._id;
           marker.togglePopup = function(){
+            t.setState({currentMarker: marker})
+
             if(marker.getPopup().isOpen()){
               marker.getPopup().remove();
             } 
@@ -195,23 +344,7 @@ export default class App extends React.PureComponent {
               }).then(function (res) {
                 console.log(res);
                 let imgId = res.data.data.getImages[0]._id;
-                axios({
-                method: "post",
-                url: `http://localhost:8000/image/${imgId}`,
-                data: {"query":"query { getPhoto { url }}"},
-              }).then(function (res2) {
-                console.log(res2)
-                let url = res2.data.data.getPhoto.url;
-                marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', '', m._id, url))
-                marker.getPopup().addTo(t.map);
-                document.getElementById(m._id).onclick = function () {
-                  t.setState({detailedLocation: true});
-                  console.log(t.state.currentMarker);
-                }
-              })
-              .catch(function(err){
-                console.error(err);
-              })
+                t.getImage(marker, m, imgId, t)
               })
               .catch(function (err) {
                 console.error(err);
@@ -238,7 +371,9 @@ export default class App extends React.PureComponent {
         console.log(r);
         if(!r._draggable)r.remove();
       }
-      this.setState({renderedMarkers: []});
+      this.draw.deleteAll();
+      this.setState({renderedMarkers: [], renderedRegions: []});
+      
     }
   
     onAddition (tag) {
@@ -294,10 +429,12 @@ export default class App extends React.PureComponent {
         console.log(map.getZoom());
         if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) {
           t.getMarkers(t);
+          t.getRegions(t);
           console.log(t.state.renderedMarkers);
         }
         else if (map.getZoom() < 13.5) {
           t.removeRendered(t);
+          t.state.currentPopup && t.state.currentPopup.remove();
         }
       });
       map.on('dragend', function () {
@@ -307,6 +444,37 @@ export default class App extends React.PureComponent {
           t.getMarkers(t, true);
         }
       })
+      const lngTolerance = 0.002;
+      const latTolerance = 0.003;
+      map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
+        
+        console.log(e.features[0].properties.id);
+        console.log(this.state.renderedRegions.find(x => x.id === e.features[0].properties.id));
+        let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
+        this.setState({currentRegion: clickedPolygon});
+        console.log(clickedPolygon);
+        /* for(let rendered of t.state.renderedMarkers){
+          console.log(Math.abs(e.lngLat.lng - rendered._lngLat.lng));
+          console.log(Math.abs(e.lngLat.lat - rendered._lngLat.lat));
+          if (Math.abs(e.lngLat.lng - rendered._lngLat.lng) <= lngTolerance && Math.abs(e.lngLat.lat - rendered._lngLat.lat) <= latTolerance) {
+           //if(e.lngLat.lat === rendered._lngLat.lat && e.lngLat.lng === rendered._lngLat.lng){ 
+            return;
+          }
+        } */
+        
+        let n = new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(this.producePopup(clickedPolygon.name, '', this.state.locationDescription, clickedPolygon.id))
+          .addTo(this.map);
+        document.getElementById(clickedPolygon.id).onclick = function (e) {
+          console.log(clickedPolygon.id);
+          //t.setState({detailedRegion: true, currentRegion: clickedPolygon});
+          t.setState({currentRegion: clickedPolygon});
+          t.getPinsWithinRegion();
+        }
+        this.setState({currentPopup: n});
+        //document.querySelector("")
+      });
       
       //this.getMarkers(this);
       let modes = MapboxDraw.modes;
@@ -326,6 +494,7 @@ export default class App extends React.PureComponent {
       map.on('draw.create', function (e) {
         console.log(e.features);
         e.features[0].name = t.state.locationName;
+        
         t.setState(prevState => ({
           newRegions: [...prevState.newRegions, e.features[0]]
         }));
@@ -374,7 +543,13 @@ export default class App extends React.PureComponent {
           renderedMarkers: [...prevState.renderedMarkers, m]
         }));
       }
-      this.map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
+      for (let r of this.state.newRegions){
+        console.log(r)
+        this.createRegion(r, this)
+        
+        console.log(this.state.renderedRegions);
+      }
+      /* this.map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         console.log(e);
         for(let rendered of this.state.renderedMarkers){
           console.log(Math.abs(e.lngLat.lng - rendered._lngLat.lng));
@@ -388,13 +563,13 @@ export default class App extends React.PureComponent {
           .setLngLat(e.lngLat)
           .setHTML(this.producePopup(this.state.locationName, '', this.state.locationDescription))
           .addTo(this.map);
-      })
+      }) */
       this.draw && this.draw.changeMode('static');
       
       for (let m of this.state.newMarkers){
         m.setDraggable(false);
       }
-      this.setState({newMarkers: []})
+      this.setState({newMarkers: [], newRegions: []})
       this.setState({movingMarker: false, choosingType: false, drawingRegion: false});
     }
 
@@ -403,7 +578,32 @@ export default class App extends React.PureComponent {
       currentLocationName: document.locationName});
     }
     closingLocation(){
-      this.setState({detailedLocation: false});
+      this.setState({detailedLocation: false, detailedRegion: false});
+    }
+
+    deleteRegion(){
+      console.log(this.state.currentRegion.backId);
+      return;
+      let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
+      axios({
+        method: "post",
+        url: "http://localhost:8000/polygon/",
+        data: body
+      }).then(function (res) {
+        console.log(res)
+        //let copy = [...t.state.renderedMarkers];
+          /* let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
+          if (index !== -1){
+            copy.splice(index, 1);
+            t.setState({renderedMarkers: copy});
+          }
+          t.setState({detailedLocation: false});
+          t.state.currentMarker.remove();
+          t.setState({currentMarker: null}); */
+      })
+      .catch(function (err) {
+        console.log(err)
+      })
     }
 
     deleteLocation(){
@@ -498,6 +698,8 @@ export default class App extends React.PureComponent {
         .addTo(this.map)
       marker.togglePopup();
       marker.image = this.state.image;
+      marker.name = this.state.locationName;
+      marker.description = this.state.locationDescription;
       console.log(marker.image);
       this.setState(prevState => ({
         newMarkers: [...prevState.newMarkers, marker]
@@ -636,7 +838,7 @@ export default class App extends React.PureComponent {
                 
             </Box>
             {
-              (this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
+              (this.state.detailedRegion || this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
               <div id='overlay' >
 
               {
@@ -659,6 +861,13 @@ export default class App extends React.PureComponent {
                 <UserForm cancel={this.cancelAccount} onSignin={this.signIn} createAccount={true}></UserForm>
                 :
                 null
+              }
+              {
+                this.state.detailedRegion?
+                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: "", locationTags: []}} owner={"John"}  ></RegionInfo>
+                :
+                null
+
               }
 
               
