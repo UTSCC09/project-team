@@ -55,13 +55,21 @@ let schema = buildSchema(pinType + polygonType + `
         _id: String
     }
 
+    input searchInput {
+        lat: Float
+        lon: Float
+        radius: Float
+    }
+    
     type Mutation {
         createPolygon(input: polygonInput): Polygon
     }
 
     type Query {
         getPolygon(input: idInput): Polygon
+        listPolygons(input: idInput): [Polygon]
         getPinsWithin(input: idInput): [Pin]
+        getNear(input: searchInput): [Polygon]
     }
 
 `);

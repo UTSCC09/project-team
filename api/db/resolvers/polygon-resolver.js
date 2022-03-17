@@ -11,15 +11,28 @@ getPolygon = async function ({input}) {
     return polygon;
 };
 
-const colorado = {
-  type: 'Polygon',
-  coordinates: [[
-    [-109, 41],
-    [-102, 41],
-    [-102, 37],
-    [-109, 37],
-    [-109, 41]
-  ]]
+listPolygons = async function ({input}) {
+    const polygons = await Polygon.find().exec();
+    return polygons;
+};
+
+getNear = async function ({input}) {
+    const radius = input.radius
+    if (radius > 2000){
+        console.log("Too large");
+    }
+    const polygons = await Polygon.find({
+        'features.geometry': {
+            $near: {
+                $maxDistance: radius,
+                $geometry: {
+                    type: "Point",
+                    coordinates: [input.lon, input.lat]
+                }
+            }
+        }
+    });
+    return polygons;
 };
 
 getPinsWithin = async function({input}) {
@@ -39,5 +52,6 @@ getPinsWithin = async function({input}) {
 module.exports = {
   createPolygon,
   getPolygon,
+  listPolygons,
   getPinsWithin
 }

@@ -45,9 +45,12 @@ app.use(session({
 const cookie = require('cookie');
 const { graphqlHTTP } = require('express-graphql');
 
-app.use('/user', graphqlHTTP({
-    schema: userSchema.schema,
-    graphiql: true
+app.use('/user', graphqlHTTP((req, res)=>{
+    return {
+        schema: userSchema.schema,
+        graphiql: true
+        context: {req, res},
+    };
 }));
 
 app.use('/rating', graphqlHTTP({
