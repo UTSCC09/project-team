@@ -206,7 +206,7 @@ export default class App extends React.PureComponent {
       let lat = marker._lngLat.lat;
       console.log(marker);
       
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description: \"${marker.description}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
@@ -252,18 +252,34 @@ export default class App extends React.PureComponent {
       })
     }
 
-    getRegions(t){
+    getRegions(t, removeOld=false){
       //let body = { "query": "query { listPolygons(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"};
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 5000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      
       axios({
         method: "post",
         url: "http://localhost:8000/polygon/",
         data: body
       }).then(function (res) {
         console.log(res);
+        if (removeOld) {
+          // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
+          let diff = t.state.renderedRegions.filter(x => !res.data.data.getNear.includes(x));
+          for (let x of diff){
+            console.log(x);
+            t.draw.delete(x.id)
+            let copy = [...t.state.renderedRegions];
+            copy.splice(copy.indexOf(x));
+            t.setState({renderedRegions: copy});
+            
+
+          }
+        }
         t.draw.changeMode('static');
         let polygons = res.data.data.getNear;
         for (let p of polygons){
+          let f = t.state.renderedRegions.find(x => x.backId === p._id)
+          if (f) continue;
           let newRegion = p.features.geometry;
           
           let v = t.draw.add(newRegion);
@@ -283,6 +299,7 @@ export default class App extends React.PureComponent {
     }
 
     getImage(marker, m, imgId, t){
+      console.log(marker);
       axios({
         method: "post",
         url: `http://localhost:8000/image/${imgId}`,
@@ -290,7 +307,7 @@ export default class App extends React.PureComponent {
       }).then(function (res2) {
         console.log(res2)
         let url = res2.data.data.getPhoto.url;
-        marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', '', m._id, url))
+        marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', marker.description, m._id, url))
         marker.getPopup().addTo(t.map);
         document.getElementById(m._id).onclick = function () {
           t.setState({detailedLocation: true});
@@ -305,14 +322,19 @@ export default class App extends React.PureComponent {
     getMarkers(t, removeOld=false){
 
       //let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
       this.send('POST', "http://localhost:8000/pin/", body, function (err, markers) {
         console.log(markers);
         console.log(t.state.renderedMarkers);
         if (removeOld) {
           // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
           let diff = t.state.renderedMarkers.filter(x => !markers.data.getNear.includes(x));
-          for (let x of diff) x.remove();
+          for (let x of diff){
+            x.remove();
+            let copy = [...t.state.renderedMarkers];
+            copy.splice(copy.indexOf(x));
+            t.setState({renderedMarkers: copy});
+          } 
         }
         
         for (let m of markers.data.getNear){
@@ -327,6 +349,7 @@ export default class App extends React.PureComponent {
             .addTo(t.map)
           
           marker.name = m.features.properties.name;
+          marker.description = m.features.properties.description;
           marker.id = m._id;
           marker.togglePopup = function(){
             t.setState({currentMarker: marker})
@@ -429,23 +452,26 @@ export default class App extends React.PureComponent {
         console.log(map.getZoom());
         if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) {
           t.getMarkers(t);
-          t.getRegions(t);
+          t.getRegions(t)
           console.log(t.state.renderedMarkers);
         }
-        else if (map.getZoom() < 13.5) {
+
+        if (map.getZoom() < 13.5) {
           t.removeRendered(t);
           t.state.currentPopup && t.state.currentPopup.remove();
         }
+        
       });
       map.on('dragend', function () {
         if (map.getZoom() >= 13.5) {
           //for(let m of t.state.renderedMarkers) m.remove();
           //t.setState({renderedMarkers: []});
           t.getMarkers(t, true);
+          t.getRegions(t, true);
         }
       })
-      const lngTolerance = 0.002;
-      const latTolerance = 0.003;
+      const lngTolerance = 0.0006;
+      const latTolerance = 0.001;
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         console.log(e.features[0].properties.id);
@@ -453,14 +479,14 @@ export default class App extends React.PureComponent {
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
         this.setState({currentRegion: clickedPolygon});
         console.log(clickedPolygon);
-        /* for(let rendered of t.state.renderedMarkers){
+        for(let rendered of t.state.renderedMarkers){
           console.log(Math.abs(e.lngLat.lng - rendered._lngLat.lng));
           console.log(Math.abs(e.lngLat.lat - rendered._lngLat.lat));
           if (Math.abs(e.lngLat.lng - rendered._lngLat.lng) <= lngTolerance && Math.abs(e.lngLat.lat - rendered._lngLat.lat) <= latTolerance) {
            //if(e.lngLat.lat === rendered._lngLat.lat && e.lngLat.lng === rendered._lngLat.lng){ 
             return;
           }
-        } */
+        }
         
         let n = new mapboxgl.Popup()
           .setLngLat(e.lngLat)
@@ -627,13 +653,12 @@ export default class App extends React.PureComponent {
     producePopup(name, tag, desc, id, url){
       console.log(url);
       //let newurl = "http://localhost:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
-      if (id) return `<div class="card">
+      if (id && url) return `<div class="card">
                   <div class="card-header"
                 style="background-image: url(${encodeURI(url)})"
                   >
                         <div class="card-header-bar">
                           <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
-                          <button id=${id} class="btn-menu"></button>
                         </div>
                   </div>
 
@@ -650,32 +675,42 @@ export default class App extends React.PureComponent {
                             <span class="value">-</span>
                           </div>
                       </div>
+                      <button id=${id} class="btn-menu"></button>
                   </div>
               </div>`
-      return `<div class="card">
-      <div class="card-header"
-    style="background-image: url(${url})"
-      >
-            <div class="card-header-bar">
-              <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+      if (url) return `<div class="card">
+            <div class="card-header"
+          style="background-image: url(${url})"
+            >
+                  <div class="card-header-bar">
+                    <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
+                  </div>
             </div>
-      </div>
 
-      <div class="card-body">
-          <h2 class="name">${name}</h2>
-          <h4 class="main-tag">${tag}</h4>
-          <div class="location-summary">${desc}</div>
-      </div>
+            <div class="card-body">
+                <h2 class="name">${name}</h2>
+                <h4 class="main-tag">${tag}</h4>
+                <div class="location-summary">${desc}</div>
+            </div>
 
-      <div class="card-footer">
-          <div class="stats">
-              <div class="stat">
-                <span class="label">Rating</span>
-                <span class="value">-</span>
-              </div>
-          </div>
-      </div>
-  </div>`      
+            <div class="card-footer">
+                <div class="stats">
+                    <div class="stat">
+                      <span class="label">Rating</span>
+                      <span class="value">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>`
+        return `<div id="region-card" class="card">
+                  <div class="card-body">
+                      <h2 class="name">${name}</h2>
+                      <div class="location-summary">${desc}</div>
+                  </div>
+                  <div class="card-footer">
+                      <button id=${id} class="btn-menu"></button>
+                  </div>
+              </div>` 
     }
     addMarker(event){
       //clear the category selection

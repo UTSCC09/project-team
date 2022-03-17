@@ -17,8 +17,8 @@ export default function QuiltedImageList(props) {
     <ImageList
       sx={{ width: 500, height: 300 }}
       variant="quilted"
-      cols={3}
-      rowHeight={121}
+      cols={1}
+      rowHeight={200}
     >
       {props.images.map((item) => (
         <ImageListItem key={item.img} cols={item.cols || 1} rows={item.rows || 1}>
