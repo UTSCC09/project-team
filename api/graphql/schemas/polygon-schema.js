@@ -27,6 +27,7 @@ const polygonType = `
 
     type polygonPropertySchema {
         name: String
+        description: String
     }
 `;
 
@@ -49,6 +50,7 @@ let schema = buildSchema(pinType + polygonType + `
 
     input propertyInput {
         name: String
+        descriptrion: String
     }
 
     input idInput {
@@ -60,9 +62,10 @@ let schema = buildSchema(pinType + polygonType + `
         lon: Float
         radius: Float
     }
-    
+
     type Mutation {
         createPolygon(input: polygonInput): Polygon
+        deletePolygon(input: idInput): String
     }
 
     type Query {
