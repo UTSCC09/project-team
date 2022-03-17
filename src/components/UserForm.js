@@ -113,7 +113,7 @@ export default class UserForm extends React.PureComponent{
           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
         }
         return (
-        <form className='user-form' onSubmit={this.props.onSignIn} id='account-form-containter' sx={{
+        <form className='user-form' onSubmit={this.state.createAccount? this.props.onRegisterUser : this.props.onSignIn} id='account-form-containter' sx={{
             innerHeight: "350px",
           }}>
             <div id='form-title-container'>{ formTitle }</div>
