@@ -22,7 +22,7 @@ const registerUser = function (username, password, callback) {
         password
       }
 
-      ... on errorUser {
+      ... on Error {
         message
       }
     }
@@ -49,7 +49,7 @@ const signIn = async function (username, password, callback) {
         password
       }
 
-      ... on errorUser {
+      ... on Error {
         message
       }
     }
