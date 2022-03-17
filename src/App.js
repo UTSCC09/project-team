@@ -20,7 +20,6 @@ import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import sanitize from "sanitize-filename"
-import api from './api';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -63,8 +62,7 @@ export default class App extends React.PureComponent {
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
         this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this)
-        this.signIn = this.signIn.bind(this);
-        this.registerUser = this.registerUser.bind(this);
+        this.onLoginFormSubmit = this.onLoginFormSubmit.bind(this);
         this.cancelAccount = this.cancelAccount.bind(this)
         this.toggleAccount = this.toggleAccount.bind(this)
         this.signOut = this.signOut.bind(this);
@@ -343,24 +341,9 @@ export default class App extends React.PureComponent {
       this.map = map;
     }
 
-    signIn(event){
-      event.preventDefault();
-      const username = event.target.username.value;
-      const password = event.target.password.value;
-      api.signIn(username, password, (err, user) => {
-        this.setState({signedIn: true});
-        this.setState({accountForm: false});  
-      })
-    };
-
-    registerUser(event){
-      event.preventDefault();
-      const username = event.target.username.value;
-      const password = event.target.password.value;
-      api.registerUser(username, password, (err, user) => {
-        this.setState({signedIn: true});
-        this.setState({accountForm: false});  
-      })
+    onLoginFormSubmit(user){
+      this.setState({signedIn: true});
+      this.setState({accountForm: false});  
     };
 
     signOut(event) {
@@ -674,7 +657,7 @@ export default class App extends React.PureComponent {
               {
                 this.state.accountForm?
 
-                <UserForm cancel={this.cancelAccount} onRegisterUser={this.registerUser} onSignIn={this.signIn} createAccount={true}></UserForm>
+                <UserForm cancel={this.cancelAccount} onLoginFormSubmit={this.onLoginFormSubmit} createAccount={true}></UserForm>
                 :
                 null
               }
