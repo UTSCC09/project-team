@@ -4,9 +4,10 @@ const path = require('path');
 const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
-createPin = async function ({input}) {
-  const pin = await new Pin(input).save();
-  return pin;
+createPin = async function ({input}, context) {
+    const pinInput = Object.assign({}, input, {user: context.req.session.user});
+    const pin = await new Pin(pinInput).save();
+    return pin;
 };
 
 getPin = async function ({input}) {

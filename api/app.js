@@ -60,16 +60,22 @@ app.use('/rating', graphqlHTTP({
 }));
 
 
-app.use('/pin/:id/image', graphqlHTTP({
-    schema: imageSchema.schema,
-    rootValue: {createImage, getImages},
-    graphiql: true
+app.use('/pin/:id/image', graphqlHTTP((req, res)=>{
+    return {
+        schema: imageSchema.schema,
+        rootValue: {createImage, getImages},
+        graphiql: true,
+        context: {req, res},
+    };
 }));
 
-app.use('/pin', graphqlHTTP({
-    schema: pinSchema.schema,
-    rootValue: pinResolver,
-    graphiql: true
+app.use('/pin', graphqlHTTP((req, res)=>{
+    return {
+        schema: pinSchema.schema,
+        rootValue: pinResolver,
+        graphiql: true,
+        context: {req, res},
+    };
 }));
 
 app.use('/comment', graphqlHTTP({
@@ -78,10 +84,13 @@ app.use('/comment', graphqlHTTP({
     graphiql: true
 }));
 
-app.use('/polygon', graphqlHTTP({
-    schema: polygonSchema.schema,
-    rootValue: polygonResolver,
-    graphiql: true
+app.use('/polygon', graphqlHTTP((req, res)=>{
+    return {
+        schema: polygonSchema.schema,
+        rootValue: polygonResolver,
+        graphiql: true,
+        context: {req, res},
+    };
 }));
 
 
