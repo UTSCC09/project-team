@@ -19,7 +19,6 @@ const registerUser = function (username, password, callback) {
     createUser(input: $input) {
       ... on User {
         username
-        password
       }
 
       ... on Error {
@@ -46,7 +45,6 @@ const signIn = async function (username, password, callback) {
     signin(input: $input) {
       ... on User {
         username
-        password
       }
 
       ... on Error {
