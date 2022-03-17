@@ -3,7 +3,15 @@ const app = express();
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const db = require('./db/db');
-const pinResolver = require('./db/resolvers/pin-resolver');
+const {
+    createPin,
+    getPin,
+    getNear,
+    listPins,
+    deletePin,
+    addTag,
+    deleteTag
+} = require('./db/resolvers/pin-resolver');
 const commentResolver = require('./db/resolvers/comment-resolver');
 const ratingResolver = require('./db/resolvers/rating-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
@@ -69,10 +77,19 @@ app.use('/pin/:id/image', graphqlHTTP((req, res)=>{
     };
 }));
 
+app.use('/pin/:id', graphqlHTTP((req, res)=>{
+    return {
+        schema: pinSchema.schema,
+        rootValue: {getPin, deletePin, addTag, deleteTag},
+        graphiql: true,
+        context: {req, res},
+    };
+}));
+
 app.use('/pin', graphqlHTTP((req, res)=>{
     return {
         schema: pinSchema.schema,
-        rootValue: pinResolver,
+        rootValue: {createPin, getNear,listPins},
         graphiql: true,
         context: {req, res},
     };

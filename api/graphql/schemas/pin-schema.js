@@ -26,6 +26,7 @@ const pinType = `
     type pinPropertySchema {
         name: String
         description: String
+        tags: [String]
     }
 `;
 
@@ -59,16 +60,24 @@ let schema = buildSchema(`
         lat: Float
         lon: Float
         radius: Float
+        tags: [String]
     }
+
+    input tagInput {
+        tag: String
+    }
+
     ` + pinType +
     `
     type Mutation {
         createPin(input: pinInput): Pin
         deletePin(input: idInput): String
+        addTag(input: tagInput): Pin
+        deleteTag(input: tagInput): Pin
     }
 
     type Query {
-        getPin(input: idInput): Pin
+        getPin: Pin
         getNear(input: searchInput): [Pin]
         listPins(input: idInput): [Pin]
     }
