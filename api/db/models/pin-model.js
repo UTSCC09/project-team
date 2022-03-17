@@ -1,20 +1,23 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const tagTypes = ['shop', 'park', 'food'];
+
 const propertySchema = new mongoose.Schema({
     name: {type: String, required: true},
-    description: {type: String}
+    description: {type: String},
+    tags: {type: [String], enum: tagTypes}
 });
 
 const geometrySchema = new mongoose.Schema({
     type: {type: String, required: true},
-    coordinates: [{type: Number, require: true}]
+    coordinates: [{type: Number, required: true}]
 });
 
 const featureSchema = new mongoose.Schema({
     type: {type: String, required: true},
-    geometry: {type: geometrySchema, require: true},
-    properties: {type: propertySchema, require: true}
+    geometry: {type: geometrySchema, required: true},
+    properties: {type: propertySchema, required: true}
 });
 
 const pinSchema = new mongoose.Schema({

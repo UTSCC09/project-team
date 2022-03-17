@@ -6,7 +6,7 @@ const Pin = require('../models/pin-model');
 
 createImage = async function ({input}, context) {
     // Validate location exists in db
-    const pin = await Pin.findOne({_id: context.params.id}).exec();
+    const pin = await Pin.findOne({_id: context.req.params.id}).exec();
 
     const {createReadStream, filename, mimetype, encoding} = await input.image.file;
     const upload_path = path.join(__dirname, `/../../static/images/${filename}`);
@@ -14,6 +14,7 @@ createImage = async function ({input}, context) {
     const out = fs.createWriteStream(upload_path);
     await stream.pipe(out);
     const image = await new Image({
+        user: context.req.session.user,
         title: input.title,
         image: filename,
         pin: pin._id

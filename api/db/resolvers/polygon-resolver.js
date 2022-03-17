@@ -1,9 +1,10 @@
 const Polygon = require('../models/polygon-model');
 const Pin = require('../models/pin-model');
 
-createPolygon = async function ({input}) {
-  const polygon = await new Polygon(input).save();
-  return polygon;
+createPolygon = async function ({input}, context) {
+    const polygonInput = Object.assign({}, input, {user: context.req.session.user});
+    const polygon = await new Polygon(polygonInput).save();
+    return polygon;
 };
 
 getPolygon = async function ({input}) {
@@ -49,9 +50,16 @@ getPinsWithin = async function({input}) {
     return pins;
 }
 
+deletePolygon = async function({input}) {
+    const polygon = await Polygon.findOne(input).exec();
+    Polygon.deleteOne(input).exec();
+    return null;
+}
+
 module.exports = {
   createPolygon,
   getPolygon,
   listPolygons,
-  getPinsWithin
+  getPinsWithin,
+  deletePolygon
 }
