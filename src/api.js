@@ -17,8 +17,14 @@ const baseUrl = 'http://localhost:8000/'
 const registerUser = function (username, password, callback) {
   let query = `mutation createUser($input: UserInput) { 
     createUser(input: $input) {
-      username
-      password
+      ... on User {
+        username
+        password
+      }
+
+      ... on errorUser {
+        message
+      }
     }
   }`;
 
@@ -38,8 +44,14 @@ const registerUser = function (username, password, callback) {
 const signIn = async function (username, password, callback) {
   let query = `query signin($input: UserInput) {
     signin(input: $input) {
-      username
-      password
+      ... on User {
+        username
+        password
+      }
+
+      ... on errorUser {
+        message
+      }
     }
   }`;
 
