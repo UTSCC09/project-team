@@ -64,7 +64,7 @@ export default class App extends React.PureComponent {
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
         this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this)
-        this.signIn = this.signIn.bind(this)
+        this.onLoginFormSubmit = this.onLoginFormSubmit.bind(this);
         this.cancelAccount = this.cancelAccount.bind(this)
         this.toggleAccount = this.toggleAccount.bind(this)
         this.signOut = this.signOut.bind(this);
@@ -535,11 +535,12 @@ export default class App extends React.PureComponent {
       
       this.map = map;
     }
-    signIn(event){
-      event.preventDefault();
+
+    onLoginFormSubmit(user){
       this.setState({signedIn: true});
-      this.setState({accountForm: false})
+      this.setState({accountForm: false});  
     };
+
     signOut(event) {
       this.setState({signedIn: false});
       
@@ -609,7 +610,7 @@ export default class App extends React.PureComponent {
 
     deleteRegion(){
       console.log(this.state.currentRegion.backId);
-      return;
+      //return;
       let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
       axios({
         method: "post",
@@ -893,7 +894,7 @@ export default class App extends React.PureComponent {
               {
                 this.state.accountForm?
 
-                <UserForm cancel={this.cancelAccount} onSignin={this.signIn} createAccount={true}></UserForm>
+                <UserForm cancel={this.cancelAccount} onLoginFormSubmit={this.onLoginFormSubmit} createAccount={true}></UserForm>
                 :
                 null
               }

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 const propertySchema = new mongoose.Schema({
     name: {type: String, required: true},
@@ -18,7 +19,8 @@ const featureSchema = new mongoose.Schema({
 
 const pinSchema = new mongoose.Schema({
     type: {type: String, required: true},
-    features: {type: featureSchema, required: true}
+    features: {type: featureSchema, required: true},
+    user: {type: Schema.Types.ObjectId, ref: 'User', required: true},
 });
 
 pinSchema.index({"features.geometry": '2dsphere'}, {unique: false})
