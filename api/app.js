@@ -1,9 +1,8 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
-
+const cors = require('cors');
 const db = require('./db/db');
-const userResolver = require('./db/resolvers/user-resolver');
 const pinResolver = require('./db/resolvers/pin-resolver');
 const commentResolver = require('./db/resolvers/comment-resolver');
 const ratingResolver = require('./db/resolvers/rating-resolver');
@@ -24,6 +23,9 @@ const imageSchema = require('./graphql/schemas/image-schema');
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false}));
 app.use(bodyParser.json());
+
+app.use(cors());
+
 
 app.use(express.static('static'));
 
@@ -46,8 +48,7 @@ const { graphqlHTTP } = require('express-graphql');
 app.use('/user', graphqlHTTP((req, res)=>{
     return {
         schema: userSchema.schema,
-        rootValue: userResolver,
-        graphiql: true,
+        graphiql: true
         context: {req, res},
     };
 }));

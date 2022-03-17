@@ -6,6 +6,7 @@ import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText'
 import TextField from '@mui/material/TextField';
+import api from '../api';
 export default class UserForm extends React.PureComponent{
 
     constructor(props){
@@ -13,10 +14,12 @@ export default class UserForm extends React.PureComponent{
         this.state = {
             createAccount: this.props.createAccount,
             showPassword: false,
+            errorMessage: ''
         }
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
         this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this)
         this.toggleAccount = this.toggleAccount.bind(this);
+        this.handleOnSubmit = this.handleOnSubmit.bind(this);
         
         
     }
@@ -33,6 +36,38 @@ export default class UserForm extends React.PureComponent{
           createAccount: !prevState.createAccount
         }))
     }
+
+    handleOnSubmit(event) {
+      event.preventDefault();
+      const username = event.target.username.value;
+      const password = event.target.password.value;
+
+      if (this.state.createAccount) {
+        api.registerUser(username, password, (err, user) => {
+          console.log(user);
+          if (user.data.createUser.message) { 
+            this.setState((prevState) => ({
+              errorMessage: user.data.createUser.message
+            }));
+            return;
+          }
+          this.props.onLoginFormSubmit(user);
+        });
+      } else {
+        api.signIn(username, password, (err, user) => {
+          if (user.data.signin.message) {
+            this.setState((prevState) => ({
+              errorMessage: user.data.signin.message
+            }));
+            return;
+          }
+          this.props.onLoginFormSubmit(user);
+        });
+      }
+
+
+    }
+
     render(){
         let usernameHelper;
         let passwordElement = <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
@@ -40,6 +75,7 @@ export default class UserForm extends React.PureComponent{
           <OutlinedInput id="outlined-adornment-password"
             type={this.state.showPassword ? 'text' : 'password'}
             label="Password"
+            id="password"
             value={this.state.password}
             required={true}
             endAdornment={
@@ -67,7 +103,7 @@ export default class UserForm extends React.PureComponent{
         let submitFormBtn;
         let confirmPasswordElement
         if (this.state.createAccount) {   
-            submitFormBtn = <Button className='form-button' variant="contained" sx={{
+            submitFormBtn = <Button type='submit' className='form-button' variant="contained" sx={{
               marginRight: "5px",
             }}>
               Sign up
@@ -112,7 +148,7 @@ export default class UserForm extends React.PureComponent{
           toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Don't have an account?</Button>;
         }
         return (
-        <form className='user-form' onSubmit={this.props.onSignin} id='account-form-containter' sx={{
+        <form className='user-form' onSubmit={this.handleOnSubmit} id='account-form-containter' sx={{
             innerHeight: "350px",
           }}>
             <div id='form-title-container'>{ formTitle }</div>
@@ -131,6 +167,8 @@ export default class UserForm extends React.PureComponent{
                 :
                 null
               }
+
+              <div id='error_message'>{this.state.errorMessage}</div>
             
               <div id='account-form-buttons'>
                 <div id='submit-cancel'>
