@@ -47,7 +47,7 @@ const queryType = new GraphQLObjectType({
             args: {
                 input: {type: userInputType}
             },
-            resolve: (_, {input}) => resolver.signin(input)
+            resolve: (_, {input}, context) => resolver.signin(input, context)
         }
     }
 });
