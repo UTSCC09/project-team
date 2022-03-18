@@ -205,28 +205,15 @@ export default class App extends React.PureComponent {
       let lng = marker._lngLat.lng;
       let lat = marker._lngLat.lat;
       console.log(marker);
-      
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description: \"${marker.description}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
+      console.log(t.state.user)
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description: \"${marker.description}\"  geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
         
         marker.name = res.data.createPin.features.properties.name;
         marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
-        /* marker.togglePopup = function(){
-          if(marker.getPopup().isOpen()){
-            marker.getPopup().remove();
-          } 
-          else{
-            t.setState({currentMarker: marker})
-            console.log(t.state.currentMarker);
-            marker.getPopup().addTo(t.map);
-            document.getElementById(res.data.createPin._id).onclick = function () {
-              t.setState({detailedLocation: true});
-              console.log(t.state.currentMarker);
-            }
-          }
-        } */
+        
         t.uploadImage(marker, res, t);
         
 
@@ -537,8 +524,7 @@ export default class App extends React.PureComponent {
     }
 
     onLoginFormSubmit(user){
-      this.setState({signedIn: true});
-      this.setState({accountForm: false});  
+      this.setState({signedIn: true, accountForm: false, user: user.username});
     };
 
     signOut(event) {
