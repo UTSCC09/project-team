@@ -38,9 +38,10 @@ getNear = async function ({input}) {
     if (radius > 2000){
         console.log("Too large");
     }
-    const test = await Pin.find({'features.properties.tags': tags}).exec();
+    console.log(tags);
+    const test = await Pin.find({'features.properties.tags': {$all: tags}}).exec();
     console.log(test);
-    const pins = await Pin.find({
+    let pins = Pin.find({
             'features.geometry': {
                 $near: {
                     $maxDistance: radius,
@@ -51,7 +52,13 @@ getNear = async function ({input}) {
                 }
             }
         },
-    ).find({'features.properties.tags': tags},).exec();
+    );
+    if (tags.length > 0) {
+        pins = await pins.find({'features.properties.tags': {"$all": tags}},).exec();
+    }
+    else {
+        pins = await pins.exec();
+    }
     console.log(pins);
     return pins;
 };
