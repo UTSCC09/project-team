@@ -128,6 +128,13 @@ body{
 .mapboxgl-popup-close-button{
     visibility: hidden;
 }
+#region-card{
+  height: 150px; 
+  width: 175px;
+}
+#region-card .name{
+  padding-top: 10px;
+}
 .card{
   position: relative;
   width: 300px; /* Remove for full width */
@@ -179,12 +186,14 @@ body{
 }
 .btn-menu{
   display: inline-block;
-  background: url(https://res.cloudinary.com/dj14cmwoz/image/upload/v1491077483/profile-card/images/menu.svg) no-repeat;
-  width: 19px;
-  height: 12.16px;
-  margin-left:10px;
+  background: url("./media/more.png"); /*<a href="https://www.flaticon.com/free-icons/more" title="more icons">More icons created by Smartline - Flaticon</a>*/ /*url(https://res.cloudinary.com/dj14cmwoz/image/upload/v1491077483/profile-card/images/menu.svg) no-repeat;*/
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 20px;
+  height: 20px;
+  margin-right:10px;
   margin-top:10px;
-  float: left;
+  float: right;
   border: none;
   cursor: pointer;
 }
