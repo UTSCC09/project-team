@@ -6,6 +6,7 @@ const {
     GraphQLUnionType,
 } = require('graphql');
 const resolver = require('../../db/resolvers/user-resolver');
+const {ErrorType} = require('./error-schema');
 
 const userInputType = new GraphQLInputObjectType({
     name: 'UserInput',
@@ -23,19 +24,12 @@ const userType = new GraphQLObjectType({
     },
 });
 
-const errorUserType = new GraphQLObjectType({
-    name: 'errorUser',
-    fields: {
-        message: {type: GraphQLString}
-    }
-});
-
 const userResultType = new GraphQLUnionType({
     name: 'UserResult',
-    types: [userType, errorUserType],
+    types: [userType, ErrorType],
     resolveType: (value) => {
         if (value.username) return userType.name;
-        if (value.message) return errorUserType.name;
+        if (value.message) return ErrorType.name;
     }
 });
 

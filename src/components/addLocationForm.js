@@ -2,6 +2,8 @@ import React from 'react';
 import { Autocomplete } from '@mui/material';
 import FormControl from '@mui/material/FormControl'
 import TextField from '@mui/material/TextField';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import FormData from "form-data"
 
 import axios from 'axios' 
@@ -12,40 +14,28 @@ export default class addingLocationForm extends React.PureComponent{
     constructor(props){
       super(props);
       this.handleImage = this.handleImage.bind(this);
-      this.sendFiles = this.sendFiles.bind(this);
-
-    }
-    send(method, url, data, callback){
-      var xhr = new XMLHttpRequest();
-      xhr.onload = function() {
-          if (xhr.status !== 200) callback("[" + xhr.status + "]" + xhr.responseText, null);
-          else callback(null, JSON.parse(xhr.responseText));
-      };
-      xhr.open(method, url, true);
-      if (!data) xhr.send();
-      else{
-          xhr.setRequestHeader('Content-Type', 'application/json');
-          //xhr.setRequestHeader("Access-Control-Allow-Origin ","*");
-          xhr.send(JSON.stringify(data));
+      this.state = {
+        file: false,
+        submitAttempt: false
       }
+      this.fileChange = this.fileChange.bind(this);
+      this.attemptSubmit = this.attemptSubmit.bind(this);
     }
-    sendFiles(method, url, data, callback){
-      let formdata = new FormData();
+    fileChange(e){
+      this.setState({file: true});
+      this.props.imageChange(e);
+    }
+    attemptSubmit(e){
+      e.preventDefault();
+      this.setState({submitAttempt: true});
+      console.log(this.state.submitAttempt && !this.state.file)
+      if(this.state.file){
+        console.log('sbumitting')
+        this.props.submit(e);
 
-      formdata.append("operations", {"query": "mutation($file:Upload!){createImage(input:{title:\"test\",image:$file}){_id,title,image,pin}}"});
-      formdata.append("map", {"0":["variables.file"]});
-      formdata.append(0, data[0])
-      let xhr = new XMLHttpRequest();
-      
-      xhr.onload = function() {
-          if (xhr.status !== 200) callback("[" + xhr.status + "]" + xhr.responseText, null);
-          else callback(null, JSON.parse(xhr.responseText));
-      };
-      xhr.open(method, url, true);
-      //xhr.setRequestHeader('Content-Type', "multipart/form-data");
-      xhr.send(formdata);
-      //xhr.send(data);
-  }
+      } 
+    }
+    
     handleImage(e){
       console.log(e)
       if (e.target.files && e.target.files[0]) {
@@ -75,9 +65,7 @@ export default class addingLocationForm extends React.PureComponent{
           .catch(function(err){
             console.error(err);
           })
-        /* this.sendFiles("POST", "http://localhost:8000/pin/62310a56ca26b64f107de717/image/", data, function (err, res) {
-          if(res)console.log(res);
-        }) */
+
 
       }
     }
@@ -85,6 +73,7 @@ export default class addingLocationForm extends React.PureComponent{
     render() {
         const categories = ['Attraction', 'Government', 'Restaurant', 'asasa', 'fghjgshjd', 'fdhjkhjkfdhjk'];
         /*autocomplete: https://mui.com/components/autocomplete/#multiple-values */
+        /* file upload: https://stackoverflow.com/questions/40589302/how-to-enable-file-upload-on-reacts-material-ui-simple-input */
         return (
             
             <div>
@@ -122,7 +111,7 @@ export default class addingLocationForm extends React.PureComponent{
                         
                 </form>
                 :
-                <form className='user-form' id='add-location-form' onSubmit={this.props.submit} >
+                <form className='user-form' id='add-location-form' onSubmit={this.attemptSubmit} >
                   <div id='form-title-container'><div className='account-form-title' id='new-location'></div></div>
                   <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
                     <TextField onChange={this.props.changeLocationName} id='location-name' required={true} variant='outlined' label="Location Name">
@@ -138,7 +127,7 @@ export default class addingLocationForm extends React.PureComponent{
                     rows={4}
                   />
                   </FormControl>
-                  <input type="file" name="myImage" onChange={this.props.imageChange} />
+                  
                   <FormControl required={true} sx={{ m: 1, width: 231}}>
                   
                   <Autocomplete
@@ -159,6 +148,32 @@ export default class addingLocationForm extends React.PureComponent{
                     )}
                   />
                   </FormControl>
+                  <FormControl required={true} sx={{ m: 1, width: 231}} >
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="raised-button-file"
+                    type="file"
+                    onChange={this.fileChange}
+                  />
+                  <label required htmlFor="raised-button-file">
+                    <Button variant="outlined" component="span">
+                      Upload an image
+                    </Button>
+                  </label> 
+                  </FormControl>
+                  {
+                    (this.state.submitAttempt && !this.state.file)?
+                    <Alert severity="error">
+                      Please upload an image for this location
+                    </Alert>
+                    :
+                    null
+                    
+                  }
+
+
+                  
                   
                   <Button type='submit' className='form-button' variant="contained" sx={{
                     marginBottom: "10px",
@@ -170,7 +185,7 @@ export default class addingLocationForm extends React.PureComponent{
                             marginBottom: "10px"
                           }}>
                             Cancel
-                          </Button>
+                  </Button>
                         
                 </form>
               }
