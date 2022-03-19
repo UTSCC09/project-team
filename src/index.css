@@ -129,8 +129,9 @@ body{
     visibility: hidden;
 }
 #region-card{
+  min-width: 175px;
   height: 150px; 
-  width: 175px;
+  width: auto;
 }
 #region-card .name{
   padding-top: 10px;

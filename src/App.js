@@ -133,7 +133,10 @@ export default class App extends React.PureComponent {
             console.log(imgs);
             let final = [];
             for (let img of imgs){
-              final.push({img: encodeURI(img.data.data.getPhoto.url)})
+              console.log(img)
+              //final.push({img: encodeURI(img.data.data.getPhoto.url)});
+              final.push({img: img.data.data.getPhoto.url});
+              console.log(final);
             }
             t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: final});
           })
@@ -213,7 +216,7 @@ export default class App extends React.PureComponent {
       let lat = marker._lngLat.lat;
       console.log(marker);
       console.log(t.state.user)
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
       axios({
         method: 'post',
         url: 'http://localhost:8000/pin/',
@@ -502,7 +505,7 @@ export default class App extends React.PureComponent {
         
         let n = new mapboxgl.Popup()
           .setLngLat(e.lngLat)
-          .setHTML(this.producePopup(clickedPolygon.name, '', this.state.locationDescription, clickedPolygon.id))
+          .setHTML(this.producePopup(clickedPolygon.name, '', clickedPolygon.description, clickedPolygon.id))
           .addTo(this.map);
         document.getElementById(clickedPolygon.id).onclick = function (e) {
           console.log(clickedPolygon.id);
@@ -532,6 +535,7 @@ export default class App extends React.PureComponent {
       map.on('draw.create', function (e) {
         console.log(e.features);
         e.features[0].name = t.state.locationName;
+        e.features[0].description = t.state.locationDescription;
         
         t.setState(prevState => ({
           newRegions: [...prevState.newRegions, e.features[0]]
@@ -650,6 +654,7 @@ export default class App extends React.PureComponent {
 
     deleteRegion(){
       console.log(this.state.currentRegion.backId);
+      let t = this;
       //return;
       let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
       axios({
@@ -658,15 +663,16 @@ export default class App extends React.PureComponent {
         data: body
       }).then(function (res) {
         console.log(res)
-        //let copy = [...t.state.renderedMarkers];
-          /* let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
-          if (index !== -1){
-            copy.splice(index, 1);
-            t.setState({renderedMarkers: copy});
-          }
-          t.setState({detailedLocation: false});
-          t.state.currentMarker.remove();
-          t.setState({currentMarker: null}); */
+        let copy = [...t.state.renderedRegions];
+        let index = t.state.renderedRegions.indexOf(t.state.renderedRegions);
+        if (index !== -1){
+          copy.splice(index, 1);
+          t.setState({renderedRegions: copy});
+        }
+        t.setState({detailedRegion: false});
+        t.draw.delete(t.state.currentRegion.id)
+        if (t.state.currentPopup) t.state.currentPopup.remove();
+        //t.setState({currentRegion: null});
       })
       .catch(function (err) {
         console.log(err)
@@ -676,7 +682,51 @@ export default class App extends React.PureComponent {
     deleteLocation(){
       let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
       let t = this;
+
+      const s = async () => {
+        try {
+          const res = await axios({
+            method: "post",
+            url: "http://localhost:8000/pin/",
+            data: body
+          });
+          let copy = [...t.state.renderedMarkers];
+          let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
+          if (index !== -1){
+            copy.splice(index, 1);
+            t.setState({renderedMarkers: copy});
+          }
+          t.setState({detailedLocation: false});
+          t.state.currentMarker.remove();
+          t.setState({currentMarker: null});
+        }
+        catch (err) {
+          console.error(err)
+        }
+      }
+      s();
+      return;
+      axios({
+        method: "post",
+        url: "http://localhost:8000/pin/",
+        data: body
+      }).then(function (res) {
+        let copy = [...t.state.renderedMarkers];
+        let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
+        if (index !== -1){
+          copy.splice(index, 1);
+          t.setState({renderedMarkers: copy});
+        }
+        t.setState({detailedLocation: false});
+        t.state.currentMarker.remove();
+        t.setState({currentMarker: null});
+      })
+      .catch(function (err) {
+        console.error(err);
+      })
+      return;
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
+        console.log(res)
         if (res) {
           let copy = [...t.state.renderedMarkers];
           let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
@@ -775,6 +825,7 @@ export default class App extends React.PureComponent {
       marker.togglePopup();
       marker.image = this.state.image;
       marker.name = this.state.locationName;
+      marker.tags = currTags;
       marker.description = this.state.locationDescription;
       console.log(marker.image);
       this.setState(prevState => ({
@@ -958,7 +1009,7 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: "", locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
                 :
                 null
               }
