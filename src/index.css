@@ -135,6 +135,12 @@ body{
 #region-card .name{
   padding-top: 10px;
 }
+#search-container{
+  display: flex;
+}
+.search-btn {
+  margin: 10px;
+}
 .card{
   position: relative;
   width: 300px; /* Remove for full width */

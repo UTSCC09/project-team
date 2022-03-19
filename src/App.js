@@ -4,6 +4,9 @@ import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-load
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
+import { Autocomplete } from '@mui/material';
+import TextField from '@mui/material/TextField';
+import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddLocationIcon from '@mui/icons-material/AddLocation'
@@ -13,7 +16,9 @@ import Chip from '@mui/material/Chip';
 import { Button } from '@mui/material';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinDropIcon from '@mui/icons-material/PinDrop';
-import MenuItem from '@mui/material/MenuItem'
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import InputAdornment from '@mui/material/InputAdornment';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import AddLocationForm from './components/addLocationForm.js'
 import UserForm from './components/UserForm.js'
@@ -50,6 +55,7 @@ export default class App extends React.PureComponent {
           renderedRegions: [],
           currentLocationTags:[],
           newRegions: [],
+          searchTags:[],
           currentLocationDescription:'',
           newMarkers: [],
           mainTag: '',
@@ -104,6 +110,7 @@ export default class App extends React.PureComponent {
         console.log(res);
         let p = [];
         for (let r of res.data.data.getPinsWithin){
+          console.log( `http://localhost:8000/pin/${r._id}/image/`);
           let x = axios({
             method: "post",
             url: `http://localhost:8000/pin/${r._id}/image/`,
@@ -206,7 +213,24 @@ export default class App extends React.PureComponent {
       let lat = marker._lngLat.lat;
       console.log(marker);
       console.log(t.state.user)
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description: \"${marker.description}\"  geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      axios({
+        method: 'post',
+        url: 'http://localhost:8000/pin/',
+        data: body
+      }).then(function (res) {
+        console.log(res);
+        marker.id=res.data.data.createPin._id;
+        
+        marker.name = res.data.data.createPin.features.properties.name;
+        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', '', res.data.data.createPin._id)))
+        
+        t.uploadImage(marker, res, t);
+      })
+      .catch(function (err) {
+        console.error(err);
+      })
+      return;
       this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
@@ -309,7 +333,7 @@ export default class App extends React.PureComponent {
     getMarkers(t, removeOld=false){
 
       //let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 tags: []}) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
       this.send('POST', "http://localhost:8000/pin/", body, function (err, markers) {
         console.log(markers);
         console.log(t.state.renderedMarkers);
@@ -459,6 +483,7 @@ export default class App extends React.PureComponent {
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
+      map.on('click', (e) => {this.setState({searching: false})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         console.log(e.features[0].properties.id);
@@ -514,11 +539,40 @@ export default class App extends React.PureComponent {
         t.setState({drawingRegion: false});
         console.log(t.state.newRegions);
       });
+      map.on('draw.update', function(e) {
+        console.log(e.features);
+        console.log(t.state.newRegions.find((x) => x.id === e.features[0].id));
+        let old = t.state.newRegions.find((x) => x.id === e.features[0].id);
+        let idx = t.state.newRegions.indexOf(old);
+        if (idx > -1){
+          let copy = [...t.state.newRegions]
+          //copy.splice(idx, 1);
+          
+          let newRegion = e.features[0];
+          newRegion.name = old.name;
+          copy[idx] = newRegion;
+          t.setState({newRegions: copy});
+          /* t.setState(prevState => ({
+            newRegions: [...prevState.newRegions, newRegion]
+          })); */
+        }
+      })
 
 
       this.draw = draw;
    
       map.addControl(draw);
+      map.addControl(
+        new mapboxgl.GeolocateControl({
+        positionOptions: {
+        enableHighAccuracy: true
+        },
+        // When active the map will receive updates to the device's location as it changes.
+        trackUserLocation: true,
+        // Draw an arrow next to the location dot to indicate which direction the device is heading.
+        showUserHeading: true
+        })
+      );
       
       this.map = map;
     }
@@ -775,6 +829,12 @@ export default class App extends React.PureComponent {
       console.log(e.target.files[0])
       this.setState({image: e.target.files[0]});
     }
+    handleSearchChange(){
+      console.log('searching');
+    }
+    keyPress(e){
+      console.log(e.keyCode);
+    }
     render() {
         const { lng, lat, zoom } = this.state;
         
@@ -806,10 +866,43 @@ export default class App extends React.PureComponent {
             <Button sx={{display: 'none'}} className='view-btn' onClick={ this.viewingLocation }></Button>
             
             <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
-                <Fab color="primary" aria-label="search">
-                    <SearchIcon />
-                </Fab>
                 {
+                  this.state.searching?
+                  <div id="search-container">
+                  <Autocomplete
+                    multiple
+                    id="tags-outlined"
+                    sx={{width: 250, backgroundColor: 'white'}}
+                    options={['restaurant', 'mall']}
+                    onKeyDown={this.keyPress.bind(this)}
+                    onChange={ this.handleSearchChange.bind(this) }
+                    getOptionLabel={(option) => option}
+                    filterSelectedOptions
+                    renderInput={(params) => (
+                      <TextField
+                      
+                        {...params}
+                        label={/*https://stackoverflow.com/questions/62645466/how-to-make-autocomplete-field-of-material-ui-required*/
+                        this.state.searchTags.length===0 ? "Search" : 'Search'}
+                        required={this.state.searchTags.length === 0}
+                        placeholder="Tags"
+                        
+                      />
+                    
+                    )}
+                  />
+                  </div>
+                  :
+                  <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
+                    <SearchIcon />
+                  </Fab>
+                }
+                
+                {
+                  this.state.searching?
+                  
+                  null
+                  :
                   
                   this.state.signedIn?
                   <div id='location-btn'>
