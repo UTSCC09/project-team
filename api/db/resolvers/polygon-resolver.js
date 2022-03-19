@@ -61,6 +61,6 @@ module.exports = {
   getPolygon,
   listPolygons,
   getPinsWithin,
-  getNear,
-  deletePolygon
+  deletePolygon,
+  getNear
 }
