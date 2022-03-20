@@ -45,6 +45,7 @@ let schema = buildSchema(`
     input geometryInput {
         type: String
         coordinates: [Float]
+        tags: [String]
     }
 
     input propertyInput {
