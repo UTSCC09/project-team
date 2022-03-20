@@ -1,3 +1,4 @@
+const axios =  require('axios');
 function send(method, url, data, callback) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
@@ -12,7 +13,7 @@ function send(method, url, data, callback) {
   }
 };
 
-const baseUrl = 'http://localhost:8000/'
+const baseUrl = 'http://178.128.230.225:8000/'
 
 const registerUser = function (username, password, callback) {
   let query = `mutation createUser($input: UserInput) { 

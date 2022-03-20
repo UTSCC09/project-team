@@ -97,7 +97,7 @@ export default class App extends React.PureComponent {
   
       axios({
         method: "post",
-        url: "http://localhost:8000/polygon/",
+        url: "http://178.128.230.225:8000/polygon/",
         data: body
       })
       .then(function (res) {
@@ -106,7 +106,7 @@ export default class App extends React.PureComponent {
         for (let r of res.data.data.getPinsWithin){
           let x = axios({
             method: "post",
-            url: `http://localhost:8000/pin/${r._id}/image/`,
+            url: `http://178.128.230.225:8000/pin/${r._id}/image/`,
             data: {"query": "query { getImages { _id, title, image, pin }}"}
           });
           p.push(x)
@@ -117,7 +117,7 @@ export default class App extends React.PureComponent {
           for (let i of vals){
             let x = axios({
               method: "post",
-              url: `http://localhost:8000/image/${i.data.data.getImages[0]._id}`,
+              url: `http://178.128.230.225:8000/image/${i.data.data.getImages[0]._id}`,
               data: {"query":"query { getPhoto { url }}"},
             });
             p2.push(x);
@@ -167,7 +167,7 @@ export default class App extends React.PureComponent {
         let id = marker.id;
         axios({
           method: "post",
-          url: `http://localhost:8000/pin/${id}/image/`,
+          url: `http://178.128.230.225:8000/pin/${id}/image/`,
           data: data,
         })
           .then(function (res) {
@@ -177,7 +177,7 @@ export default class App extends React.PureComponent {
             marker.togglePopup = function () {
               axios({
                 method: "post",
-                url: `http://localhost:8000/image/${marker.imageId}`,
+                url: `http://178.128.230.225:8000/image/${marker.imageId}`,
                 data: {"query":"query { getPhoto { url }}"},
               }).then(function (res2) {
                 console.log(res2)
@@ -207,7 +207,7 @@ export default class App extends React.PureComponent {
       console.log(marker);
       
       let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description: \"${marker.description}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
-      this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
+      this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
         
@@ -237,7 +237,7 @@ export default class App extends React.PureComponent {
       let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\"  } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
       axios({
         method: "post",
-        url: "http://localhost:8000/polygon/",
+        url: "http://178.128.230.225:8000/polygon/",
         data: body
       }).then(function (res) {
         console.log(res);
@@ -258,7 +258,7 @@ export default class App extends React.PureComponent {
       
       axios({
         method: "post",
-        url: "http://localhost:8000/polygon/",
+        url: "http://178.128.230.225:8000/polygon/",
         data: body
       }).then(function (res) {
         console.log(res);
@@ -302,7 +302,7 @@ export default class App extends React.PureComponent {
       console.log(marker);
       axios({
         method: "post",
-        url: `http://localhost:8000/image/${imgId}`,
+        url: `http://178.128.230.225:8000/image/${imgId}`,
         data: {"query":"query { getPhoto { url }}"},
       }).then(function (res2) {
         console.log(res2)
@@ -323,7 +323,7 @@ export default class App extends React.PureComponent {
 
       //let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
       let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
-      this.send('POST', "http://localhost:8000/pin/", body, function (err, markers) {
+      this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, markers) {
         console.log(markers);
         console.log(t.state.renderedMarkers);
         if (removeOld) {
@@ -362,7 +362,7 @@ export default class App extends React.PureComponent {
               console.log(t.state.currentMarker);
               axios({
                 method: "post",
-                url: `http://localhost:8000/pin/${marker.id}/image/`,
+                url: `http://178.128.230.225:8000/pin/${marker.id}/image/`,
                 data: {"query": "query { getImages { _id, title, image, pin }}"}
               }).then(function (res) {
                 console.log(res);
@@ -614,7 +614,7 @@ export default class App extends React.PureComponent {
       let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
       axios({
         method: "post",
-        url: "http://localhost:8000/polygon/",
+        url: "http://178.128.230.225:8000/polygon/",
         data: body
       }).then(function (res) {
         console.log(res)
@@ -636,7 +636,7 @@ export default class App extends React.PureComponent {
     deleteLocation(){
       let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
       let t = this;
-      this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
+      this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, res) {
         if (res) {
           let copy = [...t.state.renderedMarkers];
           let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
@@ -653,7 +653,7 @@ export default class App extends React.PureComponent {
     }
     producePopup(name, tag, desc, id, url){
       console.log(url);
-      //let newurl = "http://localhost:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
+      //let newurl = "http://178.128.230.225:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
       if (id && url) return `<div class="card">
                   <div class="card-header"
                 style="background-image: url(${encodeURI(url)})"
