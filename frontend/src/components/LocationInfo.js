@@ -47,6 +47,7 @@ export default function LocationInfo(props) {
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
+  /*streetview https://github.com/alexus37/react-google-streetview */
   
   return (
     <Card id='location-info' sx={{ maxWidth: 500, overflow: 'scroll', margin: 'auto' }}>

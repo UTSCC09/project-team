@@ -1,4 +1,6 @@
-const axios =  require('axios');
+const { default: axios } = require("axios");
+const { promise } = require("bcrypt/promises");
+
 function send(method, url, data, callback) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
@@ -13,7 +15,84 @@ function send(method, url, data, callback) {
   }
 };
 
+function performAxiosRequest(method, url, data, callback) {
+  axios({
+    method: method,
+    url: url,
+    data: data
+  }).then(function(res){
+    callback(null, res);
+  })
+  .catch(function (err) {
+    callback(err, null)
+  })
+}
+
+function getAxiosPromise(method, url, data) {
+  return axios({
+    method: method,
+    url: url,
+    data: data
+  });
+}
+
+function executePromises(promises, callback) {
+  Promise.all(promises).then(function (res) {
+    callback(null, res);
+  })
+  .catch(function(err){
+    callback(err, null);
+  })
+}
+
 const baseUrl = 'http://178.128.230.225:8000/'
+
+const deletePin = function(pinId, callback){
+  let body = {"query": `mutation { deletePin}`};
+  performAxiosRequest("post", baseUrl + 'pin/' + pinId, body, callback);
+}
+
+const searchTags = function (pos, tags, callback) {
+  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 tags: ${JSON.stringify(tags)}}) { _id type features { type properties { name description } geometry { type coordinates }}}}`};
+  performAxiosRequest("post", baseUrl + 'pin/', body, callback);
+}
+
+const getPinsWithinPolygon = function (regionId, callback) {
+  let body = {"query": `query { getPinsWithin(input: {_id: \"${regionId}\"}) { _id type features { type properties { name } geometry { type coordinates }}}}`};
+  performAxiosRequest("post", baseUrl + "polygon", body, callback)
+}
+
+const uploadImage = function (pinId, img, callback) {
+  performAxiosRequest("post", baseUrl + `pin/${pinId}/image/`, img, callback);
+}
+
+const getImage = function (imgId, callback) {
+  performAxiosRequest("post", baseUrl + `image/${imgId}`, {"query":"query { getPhoto { url }}"}, callback);
+}
+
+const getImagesOfPins = function (pins, callback) {
+  let p = [];
+  for (let pin of pins){
+    let t = getAxiosPromise("post", baseUrl + `pin/${pin._id}/image`, {"query": "query { getImages { _id, title, image, pin }}"});
+    p.push(t);
+  }
+  executePromises(p, function (err, vals) {
+    let p2 =[];
+    for (let i of vals){
+      let t = getAxiosPromise("post", baseUrl + `image/${i.data.data.getImages[0]._id}`, {"query":"query { getPhoto { url }}"});
+      p2.push(t);
+    }
+    executePromises(p2, function (imgErr, imgs) {
+      let final = [];
+      for (let img of imgs){
+        console.log(img)
+        final.push({img: encodeURI(img.data.data.getPhoto.url)});
+      }
+      callback(null, final)
+      })
+    })
+
+}
 
 const registerUser = function (username, password, callback) {
   let query = `mutation createUser($input: UserInput) { 
@@ -70,5 +149,11 @@ const signIn = async function (username, password, callback) {
 
 module.exports = {
   registerUser,
-  signIn
+  signIn,
+  deletePin,
+  searchTags,
+  getPinsWithinPolygon,
+  getImagesOfPins,
+  getImage,
+  uploadImage
 }

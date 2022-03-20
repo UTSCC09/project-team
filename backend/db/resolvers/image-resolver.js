@@ -24,7 +24,7 @@ createImage = async function ({input}, context) {
 
 getImages = async function ({input}, context) {
     // Validate location exists in db
-    const pin = await Pin.findOne({_id: context.params.id}).exec();
+    const pin = await Pin.findOne({_id: context.req.params.id}).exec();
 
     const images = await Image.find({pin: pin._id}).exec();
     return images;

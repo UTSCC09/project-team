@@ -4,6 +4,9 @@ import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-load
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
+import { Autocomplete } from '@mui/material';
+import TextField from '@mui/material/TextField';
+import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddLocationIcon from '@mui/icons-material/AddLocation'
@@ -13,7 +16,9 @@ import Chip from '@mui/material/Chip';
 import { Button } from '@mui/material';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinDropIcon from '@mui/icons-material/PinDrop';
-import MenuItem from '@mui/material/MenuItem'
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import InputAdornment from '@mui/material/InputAdornment';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import AddLocationForm from './components/addLocationForm.js'
 import UserForm from './components/UserForm.js'
@@ -21,7 +26,7 @@ import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import RegionInfo from './components/RegionInfo.js'
 import sanitize from "sanitize-filename"
-
+import api from './api';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
 export default class App extends React.PureComponent {
@@ -50,6 +55,7 @@ export default class App extends React.PureComponent {
           renderedRegions: [],
           currentLocationTags:[],
           newRegions: [],
+          searchTags:[],
           currentLocationDescription:'',
           newMarkers: [],
           mainTag: '',
@@ -93,53 +99,20 @@ export default class App extends React.PureComponent {
       
       console.log(this.state.currentRegion.backId);
       let t = this;
-      let body = {"query": `query { getPinsWithin(input: {_id: \"${this.state.currentRegion.backId}\"}) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      
   
-      axios({
-        method: "post",
-        url: "http://178.128.230.225:8000/polygon/",
-        data: body
-      })
-      .then(function (res) {
-        console.log(res);
-        let p = [];
-        for (let r of res.data.data.getPinsWithin){
-          let x = axios({
-            method: "post",
-            url: `http://178.128.230.225:8000/pin/${r._id}/image/`,
-            data: {"query": "query { getImages { _id, title, image, pin }}"}
-          });
-          p.push(x)
-        }
-        Promise.all(p).then(function (vals) {
-          console.log(vals);
-          let p2 =[];
-          for (let i of vals){
-            let x = axios({
-              method: "post",
-              url: `http://178.128.230.225:8000/image/${i.data.data.getImages[0]._id}`,
-              data: {"query":"query { getPhoto { url }}"},
-            });
-            p2.push(x);
-          }
-          Promise.all(p2).then(function(imgs){
-            console.log(imgs);
-            let final = [];
-            for (let img of imgs){
-              final.push({img: encodeURI(img.data.data.getPhoto.url)})
+      api.getPinsWithinPolygon(this.state.currentRegion.backId, function (err, res) {
+        if (err) return console.error(err);
+        if (res){
+          console.log(res);
+          api.getImagesOfPins(res.data.data.getPinsWithin, function (imgErr, imgRes) {
+            if(err) return console.error(imgErr);
+            if (imgRes) {
+              t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: imgRes});
             }
-            t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: final});
           })
-          
-        });
-        
-        
-
-      })
-      .catch(function (err) {
-        console.error(err);
-      })
-  
+        }
+      });
     }
 
     send(method, url, data, callback){
@@ -159,74 +132,81 @@ export default class App extends React.PureComponent {
 
     uploadImage(marker, res, t){
         let data = new FormData();
-        const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
+        const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) {_id, title, image, pin}}`;
         data.append("operations", JSON.stringify({ query }));
         const map = {"zero":["variables.file"]}
         data.append('map', JSON.stringify(map))
         data.append('zero', marker.image);
         let id = marker.id;
-        axios({
+        /* axios({
           method: "post",
           url: `http://178.128.230.225:8000/pin/${id}/image/`,
           data: data,
         })
-          .then(function (res) {
-            console.log(res)
-            marker.imageId = res.data.data.createImage._id;
-            console.log(marker);
-            marker.togglePopup = function () {
-              axios({
-                method: "post",
-                url: `http://178.128.230.225:8000/image/${marker.imageId}`,
-                data: {"query":"query { getPhoto { url }}"},
-              }).then(function (res2) {
-                console.log(res2)
-                let url = res2.data.data.getPhoto.url;
-                marker.getPopup().setHTML(t.producePopup(marker.name, '', '', marker.id, url))
-                marker.getPopup().addTo(t.map);
-                document.getElementById(marker.id).onclick = function () {
-                  t.setState({detailedLocation: true});
-                  console.log(t.state.currentMarker);
-                }
-              })
-              .catch(function(err){
-                console.error(err);
-              })
-              
-            }
+          .then(function (res) { */
+        api.uploadImage(id, data, function(upErr, res){
+          if (upErr) return console.error(upErr);
+          if (res)
+            {
+              console.log(res)
+              marker.imageId = res.data.data.createImage._id;
+              console.log(marker);
+              marker.togglePopup = function () {
+                api.getImage(marker.imageId, function (imgErr, imgRes) {
+                  if(imgErr) return console.error(imgErr);
+                  if (imgRes) {
+                    console.log(imgRes)
+                    let url = imgRes.data.data.getPhoto.url;
+                    marker.getPopup().setHTML(t.producePopup(marker.name, '', marker.description, marker.id, url))
+                    marker.getPopup().addTo(t.map);
+                    document.getElementById(marker.id).onclick = function () {
+                      t.setState({detailedLocation: true});
+                      console.log(t.state.currentMarker);
+                    }
+                  }
+                })
+
+                
+              }
+          }
             
           })
-          .catch(function(err){
+/*           .catch(function(err){
             console.error(err);
-          })
+          }) */
     }
 
     createMarker(marker, t){
       let lng = marker._lngLat.lng;
       let lat = marker._lngLat.lat;
       console.log(marker);
-      
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description: \"${marker.description}\" } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates } } } }`}
+      console.log(t.state.user)
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
+      axios({
+        method: 'post',
+        url: 'http://178.128.230.225:8000/pin/',
+        data: body
+      }).then(function (res) {
+        console.log(res);
+        marker.id=res.data.data.createPin._id;
+        
+        marker.name = res.data.data.createPin.features.properties.name;
+        marker.description = res.data.data.createPin.features.properties.description;
+        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', marker.description, res.data.data.createPin._id)))
+        
+        t.uploadImage(marker, res, t);
+      })
+      .catch(function (err) {
+        console.error(err);
+      })
+      return;
       this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, res) {
         console.log(res);
         marker.id=res.data.createPin._id;
         
         marker.name = res.data.createPin.features.properties.name;
         marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
-        /* marker.togglePopup = function(){
-          if(marker.getPopup().isOpen()){
-            marker.getPopup().remove();
-          } 
-          else{
-            t.setState({currentMarker: marker})
-            console.log(t.state.currentMarker);
-            marker.getPopup().addTo(t.map);
-            document.getElementById(res.data.createPin._id).onclick = function () {
-              t.setState({detailedLocation: true});
-              console.log(t.state.currentMarker);
-            }
-          }
-        } */
+        
         t.uploadImage(marker, res, t);
         
 
@@ -234,7 +214,7 @@ export default class App extends React.PureComponent {
     }
     createRegion(region, t){
       let coord = JSON.stringify(region.geometry.coordinates[0])
-      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\"  } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
       axios({
         method: "post",
         url: "http://178.128.230.225:8000/polygon/",
@@ -254,7 +234,7 @@ export default class App extends React.PureComponent {
 
     getRegions(t, removeOld=false){
       //let body = { "query": "query { listPolygons(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"};
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
       
       axios({
         method: "post",
@@ -286,6 +266,7 @@ export default class App extends React.PureComponent {
           newRegion.id = v[0];
           newRegion.name = p.features.properties.name;
           newRegion.backId = p._id;
+          newRegion.description = p.features.properties.description;
           t.setState(prevState => ({
             renderedRegions: [...prevState.renderedRegions, newRegion]
           }));
@@ -322,7 +303,7 @@ export default class App extends React.PureComponent {
     getMarkers(t, removeOld=false){
 
       //let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 tags: []}) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
       this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, markers) {
         console.log(markers);
         console.log(t.state.renderedMarkers);
@@ -330,6 +311,7 @@ export default class App extends React.PureComponent {
           // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
           let diff = t.state.renderedMarkers.filter(x => !markers.data.getNear.includes(x));
           for (let x of diff){
+            if (x._draggable) continue;
             x.remove();
             let copy = [...t.state.renderedMarkers];
             copy.splice(copy.indexOf(x));
@@ -472,6 +454,7 @@ export default class App extends React.PureComponent {
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
+      map.on('click', (e) => {this.setState({searching: false})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         console.log(e.features[0].properties.id);
@@ -490,7 +473,7 @@ export default class App extends React.PureComponent {
         
         let n = new mapboxgl.Popup()
           .setLngLat(e.lngLat)
-          .setHTML(this.producePopup(clickedPolygon.name, '', this.state.locationDescription, clickedPolygon.id))
+          .setHTML(this.producePopup(clickedPolygon.name, '', clickedPolygon.description, clickedPolygon.id))
           .addTo(this.map);
         document.getElementById(clickedPolygon.id).onclick = function (e) {
           console.log(clickedPolygon.id);
@@ -520,6 +503,7 @@ export default class App extends React.PureComponent {
       map.on('draw.create', function (e) {
         console.log(e.features);
         e.features[0].name = t.state.locationName;
+        e.features[0].description = t.state.locationDescription;
         
         t.setState(prevState => ({
           newRegions: [...prevState.newRegions, e.features[0]]
@@ -527,18 +511,46 @@ export default class App extends React.PureComponent {
         t.setState({drawingRegion: false});
         console.log(t.state.newRegions);
       });
+      map.on('draw.update', function(e) {
+        console.log(e.features);
+        console.log(t.state.newRegions.find((x) => x.id === e.features[0].id));
+        let old = t.state.newRegions.find((x) => x.id === e.features[0].id);
+        let idx = t.state.newRegions.indexOf(old);
+        if (idx > -1){
+          let copy = [...t.state.newRegions]
+          //copy.splice(idx, 1);
+          
+          let newRegion = e.features[0];
+          newRegion.name = old.name;
+          copy[idx] = newRegion;
+          t.setState({newRegions: copy});
+          /* t.setState(prevState => ({
+            newRegions: [...prevState.newRegions, newRegion]
+          })); */
+        }
+      })
 
 
       this.draw = draw;
    
       map.addControl(draw);
+      map.addControl(
+        new mapboxgl.GeolocateControl({
+        positionOptions: {
+        enableHighAccuracy: true
+        },
+        // When active the map will receive updates to the device's location as it changes.
+        trackUserLocation: true,
+        // Draw an arrow next to the location dot to indicate which direction the device is heading.
+        showUserHeading: true
+        })
+      );
       
       this.map = map;
     }
 
     onLoginFormSubmit(user){
-      this.setState({signedIn: true});
-      this.setState({accountForm: false});  
+      this.setState({signedIn: true, accountForm: false, user: user.username});
     };
 
     signOut(event) {
@@ -610,7 +622,8 @@ export default class App extends React.PureComponent {
 
     deleteRegion(){
       console.log(this.state.currentRegion.backId);
-      return;
+      let t = this;
+      //return;
       let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
       axios({
         method: "post",
@@ -618,15 +631,16 @@ export default class App extends React.PureComponent {
         data: body
       }).then(function (res) {
         console.log(res)
-        //let copy = [...t.state.renderedMarkers];
-          /* let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
-          if (index !== -1){
-            copy.splice(index, 1);
-            t.setState({renderedMarkers: copy});
-          }
-          t.setState({detailedLocation: false});
-          t.state.currentMarker.remove();
-          t.setState({currentMarker: null}); */
+        let copy = [...t.state.renderedRegions];
+        let index = t.state.renderedRegions.indexOf(t.state.renderedRegions);
+        if (index !== -1){
+          copy.splice(index, 1);
+          t.setState({renderedRegions: copy});
+        }
+        t.setState({detailedRegion: false});
+        t.draw.delete(t.state.currentRegion.id)
+        if (t.state.currentPopup) t.state.currentPopup.remove();
+        //t.setState({currentRegion: null});
       })
       .catch(function (err) {
         console.log(err)
@@ -634,10 +648,10 @@ export default class App extends React.PureComponent {
     }
 
     deleteLocation(){
-      let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
       let t = this;
-      this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, res) {
-        if (res) {
+      api.deletePin(this.state.currentMarker.id, function (err, res) {
+        if(err) return console.error(err);
+        if(res){
           let copy = [...t.state.renderedMarkers];
           let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
           if (index !== -1){
@@ -647,14 +661,15 @@ export default class App extends React.PureComponent {
           t.setState({detailedLocation: false});
           t.state.currentMarker.remove();
           t.setState({currentMarker: null});
-          
         }
+
       });
+      
     }
     producePopup(name, tag, desc, id, url){
       console.log(url);
       //let newurl = "http://178.128.230.225:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
-      if (id && url) return `<div class="card">
+      if (id && url) return `<div id="marker-card" class="card">
                   <div class="card-header"
                 style="background-image: url(${encodeURI(url)})"
                   >
@@ -679,7 +694,7 @@ export default class App extends React.PureComponent {
                       <button id=${id} class="btn-menu"></button>
                   </div>
               </div>`
-      if (url) return `<div class="card">
+      if (url) return `<div id="marker-card" class="card">
             <div class="card-header"
           style="background-image: url(${url})"
             >
@@ -735,6 +750,7 @@ export default class App extends React.PureComponent {
       marker.togglePopup();
       marker.image = this.state.image;
       marker.name = this.state.locationName;
+      marker.tags = currTags;
       marker.description = this.state.locationDescription;
       console.log(marker.image);
       this.setState(prevState => ({
@@ -775,6 +791,16 @@ export default class App extends React.PureComponent {
       this.setState({choosingType: true});
     }
 
+    performSearch(e){
+      console.log(e)
+      console.log(this.state.searchTags);
+      api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.searchTags, function (err, res) {
+        if(err) return console.error(err);
+        if (res){
+          console.log(res);
+        }
+      })
+    }
 
     addRegion(e){
       //e.preventDefault();
@@ -788,6 +814,13 @@ export default class App extends React.PureComponent {
       
       console.log(e.target.files[0])
       this.setState({image: e.target.files[0]});
+    }
+    handleSearchChange(event, value){
+      this.setState({searchTags: value.length ? value : []})
+      console.log('searching');
+    }
+    keyPress(e){
+      console.log(e.keyCode);
     }
     render() {
         const { lng, lat, zoom } = this.state;
@@ -820,10 +853,47 @@ export default class App extends React.PureComponent {
             <Button sx={{display: 'none'}} className='view-btn' onClick={ this.viewingLocation }></Button>
             
             <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
-                <Fab color="primary" aria-label="search">
-                    <SearchIcon />
-                </Fab>
                 {
+                  this.state.searching?
+                  <div id="search-container">
+                    
+                  <Autocomplete
+                    multiple
+                    id="tags-outlined"
+                    sx={{width: 250, backgroundColor: 'white'}}
+                    options={['restaurant', 'mall']}
+                    onKeyDown={this.keyPress.bind(this)}
+                    onChange={ this.handleSearchChange.bind(this) }
+                    getOptionLabel={(option) => option}
+                    filterSelectedOptions
+                    renderInput={(params) => (
+                      <TextField
+                      
+                        {...params}
+                        label={/*https://stackoverflow.com/questions/62645466/how-to-make-autocomplete-field-of-material-ui-required*/
+                        this.state.searchTags.length===0 ? "Search" : 'Search'}
+                        required={this.state.searchTags.length === 0}
+                        placeholder="Tags"
+                        
+                      />
+                    
+                    )}
+                  />
+                  <Fab color="primary" aria-label="search">
+                    <SavedSearchIcon onClick={this.performSearch.bind(this)} sx={{m: 1}} />
+                  </Fab>
+                  </div>
+                  :
+                  <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
+                    <SearchIcon />
+                  </Fab>
+                }
+                
+                {
+                  this.state.searching?
+                  
+                  null
+                  :
                   
                   this.state.signedIn?
                   <div id='location-btn'>
@@ -879,7 +949,7 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: "", locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
                 :
                 null
               }
@@ -900,7 +970,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.detailedRegion?
-                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: "", locationTags: []}} owner={"John"}  ></RegionInfo>
+                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: []}} owner={"John"}  ></RegionInfo>
                 :
                 null
 

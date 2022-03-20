@@ -5,6 +5,7 @@ const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
 createPin = async function ({input}, context) {
+    console.log(context.req.session.user);
     const pinInput = Object.assign({}, input, {user: context.req.session.user});
     const pin = await new Pin(pinInput).save();
     return pin;
