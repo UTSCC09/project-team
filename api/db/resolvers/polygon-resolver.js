@@ -57,8 +57,6 @@ deletePolygon = async function(input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
     const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
-    auth = isAuthorized(context.req, polygon.user);
-    if (auth) return auth();
     Polygon.deleteOne(polygon._id).exec();
     return null;
 }
