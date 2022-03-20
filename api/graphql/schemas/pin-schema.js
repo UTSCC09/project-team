@@ -2,90 +2,207 @@ const {
     GraphQLSchema,
     GraphQLObjectType,
     GraphQLString,
+    GraphQLFloat,
+    GraphQLInputObjectType,
+    GraphQLList,
+    GraphQLUnionType,
     buildSchema
 } = require('graphql');
+const resolver = require('../../db/resolvers/pin-resolver');
+const {ErrorType} = require('./error-schema');
 
-const pinType = `
-    type Pin {
-        _id: String
-        type: String
-        features: pinFeatureSchema
+const idInput = new GraphQLInputObjectType({
+    name: 'IdInput',
+    fields: {
+        _id: {type: GraphQLString},
     }
+});
 
-    type pinFeatureSchema {
-        type: String
-        properties: pinPropertySchema
-        geometry: pinGeometrySchema
+const geometryInput = new GraphQLInputObjectType({
+    name: 'GeometryInput',
+    fields: {
+        type: {type: GraphQLString},
+        coordinates: {type: new GraphQLList(GraphQLFloat)}
     }
+});
 
-    type pinGeometrySchema {
-        type: String
-        coordinates: [Float]
+const propertyInput = new GraphQLInputObjectType({
+    name: 'PropertyInput',
+    fields: {
+        name: {type: GraphQLString},
+        description: {type: GraphQLString},
+        tags: {type: new GraphQLList(GraphQLString)}
     }
+});
 
-    type pinPropertySchema {
-        name: String
-        description: String
-        tags: [String]
+const featureInput = new GraphQLInputObjectType({
+    name: 'FeatureInput',
+    fields: {
+        type: {type: GraphQLString},
+        properties: {type: propertyInput},
+        geometry: {type: geometryInput}
     }
-`;
+});
 
-let schema = buildSchema(`
-    input pinInput {
-        type: String
-        features: featureInput
+const pinInput = new GraphQLInputObjectType({
+    name: 'PinInput',
+    fields: {
+        type: {type: GraphQLString},
+        features: {type: featureInput}
     }
+});
 
-    input featureInput {
-        type: String
-        properties: propertyInput
-        geometry: geometryInput
+const tagInput = new GraphQLInputObjectType({
+    name: 'TagInput',
+    fields: {
+        tag: {type: GraphQLString},
     }
+});
 
-    input geometryInput {
-        type: String
-        coordinates: [Float]
-        tags: [String]
+
+const searchInput = new GraphQLInputObjectType({
+    name: 'SearchInput',
+    fields: {
+        lat: {type: GraphQLFloat},
+        lon: {type: GraphQLFloat},
+        radius: {type: GraphQLFloat},
+        tags: {type: new GraphQLList(GraphQLString)}
     }
+});
 
-    input propertyInput {
-        name: String
-        description: String
+const pinPropertyType = new GraphQLObjectType({
+    name: 'PinProperty',
+    fields: {
+        name: {type: GraphQLString},
+        description: {type: GraphQLString},
+        tags: {type: new GraphQLList(GraphQLString)}
     }
+});
 
-    input idInput {
-        _id: String
+const pinGeometryType = new GraphQLObjectType({
+    name: 'PinGeometry',
+    fields: {
+        type: {type: GraphQLString},
+        coordinates: {type: new GraphQLList(GraphQLFloat)}
     }
+});
 
-    input searchInput {
-        lat: Float
-        lon: Float
-        radius: Float
-        tags: [String]
+const pinFeatureType = new GraphQLObjectType({
+    name: 'PinFeature',
+    fields: {
+        type: {type: GraphQLString},
+        properties: {type: pinPropertyType},
+        geometry: {type: pinGeometryType}
     }
+});
 
-    input tagInput {
-        tag: String
+const pinType = new GraphQLObjectType({
+    name: 'Pin',
+    fields: {
+        _id: {type: GraphQLString},
+        type: {type: GraphQLString},
+        features: {type: pinFeatureType}
     }
+});
 
-    ` + pinType +
-    `
-    type Mutation {
-        createPin(input: pinInput): Pin
-        deletePin(input: idInput): String
-        addTag(input: tagInput): Pin
-        deleteTag(input: tagInput): Pin
+const pinMultipleType = new GraphQLObjectType({
+    name: 'Pins',
+    fields: {
+        pins: {type: new GraphQLList(pinType)}
     }
+});
 
-    type Query {
-        getPin: Pin
-        getNear(input: searchInput): [Pin]
-        listPins(input: idInput): [Pin]
+const pinResultType = new GraphQLUnionType({
+    name: 'PinResult',
+    types: [pinType, ErrorType],
+    resolveType: (value) => {
+        if (value._id) return pinType.name;
+        if (value.message) return ErrorType.name;
     }
+});
 
-`);
+const pinMultipleResultType = new GraphQLUnionType({
+    name: 'PinMultipleResult',
+    types: [pinMultipleType, ErrorType],
+    resolveType: (value) => {
+        console.log(value);
+        return value.message? ErrorType.name : pinMultipleType.name;
+    }
+})
+
+const queryType = new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+        getNear: {
+            type: pinMultipleResultType,
+            args: {
+                input: {type: searchInput}
+            },
+            resolve: (_, {input}, context) => resolver.getNear(input, context)
+        },
+        listPins: {
+            type: pinMultipleResultType,
+            args: {},
+            resolve: (_, {input}, context) => resolver.listPins(context)
+        }
+    }
+});
+
+const idQueryType = new GraphQLObjectType({
+    name: 'Query',
+    fields:{
+        getPin: {
+            type: pinResultType,
+            args: {},
+            resolve: (_, {input}, context) => resolver.getPin(context)
+        },
+    }
+});
+
+const mutationType = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+        createPin: {
+            type: pinResultType,
+            args: {
+                input: {type: pinInput}
+            },
+            resolve: (_, {input}, context) => resolver.createPin(input, context)
+        },
+    }
+});
+
+const idMutationType = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+        deletePin: {
+            type: GraphQLString,
+            args: {},
+            resolve: (_, {input}, context) => resolver.deletePin(input, context)
+        },
+        addTag: {
+            type: pinResultType,
+            args: {
+                input: {type: tagInput}
+            },
+            resolve: (_, {input}, context) => resolver.addTag(input, context)
+        },
+        deleteTag: {
+            type: pinResultType,
+            args: {
+                input: {type: tagInput}
+            },
+            resolve: (_, {input}, context) => resolver.deleteTag(input, context)
+        }
+    }
+});
+
+let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
+
+let idSchema = new GraphQLSchema({query: idQueryType, mutation: idMutationType})
 
 module.exports = {
     schema,
-    pinType
+    pinMultipleResultType,
+    idSchema
 }

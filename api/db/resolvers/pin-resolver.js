@@ -4,35 +4,42 @@ const path = require('path');
 const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
-createPin = async function ({input}, context) {
+const {isAuthenticated} = require('../../util');
+
+console.log(isAuthenticated);
+
+createPin = async function (input, context) {
+    let auth = isAuthenticated(context.req);
+    if (auth) return auth();
     const pinInput = Object.assign({}, input, {user: context.req.session.user});
     const pin = await new Pin(pinInput).save();
     return pin;
 };
 
-getPin = async function ({input}, context) {
+getPin = async function (context) {
     const pin = await Pin.findOne({_id: context.req.params.id}).exec();
-    console.log(pin, context.req.params.id);
     return pin;
 };
 
-addTag = async function ({input}, context) {
+addTag = async function (input , context) {
+    let auth = isAuthenticated(context.req);
+    if (auth) return auth();
     let pin = await Pin.findOne({_id: context.req.params.id}).exec();
-    console.log(pin);
     pin.features.properties.tags.push(input.tag);
     pin.save();
     return pin;
 }
 
-deleteTag = async function ({input}, context) {
+deleteTag = async function (input, context) {
+    let auth = isAuthenticated(context.req);
+    if (auth) return auth();
     let pin = await Pin.findOne({_id: context.req.params.id}).exec();
-    console.log(pin);
     pin.features.properties.tags.pop(input.tag);
     pin.save();
     return pin;
 }
 
-getNear = async function ({input}) {
+getNear = async function (input) {
     const radius = input.radius;
     const tags = input.tags;
     if (radius > 2000){
@@ -60,15 +67,17 @@ getNear = async function ({input}) {
         pins = await pins.exec();
     }
     console.log(pins);
-    return pins;
+    return {'pins': pins};
 };
 
-listPins = async function ({input}) {
+listPins = async function (context) {
     const pins = await Pin.find().exec();
-    return pins;
+    return {'pins': pins};
 };
 
-deletePin = async function({input}, context) {
+deletePin = async function(input, context) {
+    let auth = isAuthenticated(context.req);
+    if (auth) return auth();
     const pin = await Pin.findOne({_id: context.req.params.id}).exec();
     Pin.deleteOne({_id: context.req.params.id}).exec();
     const images = await Image.find({pin: pin._id}).exec();
