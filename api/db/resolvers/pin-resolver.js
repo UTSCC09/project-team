@@ -4,9 +4,7 @@ const path = require('path');
 const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
-const {isAuthenticated} = require('../../util');
-
-console.log(isAuthenticated);
+const {isAuthenticated, isAuthorized} = require('../../util');
 
 createPin = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -78,7 +76,7 @@ listPins = async function (context) {
 deletePin = async function(input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    const pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    if (auth) return auth();
     Pin.deleteOne({_id: context.req.params.id}).exec();
     const images = await Image.find({pin: pin._id}).exec();
     let upload_path = "";

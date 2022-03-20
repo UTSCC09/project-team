@@ -127,5 +127,6 @@ let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
 let photoSchema = new GraphQLSchema({query: photoQueryType});
 
 module.exports = {
-    schema
+    schema,
+    photoSchema
 }

@@ -1,4 +1,8 @@
-const { DupelicateError, AuthenticationError } = require('./graphql/schemas/error-schema')
+const {
+    DupelicateError,
+    AuthenticationError,
+    AuthorizationError
+} = require('./graphql/schemas/error-schema')
 
 // Check if session exists
 const isAuthenticated = function (req) {
@@ -7,7 +11,7 @@ const isAuthenticated = function (req) {
 
 // Check if user has perms
 const isAuthorized = function (req, creator) {
-    return (req.session.user == creator)? null : AuthenticationError;
+    return (req.session.user == creator)? null : AuthorizationError;
 };
 
 module.exports = {

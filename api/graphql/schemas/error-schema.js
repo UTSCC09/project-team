@@ -26,10 +26,15 @@ const AuthenticationError = function () {
   return { message: "Authentication failed" };
 }
 
+const UserInputError = function (inputValue) {
+    return {message: inputValue + ' not accepted'};
+}
+
 module.exports = {
   ErrorType,
   NotFoundError,
   AuthorizationError,
   AuthenticationError,
-  DupelicateError
+  DupelicateError,
+  UserInputError
 }
