@@ -30,11 +30,20 @@ const UserInputError = function (inputValue) {
     return {message: inputValue + ' not accepted'};
 }
 
+const stringResultType = new GraphQLUnionType({
+    name: 'PinResult',
+    types: [GraphQLString, ErrorType],
+    resolveType: (value) => {
+        return value.message? ErrorType.name : pinMultipleType.name;
+    }
+});
+
 module.exports = {
   ErrorType,
   NotFoundError,
   AuthorizationError,
   AuthenticationError,
   DupelicateError,
-  UserInputError
+  UserInputError,
+  stringResultType
 }
