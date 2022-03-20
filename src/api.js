@@ -57,6 +57,11 @@ const searchTags = function (pos, tags, callback) {
   performAxiosRequest("post", baseUrl + 'pin/', body, callback);
 }
 
+const createPin = function (marker, callback) {
+  let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  tags: [] } geometry: { type: \"Point\", coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
+  performAxiosRequest("post", baseUrl + 'pin', body, callback);
+}
+
 const getPinsWithinPolygon = function (regionId, callback) {
   let body = {"query": `query { getPinsWithin(input: {_id: \"${regionId}\"}) { _id type features { type properties { name } geometry { type coordinates }}}}`};
   performAxiosRequest("post", baseUrl + "polygon", body, callback)
@@ -155,5 +160,6 @@ module.exports = {
   getPinsWithinPolygon,
   getImagesOfPins,
   getImage,
-  uploadImage
+  uploadImage,
+  createPin
 }

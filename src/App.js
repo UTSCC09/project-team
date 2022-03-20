@@ -138,12 +138,6 @@ export default class App extends React.PureComponent {
         data.append('map', JSON.stringify(map))
         data.append('zero', marker.image);
         let id = marker.id;
-        /* axios({
-          method: "post",
-          url: `http://localhost:8000/pin/${id}/image/`,
-          data: data,
-        })
-          .then(function (res) { */
         api.uploadImage(id, data, function(upErr, res){
           if (upErr) return console.error(upErr);
           if (res)
@@ -177,39 +171,18 @@ export default class App extends React.PureComponent {
     }
 
     createMarker(marker, t){
-      let lng = marker._lngLat.lng;
-      let lat = marker._lngLat.lat;
-      console.log(marker);
-      console.log(t.state.user)
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
-      axios({
-        method: 'post',
-        url: 'http://localhost:8000/pin/',
-        data: body
-      }).then(function (res) {
-        console.log(res);
-        marker.id=res.data.data.createPin._id;
-        
-        marker.name = res.data.data.createPin.features.properties.name;
-        marker.description = res.data.data.createPin.features.properties.description;
-        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', marker.description, res.data.data.createPin._id)))
-        
-        t.uploadImage(marker, res, t);
-      })
-      .catch(function (err) {
-        console.error(err);
-      })
-      return;
-      this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
-        console.log(res);
-        marker.id=res.data.createPin._id;
-        
-        marker.name = res.data.createPin.features.properties.name;
-        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
-        
-        t.uploadImage(marker, res, t);
-        
-
+      api.createPin(marker, function (err, res) {
+        if (err) return console.error(err);
+        if (res) {
+          console.log(res);
+          marker.id=res.data.data.createPin._id;
+          
+          marker.name = res.data.data.createPin.features.properties.name;
+          marker.description = res.data.data.createPin.features.properties.description;
+          marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', marker.description, res.data.data.createPin._id)))
+          
+          t.uploadImage(marker, res, t);
+        }
       });
     }
     createRegion(region, t){
@@ -281,6 +254,20 @@ export default class App extends React.PureComponent {
 
     getImage(marker, m, imgId, t){
       console.log(marker);
+      api.getImage(imgId, function (err, res2) {
+        if(err) console.err(err);
+        if (res2) {
+          console.log(res2)
+          let url = res2.data.data.getPhoto.url;
+          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', marker.description, m._id, url))
+          marker.getPopup().addTo(t.map);
+          document.getElementById(m._id).onclick = function () {
+            t.setState({detailedLocation: true});
+            console.log(t.state.currentMarker);
+          }
+        }
+      });
+      return;
       axios({
         method: "post",
         url: `http://localhost:8000/image/${imgId}`,
