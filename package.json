@@ -21,6 +21,8 @@
     "graphql-upload": "^13.0.0",
     "mapbox-gl": "^2.7.0",
     "mongoose": "^6.2.4",
+    "node-fetch": "^2.0.0",
+    "node-uuid": "^1.4.8",
     "nodemon": "^2.0.15",
     "node-fetch": "^2.0.0",
     "react": "^17.0.2",
