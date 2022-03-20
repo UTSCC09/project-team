@@ -71,7 +71,7 @@ export default class addingLocationForm extends React.PureComponent{
     }
     
     render() {
-        const categories = ['Attraction', 'Government', 'Restaurant', 'asasa', 'fghjgshjd', 'fdhjkhjkfdhjk'];
+        const categories = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
         /*autocomplete: https://mui.com/components/autocomplete/#multiple-values */
         /* file upload: https://stackoverflow.com/questions/40589302/how-to-enable-file-upload-on-reacts-material-ui-simple-input */
         return (

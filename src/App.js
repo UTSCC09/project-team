@@ -26,7 +26,7 @@ import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import RegionInfo from './components/RegionInfo.js'
 import sanitize from "sanitize-filename"
-
+import api from './api';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
 export default class App extends React.PureComponent {
@@ -99,57 +99,20 @@ export default class App extends React.PureComponent {
       
       console.log(this.state.currentRegion.backId);
       let t = this;
-      let body = {"query": `query { getPinsWithin(input: {_id: \"${this.state.currentRegion.backId}\"}) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      
   
-      axios({
-        method: "post",
-        url: "http://localhost:8000/polygon/",
-        data: body
-      })
-      .then(function (res) {
-        console.log(res);
-        let p = [];
-        for (let r of res.data.data.getPinsWithin){
-          console.log( `http://localhost:8000/pin/${r._id}/image/`);
-          let x = axios({
-            method: "post",
-            url: `http://localhost:8000/pin/${r._id}/image/`,
-            data: {"query": "query { getImages { _id, title, image, pin }}"}
-          });
-          p.push(x)
-        }
-        Promise.all(p).then(function (vals) {
-          console.log(vals);
-          let p2 =[];
-          for (let i of vals){
-            let x = axios({
-              method: "post",
-              url: `http://localhost:8000/image/${i.data.data.getImages[0]._id}`,
-              data: {"query":"query { getPhoto { url }}"},
-            });
-            p2.push(x);
-          }
-          Promise.all(p2).then(function(imgs){
-            console.log(imgs);
-            let final = [];
-            for (let img of imgs){
-              console.log(img)
-              //final.push({img: encodeURI(img.data.data.getPhoto.url)});
-              final.push({img: img.data.data.getPhoto.url});
-              console.log(final);
+      api.getPinsWithinPolygon(this.state.currentRegion.backId, function (err, res) {
+        if (err) return console.error(err);
+        if (res){
+          console.log(res);
+          api.getImagesOfPins(res.data.data.getPinsWithin, function (imgErr, imgRes) {
+            if(err) return console.error(imgErr);
+            if (imgRes) {
+              t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: imgRes});
             }
-            t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: final});
           })
-          
-        });
-        
-        
-
-      })
-      .catch(function (err) {
-        console.error(err);
-      })
-  
+        }
+      });
     }
 
     send(method, url, data, callback){
@@ -169,46 +132,48 @@ export default class App extends React.PureComponent {
 
     uploadImage(marker, res, t){
         let data = new FormData();
-        const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
+        const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) {_id, title, image, pin}}`;
         data.append("operations", JSON.stringify({ query }));
         const map = {"zero":["variables.file"]}
         data.append('map', JSON.stringify(map))
         data.append('zero', marker.image);
         let id = marker.id;
-        axios({
+        /* axios({
           method: "post",
           url: `http://localhost:8000/pin/${id}/image/`,
           data: data,
         })
-          .then(function (res) {
-            console.log(res)
-            marker.imageId = res.data.data.createImage._id;
-            console.log(marker);
-            marker.togglePopup = function () {
-              axios({
-                method: "post",
-                url: `http://localhost:8000/image/${marker.imageId}`,
-                data: {"query":"query { getPhoto { url }}"},
-              }).then(function (res2) {
-                console.log(res2)
-                let url = res2.data.data.getPhoto.url;
-                marker.getPopup().setHTML(t.producePopup(marker.name, '', '', marker.id, url))
-                marker.getPopup().addTo(t.map);
-                document.getElementById(marker.id).onclick = function () {
-                  t.setState({detailedLocation: true});
-                  console.log(t.state.currentMarker);
-                }
-              })
-              .catch(function(err){
-                console.error(err);
-              })
-              
-            }
+          .then(function (res) { */
+        api.uploadImage(id, data, function(upErr, res){
+          if (upErr) return console.error(upErr);
+          if (res)
+            {
+              console.log(res)
+              marker.imageId = res.data.data.createImage._id;
+              console.log(marker);
+              marker.togglePopup = function () {
+                api.getImage(marker.imageId, function (imgErr, imgRes) {
+                  if(imgErr) return console.error(imgErr);
+                  if (imgRes) {
+                    console.log(imgRes)
+                    let url = imgRes.data.data.getPhoto.url;
+                    marker.getPopup().setHTML(t.producePopup(marker.name, '', marker.description, marker.id, url))
+                    marker.getPopup().addTo(t.map);
+                    document.getElementById(marker.id).onclick = function () {
+                      t.setState({detailedLocation: true});
+                      console.log(t.state.currentMarker);
+                    }
+                  }
+                })
+
+                
+              }
+          }
             
           })
-          .catch(function(err){
+/*           .catch(function(err){
             console.error(err);
-          })
+          }) */
     }
 
     createMarker(marker, t){
@@ -216,7 +181,7 @@ export default class App extends React.PureComponent {
       let lat = marker._lngLat.lat;
       console.log(marker);
       console.log(t.state.user)
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
       axios({
         method: 'post',
         url: 'http://localhost:8000/pin/',
@@ -226,7 +191,8 @@ export default class App extends React.PureComponent {
         marker.id=res.data.data.createPin._id;
         
         marker.name = res.data.data.createPin.features.properties.name;
-        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', '', res.data.data.createPin._id)))
+        marker.description = res.data.data.createPin.features.properties.description;
+        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', marker.description, res.data.data.createPin._id)))
         
         t.uploadImage(marker, res, t);
       })
@@ -248,7 +214,7 @@ export default class App extends React.PureComponent {
     }
     createRegion(region, t){
       let coord = JSON.stringify(region.geometry.coordinates[0])
-      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\"  } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
       axios({
         method: "post",
         url: "http://localhost:8000/polygon/",
@@ -268,7 +234,7 @@ export default class App extends React.PureComponent {
 
     getRegions(t, removeOld=false){
       //let body = { "query": "query { listPolygons(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"};
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
       
       axios({
         method: "post",
@@ -300,6 +266,7 @@ export default class App extends React.PureComponent {
           newRegion.id = v[0];
           newRegion.name = p.features.properties.name;
           newRegion.backId = p._id;
+          newRegion.description = p.features.properties.description;
           t.setState(prevState => ({
             renderedRegions: [...prevState.renderedRegions, newRegion]
           }));
@@ -344,6 +311,7 @@ export default class App extends React.PureComponent {
           // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
           let diff = t.state.renderedMarkers.filter(x => !markers.data.getNear.includes(x));
           for (let x of diff){
+            if (x._draggable) continue;
             x.remove();
             let copy = [...t.state.renderedMarkers];
             copy.splice(copy.indexOf(x));
@@ -680,71 +648,28 @@ export default class App extends React.PureComponent {
     }
 
     deleteLocation(){
-      let body = {"query": `mutation { deletePin(input: {_id: \"${this.state.currentMarker.id}\"})}`};
       let t = this;
+      api.deletePin(this.state.currentMarker.id, function (err, res) {
+        if(err) return console.error(err);
+        if(res){
+          let copy = [...t.state.renderedMarkers];
+          let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
+          if (index !== -1){
+            copy.splice(index, 1);
+            t.setState({renderedMarkers: copy});
+          }
+          t.setState({detailedLocation: false});
+          t.state.currentMarker.remove();
+          t.setState({currentMarker: null});
+        }
 
-      const s = async () => {
-        try {
-          const res = await axios({
-            method: "post",
-            url: "http://localhost:8000/pin/",
-            data: body
-          });
-          let copy = [...t.state.renderedMarkers];
-          let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
-          if (index !== -1){
-            copy.splice(index, 1);
-            t.setState({renderedMarkers: copy});
-          }
-          t.setState({detailedLocation: false});
-          t.state.currentMarker.remove();
-          t.setState({currentMarker: null});
-        }
-        catch (err) {
-          console.error(err)
-        }
-      }
-      s();
-      return;
-      axios({
-        method: "post",
-        url: "http://localhost:8000/pin/",
-        data: body
-      }).then(function (res) {
-        let copy = [...t.state.renderedMarkers];
-        let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
-        if (index !== -1){
-          copy.splice(index, 1);
-          t.setState({renderedMarkers: copy});
-        }
-        t.setState({detailedLocation: false});
-        t.state.currentMarker.remove();
-        t.setState({currentMarker: null});
-      })
-      .catch(function (err) {
-        console.error(err);
-      })
-      return;
-      this.send('POST', "http://localhost:8000/pin/", body, function (err, res) {
-        console.log(res)
-        if (res) {
-          let copy = [...t.state.renderedMarkers];
-          let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
-          if (index !== -1){
-            copy.splice(index, 1);
-            t.setState({renderedMarkers: copy});
-          }
-          t.setState({detailedLocation: false});
-          t.state.currentMarker.remove();
-          t.setState({currentMarker: null});
-          
-        }
       });
+      
     }
     producePopup(name, tag, desc, id, url){
       console.log(url);
       //let newurl = "http://localhost:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
-      if (id && url) return `<div class="card">
+      if (id && url) return `<div id="marker-card" class="card">
                   <div class="card-header"
                 style="background-image: url(${encodeURI(url)})"
                   >
@@ -769,7 +694,7 @@ export default class App extends React.PureComponent {
                       <button id=${id} class="btn-menu"></button>
                   </div>
               </div>`
-      if (url) return `<div class="card">
+      if (url) return `<div id="marker-card" class="card">
             <div class="card-header"
           style="background-image: url(${url})"
             >
@@ -866,6 +791,16 @@ export default class App extends React.PureComponent {
       this.setState({choosingType: true});
     }
 
+    performSearch(e){
+      console.log(e)
+      console.log(this.state.searchTags);
+      api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.searchTags, function (err, res) {
+        if(err) return console.error(err);
+        if (res){
+          console.log(res);
+        }
+      })
+    }
 
     addRegion(e){
       //e.preventDefault();
@@ -880,7 +815,8 @@ export default class App extends React.PureComponent {
       console.log(e.target.files[0])
       this.setState({image: e.target.files[0]});
     }
-    handleSearchChange(){
+    handleSearchChange(event, value){
+      this.setState({searchTags: value.length ? value : []})
       console.log('searching');
     }
     keyPress(e){
@@ -920,6 +856,7 @@ export default class App extends React.PureComponent {
                 {
                   this.state.searching?
                   <div id="search-container">
+                    
                   <Autocomplete
                     multiple
                     id="tags-outlined"
@@ -942,6 +879,9 @@ export default class App extends React.PureComponent {
                     
                     )}
                   />
+                  <Fab color="primary" aria-label="search">
+                    <SavedSearchIcon onClick={this.performSearch.bind(this)} sx={{m: 1}} />
+                  </Fab>
                   </div>
                   :
                   <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
@@ -1030,7 +970,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.detailedRegion?
-                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: "", locationTags: []}} owner={"John"}  ></RegionInfo>
+                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: []}} owner={"John"}  ></RegionInfo>
                 :
                 null
 

@@ -130,8 +130,28 @@ body{
 }
 #region-card{
   min-width: 175px;
-  height: 150px; 
+  height: 300px; 
   width: auto;
+}
+#region-card .card-body{
+  height: 250px;
+}
+#region-card .location-summary{
+  height: 200px;
+}
+#region-card .location-summary{
+  height: 150px;
+  margin-bottom: 5px;
+}
+#marker-card .location-summary {
+  height: 250px;
+  
+}
+#marker-card .card-footer{
+  height: 70px;
+}
+#marker-card {
+  height: 500px;
 }
 #region-card .name{
   padding-top: 10px;
