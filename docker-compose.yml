@@ -30,6 +30,7 @@ services:
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+      - /usr/src/app/static/images
     networks:
       - app-network
     depends_on:

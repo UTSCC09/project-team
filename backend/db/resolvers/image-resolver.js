@@ -33,7 +33,7 @@ getImages = async function ({input}, context) {
 getPhoto = async function({input}, context) {
     const image = await Image.findOne({_id: context.params.id}).exec();
     console.log(image);
-    return ({url: "http://localhost:8000/images/" + image.image});
+    return ({url: "http://178.128.230.225:8000/images/" + image.image});
 }
 
 deleteImage = async function({input}, context) {
