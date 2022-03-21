@@ -42,7 +42,7 @@ deleteTag = async function (input, context) {
 getNear = async function (input) {
     const radius = input.radius;
     const tags = input.tags;
-    if (radius > 2000){
+    if (radius > 20000){
         console.log("Too large");
     }
     console.log(tags);

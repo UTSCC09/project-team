@@ -1,5 +1,7 @@
 const Polygon = require('../models/polygon-model');
 const Pin = require('../models/pin-model');
+const {isAuthenticated} = require('../../util');
+
 
 createPolygon = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -55,7 +57,7 @@ deletePolygon = async function(input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
     const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
-    Polygon.deleteOne(polygon._id).exec();
+    Polygon.deleteOne({_id: polygon._id}).exec();
     return null;
 }
 

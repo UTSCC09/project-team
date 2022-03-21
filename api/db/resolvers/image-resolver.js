@@ -4,6 +4,7 @@ var uuid = require('node-uuid');
 
 const Image = require('../models/image-model');
 const Pin = require('../models/pin-model');
+const {isAuthenticated} = require('../../util');
 
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
