@@ -93,6 +93,7 @@ export default class App extends React.PureComponent {
         this.getImage = this.getImage.bind(this);
         this.deleteRegion = this.deleteRegion.bind(this);
         this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
+        this.searchForTags = this.searchForTags.bind(this);
     }
 
     getPinsWithinRegion(){
@@ -262,7 +263,7 @@ export default class App extends React.PureComponent {
 
     }
 
-    getMarkers(t, removeOld=false){
+    getMarkers(t, removeOld=false, search=false){
 
       api.getPins({lat: t.state.lat, lng:t.state.lng}, function (err, markers) {
         if (err) console.error(err);
@@ -271,19 +272,40 @@ export default class App extends React.PureComponent {
           console.log(t.state.renderedMarkers);
           if (removeOld) {
             // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
-            let diff = t.state.renderedMarkers.filter(x => !markers.data.data.getNear.pins.includes(x));
+            /* let diff = t.state.renderedMarkers.filter(x => !markers.data.data.getNear.pins.includes(x));
             for (let x of diff){
-              if (x._draggable) continue;
+              
+              if (x._draggable || x._color === "#FF0000") continue;
               x.remove();
               let copy = [...t.state.renderedMarkers];
               copy.splice(copy.indexOf(x));
               t.setState({renderedMarkers: copy});
+              console.log(x);
+            } */
+            for (let x of t.state.renderedMarkers){
+              if (!markers.data.data.getNear.pins.find((y) => y._id === x.id)){
+                //need to remove x
+                if (x._draggable || x._color === "#FF0000") continue;
+                x.remove();
+                let copy = [...t.state.renderedMarkers];
+                copy.splice(copy.indexOf(x), 1);
+                t.setState({renderedMarkers: copy});
+                console.log(x);
+              }
             } 
           }
+
           
           for (let m of markers.data.data.getNear.pins){
-            if(m in t.state.renderedMarkers) continue;
+
+            //if(m in t.state.renderedMarkers) continue;
+            console.log(t.state.renderedMarkers);
             console.log(m);
+            console.log(t.state.renderedMarkers.find((x) => x.id === m._id))
+            if (t.state.renderedMarkers.find((x) => x.id === m._id)) {
+              console.log(m);
+              continue;
+            }
             
             const marker = new mapboxgl.Marker({
               color: "#FFFFFF",
@@ -339,12 +361,21 @@ export default class App extends React.PureComponent {
 
     removeRendered(){
       console.log(this.state.renderedMarkers);
+      let keep = []
       for (let r of this.state.renderedMarkers){
         console.log(r);
-        if(!r._draggable)r.remove();
+        if(!r._draggable && r._color !== "#FF0000"){
+          r.remove();
+        }
+        else if (r._color === "#FF0000"){
+          if (this.state.searching) {
+            keep.push(r);
+          }
+          else r.remove();
+        } 
       }
       this.draw.deleteAll();
-      this.setState({renderedMarkers: [], renderedRegions: []});
+      this.setState({renderedMarkers: keep, renderedRegions: []});
       
     }
   
@@ -400,12 +431,15 @@ export default class App extends React.PureComponent {
       map.on('zoomend', function () {
         console.log(map.getZoom());
         if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) {
-          t.getMarkers(t);
+          //if (!t.state.displaySearchResults) {
+            t.getMarkers(t);
+          //}
+          
           t.getRegions(t)
           console.log(t.state.renderedMarkers);
         }
 
-        if (map.getZoom() < 13.5) {
+        if (map.getZoom() < 13.5 && t.state.initialZoom >= 13.5) {
           t.removeRendered(t);
           t.state.currentPopup && t.state.currentPopup.remove();
         }
@@ -413,19 +447,18 @@ export default class App extends React.PureComponent {
       });
       map.on('dragend', function () {
         if (map.getZoom() >= 13.5) {
-          //for(let m of t.state.renderedMarkers) m.remove();
-          //t.setState({renderedMarkers: []});
           t.getMarkers(t, true);
           t.getRegions(t, true);
+        }
+        if (t.state.displaySearchResults && t.state.searching) {
+          t.searchForTags();
         }
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
-      map.on('click', (e) => {this.setState({searching: false})})
+      map.on('click', (e) => {this.setState({searching: false, searchTags: []})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
-        console.log(e.features[0].properties.id);
-        console.log(this.state.renderedRegions.find(x => x.id === e.features[0].properties.id));
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
         this.setState({currentRegion: clickedPolygon});
         console.log(clickedPolygon);
@@ -607,29 +640,6 @@ export default class App extends React.PureComponent {
       });
       return;
       
-      //return;
-      //let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
-      let body = {"query": "mutation { deletePolygon }"};
-      axios({
-        method: "post",
-        url: "http://localhost:8000/polygon/" + this.state.currentRegion.backId,
-        data: body
-      }).then(function (res) {
-        console.log(res)
-        let copy = [...t.state.renderedRegions];
-        let index = t.state.renderedRegions.indexOf(t.state.renderedRegions);
-        if (index !== -1){
-          copy.splice(index, 1);
-          t.setState({renderedRegions: copy});
-        }
-        t.setState({detailedRegion: false});
-        t.draw.delete(t.state.currentRegion.id)
-        if (t.state.currentPopup) t.state.currentPopup.remove();
-        //t.setState({currentRegion: null});
-      })
-      .catch(function (err) {
-        console.log(err)
-      })
     }
 
     deleteLocation(){
@@ -776,10 +786,9 @@ export default class App extends React.PureComponent {
       this.setState({choosingType: true});
     }
 
-    performSearch(e){
-      console.log(e)
-      let t =this;
-      console.log(this.state.searchTags);
+    searchForTags(){
+      if (!this.state.searchTags.length) return;
+      let t = this;
       api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.searchTags, function (err, res) {
         if(err) return console.error(err);
         if (res){
@@ -792,8 +801,9 @@ export default class App extends React.PureComponent {
               .setPopup(new mapboxgl.Popup().setHTML(""))
             console.log(t.state.renderedMarkers);
             let old = t.state.renderedMarkers.find((x) => x.id === match._id)
-            if (old) {
-              console.log('already rendered');
+            //if (old && old._color==='#FFFFFF') {
+            if (old){
+              console.log(old._color);
               old.remove();
               let copy = [...t.state.renderedMarkers];
               let index = t.state.renderedMarkers.indexOf(old);
@@ -801,13 +811,11 @@ export default class App extends React.PureComponent {
                 copy.splice(index, 1);
                 t.setState({renderedMarkers: copy});
               }
-              //marker.togglePopup = old.togglePopup;
-              //old._color = "#FF0000";
-              //continue;
+
             }
             marker.id = match._id;
+            
             marker.togglePopup = function(){
-              console.log('togggg')
               t.setState({currentMarker: marker})
 
               if(marker.getPopup().isOpen()){
@@ -816,14 +824,6 @@ export default class App extends React.PureComponent {
               else{
                 t.setState({currentMarker: marker})
                 console.log(t.state.currentMarker);
-                /* api.getImagesOfPins([marker], function (imgErr, res) {
-                  if (imgErr) return console.error(imgErr);
-                  if (res) {
-                    console.log(res);
-                    let imgId = res.data.data.getImages[0]._id;
-                    t.getImage(marker, m, imgId, t)
-                  }
-                }) */
                 axios({
                   method: "post",
                   url: `http://localhost:8000/pin/${marker.id}/image/`,
@@ -843,6 +843,7 @@ export default class App extends React.PureComponent {
             marker.description = match.features.properties.description;
             marker.tags = match.features.properties.tags;
             marker.addTo(t.map)
+            console.log(marker);
             t.setState(prevState => ({
               renderedMarkers: [...prevState.renderedMarkers, marker]
             }));
@@ -851,6 +852,15 @@ export default class App extends React.PureComponent {
           }
         }
       })
+    }
+
+    performSearch(e){
+      console.log(e)
+      this.setState({displaySearchResults: true});
+      let t =this;
+      console.log(this.state.searchTags);
+      t.searchForTags();
+      
     }
 
     addRegion(e){

@@ -60,7 +60,7 @@ const deletePolygon = function (polyId, callback) {
 }
 
 const searchTags = function (pos, tags, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 20000 tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 10000 tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin/', body, callback);
 }
 
