@@ -106,12 +106,21 @@ export default class App extends React.PureComponent {
         if (err) return console.error(err);
         if (res){
           console.log(res);
+          let regionTags = []
+
           api.getImagesOfPins(res.data.data.getPinsWithin.pins, function (imgErr, imgRes) {
             if(err) return console.error(imgErr);
             if (imgRes) {
               t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
-          })
+          });
+          for(let p of res.data.data.getPinsWithin.pins){
+            regionTags = regionTags.concat(p.features.properties.tags);
+            regionTags = [...new Set(regionTags)];
+          }
+          t.setState({enclosedTags: regionTags});
+          console.log(regionTags);
+
         }
       });
     }
@@ -152,7 +161,7 @@ export default class App extends React.PureComponent {
                   if (imgRes) {
                     console.log(imgRes)
                     let url = imgRes.data.data.getPhoto.url;
-                    marker.getPopup().setHTML(t.producePopup(marker.name, '', marker.description, marker.id, url))
+                    marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
                     marker.getPopup().addTo(t.map);
                     document.getElementById(marker.id).onclick = function () {
                       t.setState({detailedLocation: true});
@@ -177,7 +186,8 @@ export default class App extends React.PureComponent {
           
           marker.name = res.data.data.createPin.features.properties.name;
           marker.description = res.data.data.createPin.features.properties.description;
-          marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', marker.description, res.data.data.createPin._id)))
+          marker.tags = res.data.data.createPin.features.properties.tags;
+          marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, marker.tags[0], marker.description, res.data.data.createPin._id)))
           
           t.uploadImage(marker, res, t);
         }
@@ -252,7 +262,7 @@ export default class App extends React.PureComponent {
         if (res2) {
           console.log(res2)
           let url = res2.data.data.getPhoto.url;
-          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', marker.description, m._id, url))
+          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, marker.tags[0], marker.description, m._id, url))
           marker.getPopup().addTo(t.map);
           document.getElementById(m._id).onclick = function () {
             t.setState({detailedLocation: true});
@@ -566,9 +576,10 @@ export default class App extends React.PureComponent {
       event.preventDefault();
     };
     handleCategoryChange(event, value){
-
-            
-      this.setState({tags: value.length ? value : []})
+      
+      console.log(value);
+      this.setState({tags: value.length ? value : []});
+      console.log(this.state.tags);
       this.setState({mainTag: value.length ? value[0] : []})
     }
 
@@ -1010,7 +1021,7 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: this.state.currentMarker.tags}} close={this.closingLocation} owner={'John'}></LocationInfo>
                 :
                 null
               }
@@ -1031,7 +1042,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.detailedRegion?
-                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: []}} owner={"John"}  ></RegionInfo>
+                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: this.state.enclosedTags}} owner={"John"}  ></RegionInfo>
                 :
                 null
 

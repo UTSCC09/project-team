@@ -7,6 +7,9 @@
     position: absolute;
     top: 0;
 }
+/* #add-location-form{
+  max-height: 500px;
+} */
 .sidebar {
     background-color: rgba(35, 55, 75, 0.9);
     color: #fff;
@@ -42,6 +45,7 @@
     display: block;
     height: 100%;
     width: 100%;
+    overflow: scroll;
     top: 0;
     left: 0;
     right: 0;
