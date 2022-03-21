@@ -1,6 +1,5 @@
 const { default: axios } = require("axios");
 const { promise } = require("bcrypt/promises");
-//const { base } = require("../api/db/models/pin-model");
 
 function send(method, url, data, callback) {
   var xhr = new XMLHttpRequest();

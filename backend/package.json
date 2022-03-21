@@ -19,6 +19,7 @@
     "graphql": "^15.3.0",
     "graphql-upload": "^13.0.0",
     "mongoose": "^6.2.7",
+    "node-uuid": "^1.4.8",
     "nodemon": "^2.0.15"
   },
   "devDependencies": {
