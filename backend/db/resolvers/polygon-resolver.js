@@ -1,23 +1,28 @@
 const Polygon = require('../models/polygon-model');
 const Pin = require('../models/pin-model');
+const {isAuthenticated} = require('../../util');
 
-createPolygon = async function ({input}, context) {
+
+createPolygon = async function (input, context) {
+    let auth = isAuthenticated(context.req);
+    if (auth) return auth();
     const polygonInput = Object.assign({}, input, {user: context.req.session.user});
     const polygon = await new Polygon(polygonInput).save();
     return polygon;
 };
 
-getPolygon = async function ({input}) {
-    const polygon = await Polygon.findOne(input).exec();
+getPolygon = async function (input, context) {
+    const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
     return polygon;
 };
 
 listPolygons = async function ({input}) {
     const polygons = await Polygon.find().exec();
-    return polygons;
+    return {'polygons': polygons};
 };
 
-getNear = async function ({input}) {
+getNear = async function (input) {
+    console.log("test");
     const radius = input.radius
     if (radius > 2000){
         console.log("Too large");
@@ -33,11 +38,11 @@ getNear = async function ({input}) {
             }
         }
     });
-    return polygons;
+    return {'polygons': polygons};
 };
 
-getPinsWithin = async function({input}) {
-    const polygon = await Polygon.findOne(input).exec();
+getPinsWithin = async function(input, context) {
+    const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
     const pins = await Pin.find({
         'features.geometry': {
             $geoWithin: {
@@ -45,14 +50,14 @@ getPinsWithin = async function({input}) {
             }
         }
     });
-    console.log(pins)
-    console.log(pins[0].features.geometry.coordinates);
-    return pins;
+    return {'pins': pins};
 }
 
-deletePolygon = async function({input}) {
-    const polygon = await Polygon.findOne(input).exec();
-    Polygon.deleteOne(input).exec();
+deletePolygon = async function(input, context) {
+    let auth = isAuthenticated(context.req);
+    if (auth) return auth();
+    const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
+    Polygon.deleteOne({_id: polygon._id}).exec();
     return null;
 }
 

@@ -93,6 +93,7 @@ export default class App extends React.PureComponent {
         this.getImage = this.getImage.bind(this);
         this.deleteRegion = this.deleteRegion.bind(this);
         this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
+        this.searchForTags = this.searchForTags.bind(this);
     }
 
     getPinsWithinRegion(){
@@ -105,12 +106,21 @@ export default class App extends React.PureComponent {
         if (err) return console.error(err);
         if (res){
           console.log(res);
-          api.getImagesOfPins(res.data.data.getPinsWithin, function (imgErr, imgRes) {
+          let regionTags = []
+
+          api.getImagesOfPins(res.data.data.getPinsWithin.pins, function (imgErr, imgRes) {
             if(err) return console.error(imgErr);
             if (imgRes) {
-              t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin, enclosedImages: imgRes});
+              t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
-          })
+          });
+          for(let p of res.data.data.getPinsWithin.pins){
+            regionTags = regionTags.concat(p.features.properties.tags);
+            regionTags = [...new Set(regionTags)];
+          }
+          t.setState({enclosedTags: regionTags});
+          console.log(regionTags);
+
         }
       });
     }
@@ -132,18 +142,12 @@ export default class App extends React.PureComponent {
 
     uploadImage(marker, res, t){
         let data = new FormData();
-        const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) {_id, title, image, pin}}`;
+        const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
         data.append("operations", JSON.stringify({ query }));
         const map = {"zero":["variables.file"]}
         data.append('map', JSON.stringify(map))
         data.append('zero', marker.image);
         let id = marker.id;
-        /* axios({
-          method: "post",
-          url: `http://178.128.230.225:8000/pin/${id}/image/`,
-          data: data,
-        })
-          .then(function (res) { */
         api.uploadImage(id, data, function(upErr, res){
           if (upErr) return console.error(upErr);
           if (res)
@@ -157,7 +161,7 @@ export default class App extends React.PureComponent {
                   if (imgRes) {
                     console.log(imgRes)
                     let url = imgRes.data.data.getPhoto.url;
-                    marker.getPopup().setHTML(t.producePopup(marker.name, '', marker.description, marker.id, url))
+                    marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
                     marker.getPopup().addTo(t.map);
                     document.getElementById(marker.id).onclick = function () {
                       t.setState({detailedLocation: true});
@@ -171,50 +175,28 @@ export default class App extends React.PureComponent {
           }
             
           })
-/*           .catch(function(err){
-            console.error(err);
-          }) */
     }
 
     createMarker(marker, t){
-      let lng = marker._lngLat.lng;
-      let lat = marker._lngLat.lat;
-      console.log(marker);
-      console.log(t.state.user)
-      let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\"  } geometry: { type: \"Point\", coordinates: [ ${lng}, ${lat} ] } } }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
-      axios({
-        method: 'post',
-        url: 'http://178.128.230.225:8000/pin/',
-        data: body
-      }).then(function (res) {
-        console.log(res);
-        marker.id=res.data.data.createPin._id;
-        
-        marker.name = res.data.data.createPin.features.properties.name;
-        marker.description = res.data.data.createPin.features.properties.description;
-        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, '', marker.description, res.data.data.createPin._id)))
-        
-        t.uploadImage(marker, res, t);
-      })
-      .catch(function (err) {
-        console.error(err);
-      })
-      return;
-      this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, res) {
-        console.log(res);
-        marker.id=res.data.createPin._id;
-        
-        marker.name = res.data.createPin.features.properties.name;
-        marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.createPin.features.properties.name, '', '', res.data.createPin._id)))
-        
-        t.uploadImage(marker, res, t);
-        
-
+      api.createPin(marker, function (err, res) {
+        if (err) return console.error(err);
+        if (res) {
+          console.log(res);
+          marker.id=res.data.data.createPin._id;
+          
+          marker.name = res.data.data.createPin.features.properties.name;
+          marker.description = res.data.data.createPin.features.properties.description;
+          marker.tags = res.data.data.createPin.features.properties.tags;
+          marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, marker.tags[0], marker.description, res.data.data.createPin._id)))
+          
+          t.uploadImage(marker, res, t);
+        }
       });
     }
     createRegion(region, t){
       let coord = JSON.stringify(region.geometry.coordinates[0])
-      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      //let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
+      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`}
       axios({
         method: "post",
         url: "http://178.128.230.225:8000/polygon/",
@@ -233,151 +215,177 @@ export default class App extends React.PureComponent {
     }
 
     getRegions(t, removeOld=false){
-      //let body = { "query": "query { listPolygons(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"};
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 }) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
-      
-      axios({
-        method: "post",
-        url: "http://178.128.230.225:8000/polygon/",
-        data: body
-      }).then(function (res) {
-        console.log(res);
-        if (removeOld) {
-          // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
-          let diff = t.state.renderedRegions.filter(x => !res.data.data.getNear.includes(x));
-          for (let x of diff){
-            console.log(x);
-            t.draw.delete(x.id)
-            let copy = [...t.state.renderedRegions];
-            copy.splice(copy.indexOf(x));
-            t.setState({renderedRegions: copy});
-            
 
+      api.getPolygons({lat: t.state.lat, lng: t.state.lng}, function (err, res) {
+        if (err) console.error(err);
+        if (res) {
+          console.log(res);
+          if (removeOld) {
+            // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
+            let diff = t.state.renderedRegions.filter(x => !res.data.data.getNear.polygons.includes(x));
+            for (let x of diff){
+              console.log(x);
+              t.draw.delete(x.id)
+              let copy = [...t.state.renderedRegions];
+              copy.splice(copy.indexOf(x));
+              t.setState({renderedRegions: copy});
+              
+
+            }
+          }
+          t.draw.changeMode('static');
+          let polygons = res.data.data.getNear.polygons;
+          for (let p of polygons){
+            let f = t.state.renderedRegions.find(x => x.backId === p._id)
+            if (f) continue;
+            let newRegion = p.features.geometry;
+            
+            let v = t.draw.add(newRegion);
+            newRegion.id = v[0];
+            newRegion.name = p.features.properties.name;
+            newRegion.backId = p._id;
+            newRegion.description = p.features.properties.description;
+            t.setState(prevState => ({
+              renderedRegions: [...prevState.renderedRegions, newRegion]
+            }));
+            console.log(v);
           }
         }
-        t.draw.changeMode('static');
-        let polygons = res.data.data.getNear;
-        for (let p of polygons){
-          let f = t.state.renderedRegions.find(x => x.backId === p._id)
-          if (f) continue;
-          let newRegion = p.features.geometry;
-          
-          let v = t.draw.add(newRegion);
-          newRegion.id = v[0];
-          newRegion.name = p.features.properties.name;
-          newRegion.backId = p._id;
-          newRegion.description = p.features.properties.description;
-          t.setState(prevState => ({
-            renderedRegions: [...prevState.renderedRegions, newRegion]
-          }));
-          console.log(v);
-        }
-      })
-      .catch(function (err) {
-        console.error(err)
-      })
+      });
 
     }
 
     getImage(marker, m, imgId, t){
       console.log(marker);
-      axios({
-        method: "post",
-        url: `http://178.128.230.225:8000/image/${imgId}`,
-        data: {"query":"query { getPhoto { url }}"},
-      }).then(function (res2) {
-        console.log(res2)
-        let url = res2.data.data.getPhoto.url;
-        marker.getPopup().setHTML(t.producePopup(m.features.properties.name, '', marker.description, m._id, url))
-        marker.getPopup().addTo(t.map);
-        document.getElementById(m._id).onclick = function () {
-          t.setState({detailedLocation: true});
-          console.log(t.state.currentMarker);
+      api.getImage(imgId, function (err, res2) {
+        if(err) console.error(err);
+        if (res2) {
+          console.log(res2)
+          let url = res2.data.data.getPhoto.url;
+          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, marker.tags[0], marker.description, m._id, url))
+          marker.getPopup().addTo(t.map);
+          document.getElementById(m._id).onclick = function () {
+            t.setState({detailedLocation: true});
+            console.log(t.state.currentMarker);
+          }
         }
-      })
-      .catch(function(err){
-        console.error(err);
-      })
+      });
+
     }
 
-    getMarkers(t, removeOld=false){
+    getMarkers(t, removeOld=false, search=false){
 
-      //let body = {"query": "query { listPins(input: { _id: \"placeholder\" }) { _id type features { type properties { name } geometry { type coordinates }}}}"}
-      let body = {"query": `query { getNear(input: {lat: ${t.state.lat} lon: ${t.state.lng} radius: 2000 tags: []}) { _id type features { type properties { name description } geometry { type coordinates }}}}`}
-      this.send('POST', "http://178.128.230.225:8000/pin/", body, function (err, markers) {
-        console.log(markers);
-        console.log(t.state.renderedMarkers);
-        if (removeOld) {
-          // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
-          let diff = t.state.renderedMarkers.filter(x => !markers.data.getNear.includes(x));
-          for (let x of diff){
-            if (x._draggable) continue;
-            x.remove();
-            let copy = [...t.state.renderedMarkers];
-            copy.splice(copy.indexOf(x));
-            t.setState({renderedMarkers: copy});
-          } 
-        }
-        
-        for (let m of markers.data.getNear){
-          if(m in t.state.renderedMarkers) continue;
-          console.log(m);
-          
-          const marker = new mapboxgl.Marker({
-            color: "#FFFFFF",
-            draggable: false
-          }).setLngLat(m.features.geometry.coordinates)
-            .setPopup(new mapboxgl.Popup().setHTML(""))
-            .addTo(t.map)
-          
-          marker.name = m.features.properties.name;
-          marker.description = m.features.properties.description;
-          marker.id = m._id;
-          marker.togglePopup = function(){
-            t.setState({currentMarker: marker})
-
-            if(marker.getPopup().isOpen()){
-              marker.getPopup().remove();
+      api.getPins({lat: t.state.lat, lng:t.state.lng}, function (err, markers) {
+        if (err) console.error(err);
+        if (markers) {
+          console.log(markers);
+          console.log(t.state.renderedMarkers);
+          if (removeOld) {
+            // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
+            /* let diff = t.state.renderedMarkers.filter(x => !markers.data.data.getNear.pins.includes(x));
+            for (let x of diff){
+              
+              if (x._draggable || x._color === "#FF0000") continue;
+              x.remove();
+              let copy = [...t.state.renderedMarkers];
+              copy.splice(copy.indexOf(x));
+              t.setState({renderedMarkers: copy});
+              console.log(x);
+            } */
+            for (let x of t.state.renderedMarkers){
+              if (!markers.data.data.getNear.pins.find((y) => y._id === x.id)){
+                //need to remove x
+                if (x._draggable || x._color === "#FF0000") continue;
+                x.remove();
+                let copy = [...t.state.renderedMarkers];
+                copy.splice(copy.indexOf(x), 1);
+                t.setState({renderedMarkers: copy});
+                console.log(x);
+              }
             } 
-            else{
-              t.setState({currentMarker: marker})
-              console.log(t.state.currentMarker);
-              axios({
-                method: "post",
-                url: `http://178.128.230.225:8000/pin/${marker.id}/image/`,
-                data: {"query": "query { getImages { _id, title, image, pin }}"}
-              }).then(function (res) {
-                console.log(res);
-                let imgId = res.data.data.getImages[0]._id;
-                t.getImage(marker, m, imgId, t)
-              })
-              .catch(function (err) {
-                console.error(err);
-              })
-              let imgId = marker.imageId;
-              console.log(marker.imageId);
-              
-              //request to get image url
-              
-              
-            }
           }
-          t.setState(prevState => ({
-            renderedMarkers: [...prevState.renderedMarkers, marker]
-          }));
+
           
+          for (let m of markers.data.data.getNear.pins){
+
+            //if(m in t.state.renderedMarkers) continue;
+            console.log(t.state.renderedMarkers);
+            console.log(m);
+            console.log(t.state.renderedMarkers.find((x) => x.id === m._id))
+            if (t.state.renderedMarkers.find((x) => x.id === m._id)) {
+              console.log(m);
+              continue;
+            }
+            
+            const marker = new mapboxgl.Marker({
+              color: "#FFFFFF",
+              draggable: false
+            }).setLngLat(m.features.geometry.coordinates)
+              .setPopup(new mapboxgl.Popup().setHTML(""))
+              .addTo(t.map)
+            
+            marker.name = m.features.properties.name;
+            marker.description = m.features.properties.description;
+            marker.id = m._id;
+            marker.tags = m.features.properties.tags;
+            marker.togglePopup = function(){
+              t.setState({currentMarker: marker})
+
+              if(marker.getPopup().isOpen()){
+                marker.getPopup().remove();
+              } 
+              else{
+                t.setState({currentMarker: marker})
+                console.log(t.state.currentMarker);
+                /* api.getImagesOfPins([marker], function (imgErr, res) {
+                  if (imgErr) return console.error(imgErr);
+                  if (res) {
+                    console.log(res);
+                    let imgId = res.data.data.getImages[0]._id;
+                    t.getImage(marker, m, imgId, t)
+                  }
+                }) */
+                axios({
+                  method: "post",
+                  url: `http://178.128.230.225:8000/pin/${marker.id}/image/`,
+                  data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
+                }).then(function (res) {
+                  console.log(res);
+                  let imgId = res.data.data.getImages.images[0]._id;
+                  t.getImage(marker, m, imgId, t)
+                })
+                .catch(function (err) {
+                  console.error(err);
+                })
+              }
+            }
+            t.setState(prevState => ({
+              renderedMarkers: [...prevState.renderedMarkers, marker]
+            }));
+            
+          }
         }
-      })
+      });
+      
     }
 
     removeRendered(){
       console.log(this.state.renderedMarkers);
+      let keep = []
       for (let r of this.state.renderedMarkers){
         console.log(r);
-        if(!r._draggable)r.remove();
+        if(!r._draggable && r._color !== "#FF0000"){
+          r.remove();
+        }
+        else if (r._color === "#FF0000"){
+          if (this.state.searching) {
+            keep.push(r);
+          }
+          else r.remove();
+        } 
       }
       this.draw.deleteAll();
-      this.setState({renderedMarkers: [], renderedRegions: []});
+      this.setState({renderedMarkers: keep, renderedRegions: []});
       
     }
   
@@ -433,12 +441,15 @@ export default class App extends React.PureComponent {
       map.on('zoomend', function () {
         console.log(map.getZoom());
         if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) {
-          t.getMarkers(t);
+          //if (!t.state.displaySearchResults) {
+            t.getMarkers(t);
+          //}
+          
           t.getRegions(t)
           console.log(t.state.renderedMarkers);
         }
 
-        if (map.getZoom() < 13.5) {
+        if (map.getZoom() < 13.5 && t.state.initialZoom >= 13.5) {
           t.removeRendered(t);
           t.state.currentPopup && t.state.currentPopup.remove();
         }
@@ -446,19 +457,18 @@ export default class App extends React.PureComponent {
       });
       map.on('dragend', function () {
         if (map.getZoom() >= 13.5) {
-          //for(let m of t.state.renderedMarkers) m.remove();
-          //t.setState({renderedMarkers: []});
           t.getMarkers(t, true);
           t.getRegions(t, true);
+        }
+        if (t.state.displaySearchResults && t.state.searching) {
+          t.searchForTags();
         }
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
-      map.on('click', (e) => {this.setState({searching: false})})
+      map.on('click', (e) => {this.setState({searching: false, searchTags: []})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
-        console.log(e.features[0].properties.id);
-        console.log(this.state.renderedRegions.find(x => x.id === e.features[0].properties.id));
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
         this.setState({currentRegion: clickedPolygon});
         console.log(clickedPolygon);
@@ -566,9 +576,10 @@ export default class App extends React.PureComponent {
       event.preventDefault();
     };
     handleCategoryChange(event, value){
-
-            
-      this.setState({tags: value.length ? value : []})
+      
+      console.log(value);
+      this.setState({tags: value.length ? value : []});
+      console.log(this.state.tags);
       this.setState({mainTag: value.length ? value[0] : []})
     }
 
@@ -621,30 +632,25 @@ export default class App extends React.PureComponent {
     }
 
     deleteRegion(){
-      console.log(this.state.currentRegion.backId);
       let t = this;
-      //return;
-      let body = {"query": `mutation { deletePolygon(input: {_id: \"${this.state.currentRegion.backId}\"})}`};
-      axios({
-        method: "post",
-        url: "http://178.128.230.225:8000/polygon/",
-        data: body
-      }).then(function (res) {
-        console.log(res)
-        let copy = [...t.state.renderedRegions];
-        let index = t.state.renderedRegions.indexOf(t.state.renderedRegions);
-        if (index !== -1){
-          copy.splice(index, 1);
-          t.setState({renderedRegions: copy});
+      console.log(this.state.currentRegion.backId);
+      api.deletePolygon(this.state.currentRegion.backId, function (err, res) {
+        if (err) console.error(err);
+        if (res) {
+          console.log(res)
+          let copy = [...t.state.renderedRegions];
+          let index = t.state.renderedRegions.indexOf(t.state.renderedRegions);
+          if (index !== -1){
+            copy.splice(index, 1);
+            t.setState({renderedRegions: copy});
+          }
+          t.setState({detailedRegion: false});
+          t.draw.delete(t.state.currentRegion.id)
+          if (t.state.currentPopup) t.state.currentPopup.remove();
         }
-        t.setState({detailedRegion: false});
-        t.draw.delete(t.state.currentRegion.id)
-        if (t.state.currentPopup) t.state.currentPopup.remove();
-        //t.setState({currentRegion: null});
-      })
-      .catch(function (err) {
-        console.log(err)
-      })
+      });
+      return;
+      
     }
 
     deleteLocation(){
@@ -791,15 +797,81 @@ export default class App extends React.PureComponent {
       this.setState({choosingType: true});
     }
 
-    performSearch(e){
-      console.log(e)
-      console.log(this.state.searchTags);
+    searchForTags(){
+      if (!this.state.searchTags.length) return;
+      let t = this;
       api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.searchTags, function (err, res) {
         if(err) return console.error(err);
         if (res){
           console.log(res);
+          for(let match of res.data.data.getNear.pins){
+            const marker = new mapboxgl.Marker({
+              color: "#FF0000",
+              draggable: false
+            }).setLngLat(match.features.geometry.coordinates)
+              .setPopup(new mapboxgl.Popup().setHTML(""))
+            console.log(t.state.renderedMarkers);
+            let old = t.state.renderedMarkers.find((x) => x.id === match._id)
+            //if (old && old._color==='#FFFFFF') {
+            if (old){
+              console.log(old._color);
+              old.remove();
+              let copy = [...t.state.renderedMarkers];
+              let index = t.state.renderedMarkers.indexOf(old);
+              if (index !== -1){
+                copy.splice(index, 1);
+                t.setState({renderedMarkers: copy});
+              }
+
+            }
+            marker.id = match._id;
+            
+            marker.togglePopup = function(){
+              t.setState({currentMarker: marker})
+
+              if(marker.getPopup().isOpen()){
+                marker.getPopup().remove();
+              } 
+              else{
+                t.setState({currentMarker: marker})
+                console.log(t.state.currentMarker);
+                axios({
+                  method: "post",
+                  url: `http://localhost:8000/pin/${marker.id}/image/`,
+                  data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
+                }).then(function (res) {
+                  console.log(res);
+                  let imgId = res.data.data.getImages.images[0]._id;
+                  t.getImage(marker, match, imgId, t)
+                })
+                .catch(function (err) {
+                  console.error(err);
+                })
+              }
+            }
+            console.log(match);
+            marker.name = match.features.properties.name;
+            marker.description = match.features.properties.description;
+            marker.tags = match.features.properties.tags;
+            marker.addTo(t.map)
+            console.log(marker);
+            t.setState(prevState => ({
+              renderedMarkers: [...prevState.renderedMarkers, marker]
+            }));
+            
+            
+          }
         }
       })
+    }
+
+    performSearch(e){
+      console.log(e)
+      this.setState({displaySearchResults: true});
+      let t =this;
+      console.log(this.state.searchTags);
+      t.searchForTags();
+      
     }
 
     addRegion(e){
@@ -861,7 +933,7 @@ export default class App extends React.PureComponent {
                     multiple
                     id="tags-outlined"
                     sx={{width: 250, backgroundColor: 'white'}}
-                    options={['restaurant', 'mall']}
+                    options={['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue']}
                     onKeyDown={this.keyPress.bind(this)}
                     onChange={ this.handleSearchChange.bind(this) }
                     getOptionLabel={(option) => option}
@@ -949,7 +1021,7 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: []}} close={this.closingLocation} owner={'John'}></LocationInfo>
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: this.state.currentMarker.tags}} close={this.closingLocation} owner={'John'}></LocationInfo>
                 :
                 null
               }
@@ -970,7 +1042,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.detailedRegion?
-                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: []}} owner={"John"}  ></RegionInfo>
+                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: this.state.enclosedTags}} owner={"John"}  ></RegionInfo>
                 :
                 null
 

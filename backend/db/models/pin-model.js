@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const tagTypes = ['shop', 'park', 'food'];
+const tagTypes = ['Amusment Park', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Theatre', 'Arena', 'Stadium', 'Hotel', 
+    'Motel', 'Court', 'City Hall', 'Landmark'];
 
 const propertySchema = new mongoose.Schema({
     name: {type: String, required: true},
