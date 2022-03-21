@@ -38,7 +38,7 @@ getImages = async function (context) {
     return {'images': images};
 }
 
-getPhoto = async function({input}, context) {
+getPhoto = async function(context) {
     const image = await Image.findOne({_id: context.req.params.id}).exec();
     console.log(image);
     return ({url: "http://178.128.230.225:8000/images/" + image.image});
