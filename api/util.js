@@ -11,7 +11,7 @@ const isAuthenticated = function (req) {
 
 // Check if user has perms
 const isAuthorized = function (req, creator) {
-    return (req.session.user == creator)? null : AuthorizationError;
+    return (req.session.user._id == creator.toString())? null : AuthorizationError;
 };
 
 module.exports = {

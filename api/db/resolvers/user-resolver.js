@@ -19,7 +19,18 @@ signin = async function (input, context) {
   return user;
 }
 
+signout = function (input, context) {
+    // When user signs out, destroy current session and clear stored username cookie
+    req.session.destroy();
+    res.setHeader('Set-Cookie', cookie.serialize('username', '', {
+          path : '/',
+          maxAge: 60 * 60 * 24 * 7 // 1 week in number of seconds
+    }));
+    return ({"return": "terminated"});
+}
+
 module.exports = {
   createUser,
-  signin
+  signin,
+  signout
 }

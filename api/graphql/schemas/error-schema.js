@@ -1,6 +1,7 @@
 const {
   GraphQLObjectType,
   GraphQLString,
+  GraphQLUnionType
 } = require('graphql');
 
 const ErrorType = new GraphQLObjectType({
@@ -30,11 +31,18 @@ const UserInputError = function (inputValue) {
     return {message: inputValue + ' not accepted'};
 }
 
+const stringType = new GraphQLObjectType({
+    name: "Return",
+    fields: {
+        return: {type: GraphQLString}
+    }
+});
+
 const stringResultType = new GraphQLUnionType({
-    name: 'PinResult',
-    types: [GraphQLString, ErrorType],
+    name: 'StringResult',
+    types: [stringType, ErrorType],
     resolveType: (value) => {
-        return value.message? ErrorType.name : pinMultipleType.name;
+        return value.message? ErrorType.name : GraphQLString.name;
     }
 });
 

@@ -5,6 +5,7 @@ const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
 const {isAuthenticated, isAuthorized} = require('../../util');
+const {DupelicateError} = require('../../graphql/schemas/error-schema')
 
 createPin = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -23,6 +24,9 @@ addTag = async function (input , context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
     let pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    if (pin.features.properties.tags.includes(input.tag)) {
+        return(DupelicateError(input.tag));
+    }
     pin.features.properties.tags.push(input.tag);
     pin.save();
     return pin;
@@ -44,8 +48,6 @@ getNear = async function (input) {
         console.log("Too large");
     }
     console.log(tags);
-    const test = await Pin.find({'features.properties.tags': {$all: tags}}).exec();
-    console.log(test);
     let pins = Pin.find({
             'features.geometry': {
                 $near: {
@@ -76,8 +78,10 @@ listPins = async function (context) {
 deletePin = async function(input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    if (auth) return auth();
-    Pin.deleteOne({_id: context.req.params.id}).exec();
+    pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    let perm = isAuthorized(context.req, pin.user);
+    if (perm) return perm();
+    Pin.deleteOne({_id: pin._id}).exec();
     const images = await Image.find({pin: pin._id}).exec();
     let upload_path = "";
     console.log(images);
