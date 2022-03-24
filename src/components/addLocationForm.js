@@ -5,18 +5,20 @@ import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import FormData from "form-data"
-
+import api from '../api'
 import axios from 'axios' 
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
 
-export default class addingLocationForm extends React.PureComponent{
+export default class addLocationForm extends React.PureComponent{
 
     constructor(props){
       super(props);
       this.handleImage = this.handleImage.bind(this);
       this.state = {
         file: false,
-        submitAttempt: false
+        submitAttempt: false,
+        matches: [],
+        completeMatchInfo: []
       }
       this.fileChange = this.fileChange.bind(this);
       this.attemptSubmit = this.attemptSubmit.bind(this);
@@ -34,6 +36,20 @@ export default class addingLocationForm extends React.PureComponent{
         this.props.submit(e);
 
       } 
+    }
+    updateResults(e){
+      let t = this;
+      console.log(e.target.value);
+      if (e.target.value.length > 4) {
+        api.getLocationCoord(e.target.value, true, function (err, res) {
+          if (err) console.error(err);
+          if (res) {
+            console.log(res);
+            t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});
+          }
+        })
+        
+      }
     }
     
     handleImage(e){
@@ -147,6 +163,23 @@ export default class addingLocationForm extends React.PureComponent{
                       />
                     )}
                   />
+                  </FormControl>
+
+                  <FormControl sx={{ m: 1, width: 231}}>
+                    <Autocomplete 
+                    options={this.state.matches} 
+                    onChange={
+                      (e, val) => {
+                        console.log(this.state.completeMatchInfo)
+                        console.log(e)
+                        this.props.updateAddress(this.state.completeMatchInfo, val)
+                      }
+                    }
+                    renderInput={(params) => (
+                      <TextField placeholder='Address (optional)' onChange={this.updateResults.bind(this)} {...params} />
+                    )}
+                    />
+
                   </FormControl>
                   <FormControl required={true} sx={{ m: 1, width: 231}} >
                   <input

@@ -4,9 +4,6 @@ import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-load
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
-import { Autocomplete } from '@mui/material';
-import TextField from '@mui/material/TextField';
-import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddLocationIcon from '@mui/icons-material/AddLocation'
@@ -25,7 +22,9 @@ import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import RegionInfo from './components/RegionInfo.js'
+import SearchBar from './components/SearchBar'
 import sanitize from "sanitize-filename"
+//import MapboxDirections from '@mapbox/mapbox-gl-directions'
 import api from './api';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -58,8 +57,11 @@ export default class App extends React.PureComponent {
           searchTags:[],
           currentLocationDescription:'',
           newMarkers: [],
+          highlightedMarkers: [],
+          addressSearchMarkers: null,
           mainTag: '',
           tags: [],
+          flyTo: [],
           suggestions: [
             { id: 1, name: "Attraction" },
             { id: 2, name: "Government" }
@@ -94,6 +96,7 @@ export default class App extends React.PureComponent {
         this.deleteRegion = this.deleteRegion.bind(this);
         this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
         this.searchForTags = this.searchForTags.bind(this);
+        this.removeHighlighted = this.removeHighlighted.bind(this);
     }
 
     getPinsWithinRegion(){
@@ -369,13 +372,19 @@ export default class App extends React.PureComponent {
       
     }
 
-    removeRendered(){
-      console.log(this.state.renderedMarkers);
+    removeRendered(removeHighlighted=false){
+      console.log(removeHighlighted);
       let keep = []
       for (let r of this.state.renderedMarkers){
         console.log(r);
-        if(!r._draggable && r._color !== "#FF0000"){
-          r.remove();
+        if(!r._draggable){
+          console.log(r._color);
+          if (r._color !== "#FF0000") {
+            r.remove();
+          }
+          else if (removeHighlighted) r.remove();
+          else keep.push(r)
+          
         }
         else if (r._color === "#FF0000"){
           if (this.state.searching) {
@@ -384,8 +393,12 @@ export default class App extends React.PureComponent {
           else r.remove();
         } 
       }
-      this.draw.deleteAll();
-      this.setState({renderedMarkers: keep, renderedRegions: []});
+      //if (!removeHighlighted) {
+        this.draw.deleteAll();
+        this.setState({renderedRegions: []})
+      //}
+      
+      this.setState({renderedMarkers: keep});
       
     }
   
@@ -446,11 +459,11 @@ export default class App extends React.PureComponent {
           //}
           
           t.getRegions(t)
-          console.log(t.state.renderedMarkers);
+          console.log(!t.state.renderedMarkers);
         }
 
         if (map.getZoom() < 13.5 && t.state.initialZoom >= 13.5) {
-          t.removeRendered(t);
+          t.removeRendered(!t.state.searching);
           t.state.currentPopup && t.state.currentPopup.remove();
         }
         
@@ -532,6 +545,7 @@ export default class App extends React.PureComponent {
           
           let newRegion = e.features[0];
           newRegion.name = old.name;
+          newRegion.description = old.description;
           copy[idx] = newRegion;
           t.setState({newRegions: copy});
           /* t.setState(prevState => ({
@@ -541,6 +555,12 @@ export default class App extends React.PureComponent {
       })
 
 
+/*       api.getLocationCoord('CN tower', function (err, res) {
+        if (err) console.error(err);
+        if (res) {
+          console.log(res)
+        }
+      }) */
       this.draw = draw;
    
       map.addControl(draw);
@@ -555,6 +575,14 @@ export default class App extends React.PureComponent {
         showUserHeading: true
         })
       );
+/*       map.addControl(
+        new MapboxDirections({
+          accessToken: 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg',
+          unit: 'metric',
+          profile: 'mapbox/cycling'        
+        }),
+        'top-left'
+      ); */
       
       this.map = map;
     }
@@ -737,7 +765,9 @@ export default class App extends React.PureComponent {
     addMarker(event){
       //clear the category selection
       let currTags = this.state.tags;
-      this.setState({addingLocation: false, movingMarker: true, tags: []});
+      let coord = this.state.newCoord;
+      this.setState({addingLocation: false, movingMarker: true, tags: [], newCoord: null});
+      
       
       let tag = this.state.mainTag
       let name = this.state.locationName;
@@ -750,9 +780,14 @@ export default class App extends React.PureComponent {
       const marker = new mapboxgl.Marker({
         color: "#FFFFFF",
         draggable: true
-      }).setLngLat([this.state.lng, this.state.lat])
+      }).setLngLat(coord ? coord : [this.state.lng, this.state.lat])
         .setPopup(new mapboxgl.Popup().setHTML(contents))
         .addTo(this.map)
+      if (coord) {
+        this.map.flyTo({
+          center: coord
+        });
+      }
       marker.togglePopup();
       marker.image = this.state.image;
       marker.name = this.state.locationName;
@@ -858,6 +893,9 @@ export default class App extends React.PureComponent {
             t.setState(prevState => ({
               renderedMarkers: [...prevState.renderedMarkers, marker]
             }));
+            t.setState(prevState => ({
+              highlightedMarkers: [...prevState.highlightedMarkers, marker]
+            }));
             
             
           }
@@ -865,12 +903,57 @@ export default class App extends React.PureComponent {
       })
     }
 
+    removeHighlighted(){
+      let keep =[];
+      for (let h of this.state.highlightedMarkers){
+        if (h._color === "#FF0000") {
+          h.remove();
+        }
+        else keep.push(h)
+      }
+      this.setState({highlightedMarkers: [], renderedMarkers: keep});
+    }
+
+    removeMarkerFromRendered(old){
+      let copy = [...this.state.renderedMarkers];
+      let index = this.state.renderedMarkers.indexOf(old);
+      if (index !== -1){
+        old.remove();
+        copy.splice(index, 1);
+        this.setState({renderedMarkers: copy});
+
+      }
+    }
+
     performSearch(e){
       console.log(e)
-      this.setState({displaySearchResults: true});
-      let t =this;
-      console.log(this.state.searchTags);
-      t.searchForTags();
+
+      console.log(this.state.flyTo)
+      if (this.state.flyTo.length) {
+        if(this.state.addressSearchMarkers) this.removeMarkerFromRendered(this.state.addressSearchMarkers);
+        this.removeHighlighted();
+        console.log(this.state.flyTo)
+        let t = this;
+        this.map.flyTo({
+          center: t.state.flyTo
+        });
+        const marker = new mapboxgl.Marker({
+          color: "#0000FF",
+          draggable: false
+        }).setLngLat(t.state.flyTo)
+          .addTo(t.map)
+        this.setState(prevState => ({
+          renderedMarkers: [...prevState.renderedMarkers, marker],
+          addressSearchMarkers: marker
+        }));
+      }
+      else {
+        this.setState({displaySearchResults: true});
+        console.log(this.state.searchTags);
+        this.removeRendered(true);
+        this.searchForTags();
+      }
+      
       
     }
 
@@ -888,11 +971,25 @@ export default class App extends React.PureComponent {
       this.setState({image: e.target.files[0]});
     }
     handleSearchChange(event, value){
-      this.setState({searchTags: value.length ? value : []})
-      console.log('searching');
+      console.log(value);
+      if (value.place_name) {
+        console.log(value);
+        this.setState({flyTo: value.geometry.coordinates})
+        
+      }
+      else{
+        this.setState({searchTags: value.length ? value : [], flyTo: []})
+        console.log('searching');
+      }
+      
     }
-    keyPress(e){
-      console.log(e.keyCode);
+    updateAddress(arr, name){
+      console.log(arr);
+      console.log(name);
+      console.log(arr.find((x) => x.place_name === name));
+      if (name) {
+        this.setState({newCoord: arr.find((x) => x.place_name === name).geometry.coordinates})
+      }
     }
     render() {
         const { lng, lat, zoom } = this.state;
@@ -927,34 +1024,10 @@ export default class App extends React.PureComponent {
             <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
                 {
                   this.state.searching?
-                  <div id="search-container">
+                  
                     
-                  <Autocomplete
-                    multiple
-                    id="tags-outlined"
-                    sx={{width: 250, backgroundColor: 'white'}}
-                    options={['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue']}
-                    onKeyDown={this.keyPress.bind(this)}
-                    onChange={ this.handleSearchChange.bind(this) }
-                    getOptionLabel={(option) => option}
-                    filterSelectedOptions
-                    renderInput={(params) => (
-                      <TextField
-                      
-                        {...params}
-                        label={/*https://stackoverflow.com/questions/62645466/how-to-make-autocomplete-field-of-material-ui-required*/
-                        this.state.searchTags.length===0 ? "Search" : 'Search'}
-                        required={this.state.searchTags.length === 0}
-                        placeholder="Tags"
-                        
-                      />
-                    
-                    )}
-                  />
-                  <Fab color="primary" aria-label="search">
-                    <SavedSearchIcon onClick={this.performSearch.bind(this)} sx={{m: 1}} />
-                  </Fab>
-                  </div>
+                  <SearchBar searchChange = {this.handleSearchChange.bind(this)} search={this.performSearch.bind(this)}> </SearchBar>
+                  
                   :
                   <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
                     <SearchIcon />
@@ -986,7 +1059,7 @@ export default class App extends React.PureComponent {
                   </Fab>
                 }
                 {
-                  (this.state.signedIn && this.state.choosingType)?
+                  (this.state.signedIn && this.state.choosingType && !this.state.searching)?
                     <div id='types'>
                       <Fab disabled={this.state.drawingRegion} onClick={ this.addLocation } sx={{m: 1}}>
                         <PinDropIcon/>
@@ -1002,7 +1075,7 @@ export default class App extends React.PureComponent {
                 }
 
                 {
-                  this.state.signedIn?
+                  (this.state.signedIn && !this.state.searching)?
                   
                   <Fab color={locationColor} onClick={ locationClick } aria-label="add">
                     { locationButton }
@@ -1027,7 +1100,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.addingLocation?
-                <AddLocationForm imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} tags={this.state.tags} categoryChange={this.handleCategoryChange.bind(this)} changeLocationDescription={this.handleLocationDescription} changeLocationName={this.handleLocationName}></AddLocationForm>
+                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} tags={this.state.tags} categoryChange={this.handleCategoryChange.bind(this)} changeLocationDescription={this.handleLocationDescription} changeLocationName={this.handleLocationName}></AddLocationForm>
                 :
                 null
               }

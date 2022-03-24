@@ -76,6 +76,10 @@ const getPinsWithinPolygon = function (regionId, callback) {
   performAxiosRequest("post", baseUrl + `polygon/${regionId}`, body, callback)
 }
 
+const getLocationCoord = function (q, autocomplete, callback) {
+  performAxiosRequest("get", `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?autocomplete=${autocomplete}&access_token=pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg`, null, callback);
+}
+
 const uploadImage = function (pinId, img, callback) {
   performAxiosRequest("post", baseUrl + `pin/${pinId}/image/`, img, callback);
 }
@@ -226,5 +230,6 @@ module.exports = {
   createPin,
   getPins,
   getPolygons,
-  deletePolygon
+  deletePolygon,
+  getLocationCoord
 }
