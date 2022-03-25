@@ -66,7 +66,7 @@ const searchTags = function (pos, tags, callback) {
 
 const createPin = function (marker, callback) {
   console.log(marker);
-  let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" tags:${JSON.stringify(marker.tags)}  } geometry: { type: \"Point\", coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) { ...on Pin{ _id type features { type properties { name description tags } geometry { type coordinates } } } ...on Error{ message } }}`}
+  let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" tags:${JSON.stringify(marker.tags)} } geometry: { type: \"Point\", coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) { ...on Pin{ _id type features { type properties { name description tags } geometry { type coordinates } } } ...on Error{ message } }}`}
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 

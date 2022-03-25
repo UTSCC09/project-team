@@ -3,17 +3,18 @@ import { styled } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import AddCommentIcon from '@mui/icons-material/AddComment';
-import CardMedia from '@mui/material/CardMedia';
 import CardContent from '@mui/material/CardContent';
 import Streetview from 'react-google-streetview';
-
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import CardActions from '@mui/material/CardActions';
 import Collapse from '@mui/material/Collapse';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import { red } from '@mui/material/colors';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ShareIcon from '@mui/icons-material/Share';
+import MuiImageSlider from 'mui-image-slider';
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
@@ -36,13 +37,14 @@ const ExpandMore = styled((props) => {
     duration: theme.transitions.duration.shortest,
   }),
 }));
-
+const images = ["https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Toronto_-_ON_-_Royal_York_Hotel.jpg/2560px-Toronto_-_ON_-_Royal_York_Hotel.jpg",
+"https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_Toronto_Harbourfront7.jpg/480px-Toronto_-_ON_-_Toronto_Harbourfront7.jpg"];
 export default function LocationInfo(props) {
   /* Card: https://mui.com/components/cards/#complex-interaction*/
   const [expanded, setExpanded] = React.useState(false);
   /*Ratings: https://mui.com/components/rating/ */
   const [rating, setRating] = React.useState(0);
-  const { owner, close , info, pos, deleteLocation } = props;
+  const { owner, close , info, pos, deleteLocation, user } = props;
   console.log(info)
   const handleExpandClick = () => {
     setExpanded(!expanded);
@@ -70,12 +72,18 @@ export default function LocationInfo(props) {
        
       </Stack>
 
+      <FormGroup>
+        <FormControlLabel control={<Switch defaultChecked />} label="Street View" />
+      </FormGroup>
 
 
       <div id='street'>
         <Streetview streetViewPanoramaOptions={{position: pos,
         pov: { heading: 0, pitch: 0 },
         zoom: 1,}} apiKey={'AIzaSyDkrJcHAWMRsbbL9i5rzvysM3wyoEl6zQc'}></Streetview>
+      </div>
+      <div id='images'>
+          <MuiImageSlider images={images} />
       </div>
 
       <CardContent>
@@ -92,9 +100,16 @@ export default function LocationInfo(props) {
         }}
       />
       <CardActions disableSpacing>
-        <IconButton onClick={ deleteLocation } >
-          <DeleteForeverIcon />
-        </IconButton>
+        {
+          (user && user === owner)?
+            <IconButton onClick={ deleteLocation } >
+              <DeleteForeverIcon />
+            </IconButton>
+          :
+          null
+        }
+
+        
         <IconButton >
           <AddCommentIcon />
         </IconButton>

@@ -527,7 +527,7 @@ export default class App extends React.PureComponent {
         console.log(e.features);
         e.features[0].name = t.state.locationName;
         e.features[0].description = t.state.locationDescription;
-        
+        e.features[0].owner = t.state.user;
         t.setState(prevState => ({
           newRegions: [...prevState.newRegions, e.features[0]]
         }));
@@ -588,11 +588,12 @@ export default class App extends React.PureComponent {
     }
 
     onLoginFormSubmit(user){
+      console.log(user);
       this.setState({signedIn: true, accountForm: false, user: user.username});
     };
 
     signOut(event) {
-      this.setState({signedIn: false});
+      this.setState({signedIn: false, user: null});
       
     }
     handleClickShowPassword (){
@@ -785,13 +786,15 @@ export default class App extends React.PureComponent {
         .addTo(this.map)
       if (coord) {
         this.map.flyTo({
-          center: coord
+          center: coord,
+          zoom: 13.6
         });
       }
       marker.togglePopup();
       marker.image = this.state.image;
       marker.name = this.state.locationName;
       marker.tags = currTags;
+      marker.owner = this.state.user;
       marker.description = this.state.locationDescription;
       console.log(marker.image);
       this.setState(prevState => ({
@@ -1094,7 +1097,11 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} pos={this.state.currentMarker._lngLat} info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: this.state.currentMarker.tags}} close={this.closingLocation} owner={'John'}></LocationInfo>
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} 
+                  pos={this.state.currentMarker._lngLat} 
+                  info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: this.state.currentMarker.tags}} 
+                  close={this.closingLocation} owner={this.state.currentMarker.owner}
+                  user={this.state.user}></LocationInfo>
                 :
                 null
               }
@@ -1115,7 +1122,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.detailedRegion?
-                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: this.state.enclosedTags}} owner={"John"}  ></RegionInfo>
+                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: this.state.enclosedTags}} owner={this.state.currentMarker.owner}  ></RegionInfo>
                 :
                 null
 
