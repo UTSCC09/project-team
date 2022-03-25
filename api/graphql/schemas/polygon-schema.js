@@ -93,7 +93,8 @@ const polygonType = new GraphQLObjectType({
     fields: {
         _id: {type: GraphQLString},
         type: {type: GraphQLString},
-        features: {type: polygonFeatureType}
+        features: {type: polygonFeatureType},
+        owner: {type: GraphQLString}
     }
 });
 

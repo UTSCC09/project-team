@@ -5,7 +5,7 @@ const {isAuthenticated, isAuthorized} = require('../../util');
 createPolygon = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    const polygonInput = Object.assign({}, input, {user: context.req.session.user});
+    const polygonInput = Object.assign({}, input, {user: context.req.session.user, owner: context.req.session.user.username});
     const polygon = await new Polygon(polygonInput).save();
     return polygon;
 };
