@@ -837,7 +837,7 @@ export default class App extends React.PureComponent {
                 console.log(t.state.currentMarker);
                 axios({
                   method: "post",
-                  url: `http://localhost:8000/pin/${marker.id}/image/`,
+                  url: `http://178.128.230.225:8000/pin/${marker.id}/image/`,
                   data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
                 }).then(function (res) {
                   console.log(res);

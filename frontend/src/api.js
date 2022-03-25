@@ -46,7 +46,7 @@ function executePromises(promises, callback) {
   })
 }
 
-const baseUrl = 'http://178.128.230.225:8000/'
+const baseUrl = process.env.HOST_URL
 
 const deletePin = function(pinId, callback){
   let body = {"query": `mutation { deletePin}`};

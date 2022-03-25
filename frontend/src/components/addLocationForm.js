@@ -56,7 +56,7 @@ export default class addingLocationForm extends React.PureComponent{
         console.log(data);
         axios({
           method: "post",
-          url: "http://localhost:8000/pin/62310a56ca26b64f107de717/image/",
+          url: "http://178.128.230.225:8000/pin/62310a56ca26b64f107de717/image/",
           data: data,
         })
           .then(function (res) {

@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     ports: 
       - "3000:3000"
+    env_file: .env
+    environment:
+      - HOST_URL=$HOST_URL:8000/
     volumes:
       - ./frontend:/usr/src/app
       - /usr/src/app/node_modules
@@ -27,6 +30,7 @@ services:
       - MONGO_HOSTNAME=db
       - MONGO_PORT=$MONGO_PORT
       - MONGO_DB=$MONGO_DB
+      - HOST_URL=$HOST_URL:8000/
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
