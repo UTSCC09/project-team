@@ -65,7 +65,10 @@ export default function RegionInfo(props) {
         title={info.name}
         subheader={<div></div>}
       />
-      <Stack direction="row" spacing={1}>
+      <Stack sx={{overflow: 'scroll'}} direction="row" spacing={1}>
+      <Typography sx={{marginLeft: '5px'}} variant="h6" color="text.secondary">
+          Found here:
+        </Typography> 
         {info.locationTags.map((tag) =>  <Chip label={tag} variant="outlined" />)}
        
       </Stack>

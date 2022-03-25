@@ -7,6 +7,7 @@
     position: absolute;
     top: 0;
 }
+
 .sidebar {
     background-color: rgba(35, 55, 75, 0.9);
     color: #fff;
@@ -19,6 +20,14 @@
     margin: 12px;
     border-radius: 4px;
 }
+
+.clear{
+  z-index: 1;
+  position: absolute;
+  bottom: 0;
+  left: 600px;
+}
+
 #location-info{
   max-height: 100vh;
   margin-top: 15px;
@@ -42,6 +51,7 @@
     display: block;
     height: 100%;
     width: 100%;
+    overflow: scroll;
     top: 0;
     left: 0;
     right: 0;
@@ -129,11 +139,38 @@ body{
     visibility: hidden;
 }
 #region-card{
-  height: 150px; 
-  width: 175px;
+  min-width: 175px;
+  height: 300px; 
+  width: auto;
+}
+#region-card .card-body{
+  height: 250px;
+}
+#region-card .location-summary{
+  height: 200px;
+}
+#region-card .location-summary{
+  height: 150px;
+  margin-bottom: 5px;
+}
+#marker-card .location-summary {
+  height: 250px;
+  
+}
+#marker-card .card-footer{
+  height: 70px;
+}
+#marker-card {
+  height: 500px;
 }
 #region-card .name{
   padding-top: 10px;
+}
+#search-container{
+  display: flex;
+}
+.search-btn {
+  margin: 10px;
 }
 .card{
   position: relative;

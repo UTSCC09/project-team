@@ -47,6 +47,7 @@ export default function LocationInfo(props) {
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
+  /*streetview https://github.com/alexus37/react-google-streetview */
   
   return (
     <Card id='location-info' sx={{ maxWidth: 500, overflow: 'scroll', margin: 'auto' }}>
@@ -64,7 +65,7 @@ export default function LocationInfo(props) {
         title={info.name}
         subheader={<div></div>}
       />
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" sx={{overflow: 'scroll', marginBottom:'5px'}} spacing={1}>
         {info.locationTags.map((tag) =>  <Chip label={tag} variant="outlined" />)}
        
       </Stack>
@@ -78,7 +79,7 @@ export default function LocationInfo(props) {
       </div>
 
       <CardContent>
-        <Typography variant="body2" color="text.secondary">
+        <Typography paragraph variant="body2" color="text.secondary">
           {info.description}
         </Typography>
       </CardContent>

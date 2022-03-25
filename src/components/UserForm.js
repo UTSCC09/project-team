@@ -51,7 +51,7 @@ export default class UserForm extends React.PureComponent{
             }));
             return;
           }
-          this.props.onLoginFormSubmit(user);
+          this.props.onLoginFormSubmit(user.data.createUser);
         });
       } else {
         api.signIn(username, password, (err, user) => {
@@ -61,7 +61,7 @@ export default class UserForm extends React.PureComponent{
             }));
             return;
           }
-          this.props.onLoginFormSubmit(user);
+          this.props.onLoginFormSubmit(user.data.signin);
         });
       }
 
