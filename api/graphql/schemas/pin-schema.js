@@ -102,7 +102,7 @@ const pinType = new GraphQLObjectType({
         _id: {type: GraphQLString},
         type: {type: GraphQLString},
         features: {type: pinFeatureType},
-        user: {type: GraphQLString}
+        owner: {type: GraphQLString}
     }
 });
 

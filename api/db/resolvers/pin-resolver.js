@@ -10,13 +10,14 @@ const {DupelicateError} = require('../../graphql/schemas/error-schema')
 createPin = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    const pinInput = Object.assign({}, input, {user: context.req.session.user});
+    const pinInput = Object.assign({}, input, {user: context.req.session.user, owner: context.req.session.user.username});
     const pin = await new Pin(pinInput).save();
     return pin;
 };
 
 getPin = async function (context) {
     const pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    console.log(pin);
     return pin;
 };
 
