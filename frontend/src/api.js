@@ -46,7 +46,7 @@ function executePromises(promises, callback) {
   })
 }
 
-const baseUrl = process.env.HOST_URL
+const baseUrl = 'http://localhost:8000/';
 
 const deletePin = function(pinId, callback){
   let body = {"query": `mutation { deletePin}`};
