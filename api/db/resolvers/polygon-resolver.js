@@ -1,8 +1,5 @@
 const Polygon = require('../models/polygon-model');
 const Pin = require('../models/pin-model');
-const {isAuthenticated} = require('../../util');
-
-
 const {isAuthenticated, isAuthorized} = require('../../util');
 
 createPolygon = async function (input, context) {
