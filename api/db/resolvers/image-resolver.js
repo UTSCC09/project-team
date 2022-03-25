@@ -6,6 +6,8 @@ const Image = require('../models/image-model');
 const Pin = require('../models/pin-model');
 const {isAuthenticated} = require('../../util');
 
+const {isAuthenticated, isAuthorized} = require('../../util');
+
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
@@ -47,6 +49,8 @@ deleteImage = async function(context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
     const image = await Image.findOne({_id: context.params.id}).exec();
+    let perm = isAuthorized(context.req, image.user);
+    if (perm) return perm();
     const status = Image.deleteOne({_id: context.params.id}).exec();
     const upload_path = path.join(__dirname, `/../../static/images/${image.image}`);
     console.log(status, upload_path);
