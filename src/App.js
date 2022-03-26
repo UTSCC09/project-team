@@ -25,6 +25,7 @@ import SearchBar from './components/SearchBar'
 import sanitize from "sanitize-filename"
 //import MapboxDirections from '@mapbox/mapbox-gl-directions'
 import api from './api';
+import { display } from '@mui/system';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
 export default class App extends React.PureComponent {
@@ -95,6 +96,7 @@ export default class App extends React.PureComponent {
         this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
         this.searchForTags = this.searchForTags.bind(this);
         this.removeHighlighted = this.removeHighlighted.bind(this);
+        this.displayCustomSearchResults = this.displayCustomSearchResults.bind(this);
     }
 
     getPinsWithinRegion(){
@@ -484,13 +486,17 @@ export default class App extends React.PureComponent {
           t.getMarkers(t, true);
           t.getRegions(t, true);
         }
-        if (t.state.displaySearchResults && t.state.searching) {
+        if (t.state.displayTagSearchResults && t.state.searching) {
           t.searchForTags();
+        }
+        else if(t.state.searching && t.state.displayingCustomSearchResults){
+          console.log('custom');
+          t.performSearch(null, true)
         }
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
-      map.on('click', (e) => {this.setState({searching: false, searchTags: []})})
+      map.on('click', (e) => {this.setState({searching: false, searchTags: [], displayingCustomSearchResults: false})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
@@ -843,6 +849,60 @@ export default class App extends React.PureComponent {
       this.setState({choosingType: true});
     }
 
+    displayCustomSearchResults(pins){
+      this.setState({displayingCustomSearchResults: true});
+      let t = this;
+      for (let pin of pins){
+        let marker = new mapboxgl.Marker({
+          color: "#FF0000",
+          draggable: false
+        }).setLngLat(pin.features.geometry.coordinates)
+          .setPopup(new mapboxgl.Popup().setHTML(""));
+        let old = t.state.renderedMarkers.find((x) => x.id === pins._id);
+        if (old) {
+          old.remove();
+          let copy = [...this.state.renderedMarkers];
+          let index = this.state.renderedMarkers.indexOf(old);
+          if (index !== -1){
+            copy.splice(index, 1);
+            this.setState({renderedMarkers: copy});
+          }
+        }
+        marker.id = pin._id;
+        marker.togglePopup = function(){
+          t.setState({currentMarker: marker})
+
+          if(marker.getPopup().isOpen()){
+            marker.getPopup().remove();
+          } 
+          else{
+            t.setState({currentMarker: marker})
+            console.log(t.state.currentMarker);
+            api.getImageFromPinId(marker.id, function (err, res) {
+              if(err) return console.error(err);
+              if (res) {
+                console.log(res);
+                t.setState({currentMarkerImages: res.data.data.getImages.images});
+                let imgId = res.data.data.getImages.images[0]._id;
+                t.getImage(marker, pin, imgId, t);
+              }
+            })
+            
+          }
+        }
+        marker.name = pin.features.properties.name;
+        marker.description = pin.features.properties.description;
+        marker.tags = pin.features.properties.tags;
+        marker.addTo(t.map)
+        console.log(marker);
+        t.setState(prevState => ({
+          renderedMarkers: [...prevState.renderedMarkers, marker]
+        }));
+        t.setState(prevState => ({
+          highlightedMarkers: [...prevState.highlightedMarkers, marker]
+        }));
+      }
+    }
     searchForTags(){
       if (!this.state.searchTags.length) return;
       let t = this;
@@ -881,7 +941,15 @@ export default class App extends React.PureComponent {
               else{
                 t.setState({currentMarker: marker})
                 console.log(t.state.currentMarker);
-                axios({
+                api.getImageFromPinId(marker.id, function (err, res) {
+                  if (err)console.error(err);
+                  if (res) {
+                    t.setState({currentMarkerImages: res.data.data.getImages.images});
+                    let imgId = res.data.data.getImages.images[0]._id;
+                    t.getImage(marker, match, imgId, t)
+                  }
+                })
+                /* axios({
                   method: "post",
                   url: `http://localhost:8000/pin/${marker.id}/image/`,
                   data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
@@ -893,7 +961,7 @@ export default class App extends React.PureComponent {
                 })
                 .catch(function (err) {
                   console.error(err);
-                })
+                }) */
               }
             }
             console.log(match);
@@ -915,15 +983,23 @@ export default class App extends React.PureComponent {
       })
     }
 
-    removeHighlighted(){
+    removeHighlighted(custom=false){
       let keep =[];
       console.log(this.state.renderedMarkers);
       for (let h of this.state.renderedMarkers){
         console.log(h);
-        if (h._color === "#FF0000") {
-          h.remove();
+        if (!custom) {
+          if (h._color === "#FF0000") {
+            h.remove();
+          }
+          else keep.push(h)
         }
-        else keep.push(h)
+        else{
+          if (h._color === "#FF0000" && this) {
+            h.remove();
+          }
+        }
+        
       }
       console.log(keep);
       this.setState({highlightedMarkers: [], renderedMarkers: keep});
@@ -940,13 +1016,14 @@ export default class App extends React.PureComponent {
       }
     }
 
-    performSearch(e){
-      console.log(e)
+    performSearch(e, custom=null){
 
-      console.log(this.state.flyTo)
+      let t= this;
+      console.log(this.state.flyTo && !custom);
+      this.removeHighlighted();
+      console.log(this.state.customSearch);
       if (this.state.flyTo.length) {
         if(this.state.addressSearchMarkers) this.removeMarkerFromRendered(this.state.addressSearchMarkers);
-        this.removeHighlighted();
         console.log(this.state.flyTo)
         let t = this;
         this.map.flyTo({
@@ -963,14 +1040,23 @@ export default class App extends React.PureComponent {
           addressSearchMarkers: marker
         }));
       }
-      else {
-        this.setState({displaySearchResults: true});
+      else if (this.state.customSearch || custom) {
+        console.log(this.state.customSearch);
+        this.setState({displayTagSearchResults: false});
+        api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
+          if (err) return console.error(err);
+          console.log(res);
+          t.displayCustomSearchResults(res.data.data.searchByTag.pins);
+        });
+        
+      }
+      else if (!custom) {
+        this.setState({displayTagSearchResults: true});
         console.log(this.state.searchTags);
-        this.removeHighlighted();
+        
         //this.removeRendered(true);
         this.searchForTags();
       }
-      
       
     }
 
@@ -990,11 +1076,16 @@ export default class App extends React.PureComponent {
     handleSearchChange(event, value){
       console.log(value);
       if (value.place_name) {
+        this.setState({customSearch: null});
         console.log(value);
         this.setState({flyTo: value.geometry.coordinates})
         
       }
+      else if (value.title) {
+        this.setState({customSearch: value});
+      }
       else{
+        this.setState({customSearch: null});
         this.setState({searchTags: value.length ? value : [], flyTo: []})
         console.log('searching');
       }

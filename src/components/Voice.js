@@ -7,7 +7,7 @@ export default class Voice extends React.PureComponent {
         super(props)
      
         this.state = {
-          recordState: null
+          recordState: RecordState.START
         }
       }
      

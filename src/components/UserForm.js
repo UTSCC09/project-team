@@ -72,7 +72,7 @@ export default class UserForm extends React.PureComponent{
         let usernameHelper;
         let passwordElement = <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
         <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-          <OutlinedInput id="outlined-adornment-password"
+          <OutlinedInput
             type={this.state.showPassword ? 'text' : 'password'}
             label="Password"
             id="password"

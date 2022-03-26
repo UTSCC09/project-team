@@ -3,6 +3,7 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import Fab from "@mui/material/Fab";
+import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
 import api from '../api'
 import IconButton from '@mui/material/IconButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
@@ -22,9 +23,13 @@ export default class addLocationForm extends React.PureComponent{
         }
         this.updateResults = this.updateResults.bind(this);
         this.onStop = this.onStop.bind(this);
+        this.start = this.start.bind(this);
     }
     onStop(audioData){
       console.log('audioData', audioData);
+    }
+    start(){
+      this.setState({recordState: RecordState.START});
     }
     updateResults(e){
         let t = this;
@@ -51,6 +56,9 @@ export default class addLocationForm extends React.PureComponent{
             if (m) this.props.searchChange(e, m)
         }
         else if (!val.title) this.props.searchChange(e, val);
+        else {
+          this.props.searchChange(e, val);
+        }
 
     }
     render() {
@@ -60,7 +68,10 @@ export default class addLocationForm extends React.PureComponent{
           
               {
                 this.state.voiceSearch?
-                <Voice> </Voice>
+                <div>
+                  <AudioReactRecorder backgroundColor={'white'} canvasWidth={300} canvasHeight={50} state={recordState} onStop={this.onStop} />
+                  <button onClick={this.start}>Start</button>
+                </div>
                 :
                 <Autocomplete
                     id="tags-outlined"
@@ -78,7 +89,7 @@ export default class addLocationForm extends React.PureComponent{
                         if (inputValue !== '' && !isExisting) {
                           filtered.push({
                             inputValue,
-                            title: `Search for "${inputValue}"`,
+                            title: `"${inputValue}"`,
                           });
                         }
                 
@@ -97,18 +108,26 @@ export default class addLocationForm extends React.PureComponent{
                   />
               }
             
-              <IconButton color="primary" onClick={this.props.search}>
-                <SavedSearchIcon />
-              </IconButton>
+              
               {
                 this.state.voiceSearch?
-                  <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
-                      <StopCircleIcon />
-                  </IconButton>
-                :
-                  <IconButton color="secondary" onClick={() => {this.setState({voiceSearch: true, recordState: RecordState.START})}}>
+                  <div>
+                    <IconButton color='success' onClick={()=>{this.setState({recordState: RecordState.START})}}>
                       <KeyboardVoiceIcon />
-                  </IconButton>
+                    </IconButton>
+                    <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
+                        <StopCircleIcon />
+                    </IconButton>
+                  </div>
+                :
+                  <div>
+                    <IconButton color="primary" onClick={this.props.search}>
+                      <SavedSearchIcon />
+                    </IconButton>
+                    <IconButton color="secondary" onClick={() => {this.setState({voiceSearch: true})}}>
+                        <RecordVoiceOverIcon />
+                    </IconButton>
+                  </div>
               }
               
             </div>

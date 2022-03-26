@@ -48,6 +48,8 @@ function executePromises(promises, callback) {
 }
 
 const baseUrl = 'http://localhost:8000/'
+const renderRadius = 2000;
+const searchRadius = 10000;
 
 const deletePin = function(pinId, callback){
   let body = {"query": `mutation { deletePin { ...on Return{ return } ...on Error{ message } } }`};
@@ -60,7 +62,7 @@ const deletePolygon = function (polyId, callback) {
 }
 
 const searchTags = function (pos, tags, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 10000 tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${searchRadius} tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin/', body, callback);
 }
 
@@ -85,6 +87,12 @@ const getLocationCoord = function (q, autocomplete, callback) {
   performAxiosRequest("get", `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?autocomplete=${autocomplete}&access_token=pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg`, null, callback);
 }
 
+const customSearch = function(pos, query, callback){
+  let body = {'query': `query { searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, message: \"${query}\" } ) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }} }`};
+  performAxiosRequest('post', baseUrl + 'pin', body, callback);
+
+}
+
 const uploadImage = function (pinId, img, callback) {
   performAxiosRequest("post", baseUrl + `pin/${pinId}/image/`, img, callback);
 }
@@ -103,13 +111,18 @@ const getImagesFromIds = function(idArr, callback){
 }
 
 const getPins = function (pos, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 tags: []}) { ...on Pins{ pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) { ...on Pins{ pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 
 const getPolygons = function (pos, callback) {
-  let body= {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 }) { ...on Polygons{ polygons{ _id type owner features { type properties { name description } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body= {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} }) { ...on Polygons{ polygons{ _id type owner features { type properties { name description } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest('post', baseUrl + 'polygon', body, callback);
+}
+
+const getImageFromPinId = function (pinId, callback) {
+  let body = {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"};
+  performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, callback);
 }
 
 const getImagesOfPins = function (pins, callback) {
@@ -246,5 +259,7 @@ module.exports = {
   deletePolygon,
   getLocationCoord,
   getImagesFromIds,
-  createPolygon
+  createPolygon,
+  customSearch,
+  getImageFromPinId
 }
