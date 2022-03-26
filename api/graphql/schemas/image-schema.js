@@ -11,7 +11,6 @@ const {
 
 const {
     GraphQLUpload,
-    graphqlUploadExpress
 } = require('graphql-upload');
 
 const resolver = require('../../db/resolvers/image-resolver');

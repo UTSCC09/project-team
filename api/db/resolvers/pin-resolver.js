@@ -84,7 +84,18 @@ deletePin = async function(input, context) {
 
 searchPinByTag = async function(input, context) {
     const text = input.message;
-    const data = await client.message(text, {});
+    const speech = input.speech;
+    let data = null
+    if (speech) {
+        const {createReadStream, filename, mimetype, encoding} = await input.speech;
+        data = await client.speech(mimetype, createReadStream());
+    }
+    else if (text) {
+        data = await client.message(text, {});
+    }
+    else {
+        return UserInputError();
+    }
     if (data.intents.some(elem => elem.name == 'search_nearby')){
         let tags = [];
         for (const [key, value] of Object.entries(data.entities)) {
