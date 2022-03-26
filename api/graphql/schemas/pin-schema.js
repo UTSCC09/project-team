@@ -11,6 +11,10 @@ const {
 const resolver = require('../../db/resolvers/pin-resolver');
 const {ErrorType, stringResultType} = require('./error-schema');
 
+const {
+    GraphQLUpload,
+} = require('graphql-upload');
+
 const idInput = new GraphQLInputObjectType({
     name: 'IdInput',
     fields: {
@@ -67,7 +71,8 @@ const searchInput = new GraphQLInputObjectType({
         lon: {type: GraphQLFloat},
         radius: {type: GraphQLFloat},
         tags: {type: new GraphQLList(GraphQLString)},
-        message: {type: GraphQLString}
+        message: {type: GraphQLString},
+        speech: {type: GraphQLUpload},
     }
 });
 
