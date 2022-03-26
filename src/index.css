@@ -71,6 +71,9 @@
     margin-bottom: 0px;
 
   }
+  .voice{
+    z-index: 99;
+  }
   #types{
     float: right;
     margin-top: 0;

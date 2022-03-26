@@ -5,8 +5,10 @@ import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import Fab from "@mui/material/Fab";
 import api from '../api'
 import IconButton from '@mui/material/IconButton';
-import PhotoCamera from '@mui/icons-material/PhotoCamera';
-import Button from '@mui/material/Button';
+import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
+import AudioReactRecorder, { RecordState } from 'audio-react-recorder'
+import Voice from './Voice'
+import StopCircleIcon from '@mui/icons-material/StopCircle';
 const filter = createFilterOptions();
 const tags = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
 export default class addLocationForm extends React.PureComponent{
@@ -15,9 +17,14 @@ export default class addLocationForm extends React.PureComponent{
         super(props);
         this.state= {
             matches: tags,
-            completeMatchInfo: []
+            completeMatchInfo: [],
+            recordState: null
         }
         this.updateResults = this.updateResults.bind(this);
+        this.onStop = this.onStop.bind(this);
+    }
+    onStop(audioData){
+      console.log('audioData', audioData);
     }
     updateResults(e){
         let t = this;
@@ -47,44 +54,63 @@ export default class addLocationForm extends React.PureComponent{
 
     }
     render() {
+        const { recordState } = this.state
         return (
         <div id="search-container">
-            <Autocomplete
-                id="tags-outlined"
-                sx={{width: 250, backgroundColor: 'white'}}
-                options={this.state.matches}
-                onChange={ this.updateSearch.bind(this) }
-                getOptionLabel={(option) => option.inputValue ? option.title : option}
-                filterSelectedOptions
-                filterOptions={(options, params) => {
-                    const filtered = filter(options, params);
-            
-                    const { inputValue } = params;
-                    // Suggest the creation of a new value
-                    const isExisting = options.some((option) => inputValue === option.title);
-                    if (inputValue !== '' && !isExisting) {
-                      filtered.push({
-                        inputValue,
-                        title: `Search for "${inputValue}"`,
-                      });
-                    }
-            
-                    return filtered;
-                  }}
-                renderInput={(params) => (
-                  <TextField
-                  
-                    {...params}
-                    placeholder="What are you looking for?"
-                    onChange={this.updateResults}
-                    
-                  />
+          
+              {
+                this.state.voiceSearch?
+                <Voice> </Voice>
+                :
+                <Autocomplete
+                    id="tags-outlined"
+                    sx={{width: 250, backgroundColor: 'white'}}
+                    options={this.state.matches}
+                    onChange={ this.updateSearch.bind(this) }
+                    getOptionLabel={(option) => option.inputValue ? option.title : option}
+                    filterSelectedOptions
+                    filterOptions={(options, params) => {
+                        const filtered = filter(options, params);
                 
-                )}
-              />
+                        const { inputValue } = params;
+                        // Suggest the creation of a new value
+                        const isExisting = options.some((option) => inputValue === option.title);
+                        if (inputValue !== '' && !isExisting) {
+                          filtered.push({
+                            inputValue,
+                            title: `Search for "${inputValue}"`,
+                          });
+                        }
+                
+                        return filtered;
+                      }}
+                    renderInput={(params) => (
+                      <TextField
+                      
+                        {...params}
+                        placeholder="What are you looking for?"
+                        onChange={this.updateResults}
+                        
+                      />
+                    
+                    )}
+                  />
+              }
+            
               <IconButton color="primary" onClick={this.props.search}>
                 <SavedSearchIcon />
               </IconButton>
+              {
+                this.state.voiceSearch?
+                  <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
+                      <StopCircleIcon />
+                  </IconButton>
+                :
+                  <IconButton color="secondary" onClick={() => {this.setState({voiceSearch: true, recordState: RecordState.START})}}>
+                      <KeyboardVoiceIcon />
+                  </IconButton>
+              }
+              
             </div>
         );
     }

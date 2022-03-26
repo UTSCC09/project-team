@@ -9,8 +9,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddLocationIcon from '@mui/icons-material/AddLocation'
 import LogoutIcon from '@mui/icons-material/Logout';
 import DoneIcon from '@mui/icons-material/Done';
-import Chip from '@mui/material/Chip';
-import { Button } from '@mui/material';
+import Voice from './components/Voice'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinDropIcon from '@mui/icons-material/PinDrop';
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -209,21 +208,6 @@ export default class App extends React.PureComponent {
           }));
         }
       })
-      /* axios({
-        method: "post",
-        url: "http://localhost:8000/polygon/",
-        data: body
-      }).then(function (res) {
-        console.log(res);
-        region.backId = res.data.data.createPolygon._id;
-        t.setState(prevState => ({
-          renderedRegions: [...prevState.renderedRegions, region]
-        }));
-
-      })
-      .catch(function (err) {
-        console.error(err);
-      }) */
     }
 
     getRegions(t, removeOld=false){
@@ -1057,9 +1041,7 @@ export default class App extends React.PureComponent {
                 {
                   this.state.searching?
                   
-                    
                   <SearchBar searchChange = {this.handleSearchChange.bind(this)} search={this.performSearch.bind(this)}> </SearchBar>
-                  
                   :
                   <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
                     <SearchIcon />
@@ -1175,6 +1157,7 @@ export default class App extends React.PureComponent {
             :
             null
             }
+            
             
             <div ref={this.mapContainer} className="map-container" />
           </div>
