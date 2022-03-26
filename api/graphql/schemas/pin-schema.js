@@ -66,9 +66,11 @@ const searchInput = new GraphQLInputObjectType({
         lat: {type: GraphQLFloat},
         lon: {type: GraphQLFloat},
         radius: {type: GraphQLFloat},
-        tags: {type: new GraphQLList(GraphQLString)}
+        tags: {type: new GraphQLList(GraphQLString)},
+        message: {type: GraphQLString}
     }
 });
+
 
 const pinPropertyType = new GraphQLObjectType({
     name: 'PinProperty',
@@ -145,6 +147,13 @@ const queryType = new GraphQLObjectType({
             type: pinMultipleResultType,
             args: {},
             resolve: (_, {input}, context) => resolver.listPins(context)
+        },
+        searchByTag: {
+            type: pinMultipleResultType,
+            args: {
+                input: {type: searchInput}
+            },
+            resolve: (_, {input}, context) => resolver.searchPinByTag(input, context)
         }
     }
 });

@@ -14,7 +14,12 @@ const isAuthorized = function (req, creator) {
     return (req.session.user._id == creator.toString())? null : AuthorizationError;
 };
 
+const capitalizeFirst = function (string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 module.exports = {
     isAuthenticated,
-    isAuthorized
+    isAuthorized,
+    capitalizeFirst
 };

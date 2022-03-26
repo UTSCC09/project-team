@@ -4,8 +4,15 @@ const path = require('path');
 const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
-const {isAuthenticated, isAuthorized} = require('../../util');
-const {DupelicateError} = require('../../graphql/schemas/error-schema')
+const {isAuthenticated, isAuthorized, capitalizeFirst} = require('../../util');
+const {DupelicateError, UserInputError} = require('../../graphql/schemas/error-schema')
+
+const {Wit, log} = require('node-wit');
+
+const client = new Wit({
+  accessToken: "2EHFQJNOAPLROBR7OVCXGRUUR33W7IMH",
+  logger: new log.Logger(log.DEBUG), // optional
+});
 
 createPin = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -45,29 +52,9 @@ deleteTag = async function (input, context) {
 getNear = async function (input) {
     const radius = input.radius;
     const tags = input.tags;
-    if (radius > 20000){
-        console.log("Too large");
-    }
-    console.log(tags);
-    let pins = Pin.find({
-            'features.geometry': {
-                $near: {
-                    $maxDistance: radius,
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [input.lon, input.lat]
-                    }
-                }
-            }
-        },
-    );
-    if (tags.length > 0) {
-        pins = await pins.find({'features.properties.tags': {"$all": tags}},).exec();
-    }
-    else {
-        pins = await pins.exec();
-    }
-    console.log(pins);
+    const lat = input.lat;
+    const lon = input.lon;
+    pins = await searchPins(radius, lat, lon, tags);
     return {'pins': pins};
 };
 
@@ -95,6 +82,53 @@ deletePin = async function(input, context) {
     return null;
 }
 
+searchPinByTag = async function(input, context) {
+    const text = input.message;
+    const data = await client.message(text, {});
+    if (data.intents.some(elem => elem.name == 'search_nearby')){
+        let tags = [];
+        for (const [key, value] of Object.entries(data.entities)) {
+            tags.push(capitalizeFirst(value[0].name));
+        }
+        if (tags.length == 0) {
+            return UserInputError(text);
+        }
+        const radius = input.radius;
+        const lat = input.lat;
+        const lon = input.lon;
+        pins = await searchPins(radius, lat, lon, tags);
+        return {'pins': pins};
+    }
+    else {
+        return UserInputError(text);
+    }
+}
+
+searchPins = async function(radius, lat, lon, tags) {
+    if (radius > 20000){
+        console.log("Too large");
+    }
+    let pins = Pin.find({
+            'features.geometry': {
+                $near: {
+                    $maxDistance: radius,
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [lon, lat]
+                    }
+                }
+            }
+        },
+    );
+    if (tags.length > 0) {
+        pins = await pins.find({'features.properties.tags': {"$in": tags}},).exec();
+    }
+    else {
+        pins = await pins.exec();
+    }
+    return pins;
+}
+
 module.exports = {
   createPin,
   getPin,
@@ -102,5 +136,6 @@ module.exports = {
   listPins,
   deletePin,
   addTag,
-  deleteTag
+  deleteTag,
+  searchPinByTag
 }
