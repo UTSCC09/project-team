@@ -81,7 +81,6 @@ export default class App extends React.PureComponent {
         this.handleLocationName = this.handleLocationName.bind(this);
         this.doneMarker = this.doneMarker.bind(this);
         this.handleLocationDescription = this.handleLocationDescription.bind(this);
-        this.viewingLocation = this.viewingLocation.bind(this);
         this.closingLocation = this.closingLocation.bind(this);
         this.producePopup=this.producePopup.bind(this);
         this.addRegion=this.addRegion.bind(this);
@@ -167,7 +166,8 @@ export default class App extends React.PureComponent {
                     marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
                     marker.getPopup().addTo(t.map);
                     document.getElementById(marker.id).onclick = function () {
-                      t.setState({detailedLocation: true});
+                      t.setState({detailedLocation: true, currentMarker: marker, currentMarkerImages: [url]});
+                      
                       console.log(t.state.currentMarker);
                     }
                   }
@@ -186,7 +186,7 @@ export default class App extends React.PureComponent {
         if (res) {
           console.log(res);
           marker.id=res.data.data.createPin._id;
-          
+          marker.owner = res.data.data.createPin.owner;
           marker.name = res.data.data.createPin.features.properties.name;
           marker.description = res.data.data.createPin.features.properties.description;
           marker.tags = res.data.data.createPin.features.properties.tags;
@@ -197,16 +197,25 @@ export default class App extends React.PureComponent {
       });
     }
     createRegion(region, t){
-      let coord = JSON.stringify(region.geometry.coordinates[0])
-      //let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { _id type features { type properties { name } geometry { type coordinates }}}}`}
-      let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`}
-      axios({
+      //let coord = JSON.stringify(region.geometry.coordinates[0])
+      //let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`}
+      api.createPolygon(region, function (err, res) {
+        if(err) return console.error(err);
+        if (res) {
+          console.log(res);
+          region.backId = res.data.data.createPolygon._id;
+          t.setState(prevState => ({
+            renderedRegions: [...prevState.renderedRegions, region]
+          }));
+        }
+      })
+      /* axios({
         method: "post",
         url: "http://localhost:8000/polygon/",
         data: body
       }).then(function (res) {
         console.log(res);
-        region.backId = res.data.data.createPolygon._id
+        region.backId = res.data.data.createPolygon._id;
         t.setState(prevState => ({
           renderedRegions: [...prevState.renderedRegions, region]
         }));
@@ -214,7 +223,7 @@ export default class App extends React.PureComponent {
       })
       .catch(function (err) {
         console.error(err);
-      })
+      }) */
     }
 
     getRegions(t, removeOld=false){
@@ -246,6 +255,7 @@ export default class App extends React.PureComponent {
             let v = t.draw.add(newRegion);
             newRegion.id = v[0];
             newRegion.name = p.features.properties.name;
+            newRegion.owner = p.owner;
             newRegion.backId = p._id;
             newRegion.description = p.features.properties.description;
             t.setState(prevState => ({
@@ -259,8 +269,23 @@ export default class App extends React.PureComponent {
     }
 
     getImage(marker, m, imgId, t){
-      console.log(marker);
-      api.getImage(imgId, function (err, res2) {
+      console.log(this.state.currentMarkerImages)
+      api.getImagesFromIds(this.state.currentMarkerImages, function (err, res) {
+        if (err) return console.error(err);
+        if (res) {
+          console.log(res);
+          let url = res[0].data.data.getPhoto.url;
+          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, marker.tags[0], marker.description, m._id, url))
+          marker.getPopup().addTo(t.map);
+          document.getElementById(m._id).onclick = function () {
+            t.setState({detailedLocation: true});
+            console.log(t.state.currentMarker);
+          }
+          t.setState({displayImgs: res.map((x) => x.data.data.getPhoto.url)});
+          
+        }
+      });
+      /* api.getImage(imgId, function (err, res2) {
         if(err) console.error(err);
         if (res2) {
           console.log(res2)
@@ -272,7 +297,7 @@ export default class App extends React.PureComponent {
             console.log(t.state.currentMarker);
           }
         }
-      });
+      }); */
 
     }
 
@@ -330,6 +355,7 @@ export default class App extends React.PureComponent {
             marker.name = m.features.properties.name;
             marker.description = m.features.properties.description;
             marker.id = m._id;
+            marker.owner = m.owner;
             marker.tags = m.features.properties.tags;
             marker.togglePopup = function(){
               t.setState({currentMarker: marker})
@@ -354,6 +380,7 @@ export default class App extends React.PureComponent {
                   data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
                 }).then(function (res) {
                   console.log(res);
+                  t.setState({currentMarkerImages: res.data.data.getImages.images});
                   let imgId = res.data.data.getImages.images[0]._id;
                   t.getImage(marker, m, imgId, t)
                 })
@@ -483,6 +510,7 @@ export default class App extends React.PureComponent {
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
+        console.log(clickedPolygon);
         this.setState({currentRegion: clickedPolygon});
         console.log(clickedPolygon);
         for(let rendered of t.state.renderedMarkers){
@@ -652,10 +680,6 @@ export default class App extends React.PureComponent {
       this.setState({movingMarker: false, choosingType: false, drawingRegion: false});
     }
 
-    viewingLocation(){
-      this.setState({detailedLocation: true, currentLocationDescription: document.locationDesc,
-      currentLocationName: document.locationName});
-    }
     closingLocation(){
       this.setState({detailedLocation: false, detailedRegion: false});
     }
@@ -879,6 +903,7 @@ export default class App extends React.PureComponent {
                   data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
                 }).then(function (res) {
                   console.log(res);
+                  t.setState({currentMarkerImages: res.data.data.getImages.images});
                   let imgId = res.data.data.getImages.images[0]._id;
                   t.getImage(marker, match, imgId, t)
                 })
@@ -908,12 +933,15 @@ export default class App extends React.PureComponent {
 
     removeHighlighted(){
       let keep =[];
-      for (let h of this.state.highlightedMarkers){
+      console.log(this.state.renderedMarkers);
+      for (let h of this.state.renderedMarkers){
+        console.log(h);
         if (h._color === "#FF0000") {
           h.remove();
         }
         else keep.push(h)
       }
+      console.log(keep);
       this.setState({highlightedMarkers: [], renderedMarkers: keep});
     }
 
@@ -938,7 +966,8 @@ export default class App extends React.PureComponent {
         console.log(this.state.flyTo)
         let t = this;
         this.map.flyTo({
-          center: t.state.flyTo
+          center: t.state.flyTo,
+          zoom: 13.6
         });
         const marker = new mapboxgl.Marker({
           color: "#0000FF",
@@ -953,7 +982,8 @@ export default class App extends React.PureComponent {
       else {
         this.setState({displaySearchResults: true});
         console.log(this.state.searchTags);
-        this.removeRendered(true);
+        this.removeHighlighted();
+        //this.removeRendered(true);
         this.searchForTags();
       }
       
@@ -1022,7 +1052,6 @@ export default class App extends React.PureComponent {
             <div className="sidebar">
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
-            <Button sx={{display: 'none'}} className='view-btn' onClick={ this.viewingLocation }></Button>
             
             <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
                 {
@@ -1099,15 +1128,28 @@ export default class App extends React.PureComponent {
                 this.state.detailedLocation?
                 <LocationInfo deleteLocation={this.deleteLocation.bind(this)} 
                   pos={this.state.currentMarker._lngLat} 
-                  info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, locationTags: this.state.currentMarker.tags}} 
+                  info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, 
+                    locationTags: this.state.currentMarker.tags, id: this.state.currentMarker.id}} 
                   close={this.closingLocation} owner={this.state.currentMarker.owner}
-                  user={this.state.user}></LocationInfo>
+                  user={this.state.user}
+                  images={this.state.displayImgs}
+                  updateImages={(newImg)=>{
+                    let c = this.state.displayImgs;
+                    c.unshift(newImg);
+                    this.setState({displayImgs:c});
+                  }}
+                  ></LocationInfo>
                 :
                 null
               }
               {
                 this.state.addingLocation?
-                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} tags={this.state.tags} categoryChange={this.handleCategoryChange.bind(this)} changeLocationDescription={this.handleLocationDescription} changeLocationName={this.handleLocationName}></AddLocationForm>
+                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} 
+                  submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} 
+                  tags={this.state.tags} 
+                  categoryChange={this.handleCategoryChange.bind(this)} 
+                  changeLocationDescription={this.handleLocationDescription} 
+                  changeLocationName={this.handleLocationName}></AddLocationForm>
                 :
                 null
               }
@@ -1122,7 +1164,7 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.detailedRegion?
-                <RegionInfo deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: this.state.enclosedTags}} owner={this.state.currentMarker.owner}  ></RegionInfo>
+                <RegionInfo user={this.state.user} deleteRegion={this.deleteRegion} close={this.closingLocation} info={{images: this.state.enclosedImages, name: this.state.currentRegion.name, description: this.state.currentRegion.description, locationTags: this.state.enclosedTags}} owner={this.state.currentRegion.owner}  ></RegionInfo>
                 :
                 null
 

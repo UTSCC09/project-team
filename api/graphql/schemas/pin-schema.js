@@ -9,7 +9,7 @@ const {
     buildSchema
 } = require('graphql');
 const resolver = require('../../db/resolvers/pin-resolver');
-const {ErrorType} = require('./error-schema');
+const {ErrorType, stringResultType} = require('./error-schema');
 
 const idInput = new GraphQLInputObjectType({
     name: 'IdInput',
@@ -101,7 +101,8 @@ const pinType = new GraphQLObjectType({
     fields: {
         _id: {type: GraphQLString},
         type: {type: GraphQLString},
-        features: {type: pinFeatureType}
+        features: {type: pinFeatureType},
+        owner: {type: GraphQLString}
     }
 });
 
@@ -176,7 +177,7 @@ const idMutationType = new GraphQLObjectType({
     name: 'Mutation',
     fields: {
         deletePin: {
-            type: GraphQLString,
+            type: stringResultType,
             args: {},
             resolve: (_, {input}, context) => resolver.deletePin(input, context)
         },

@@ -50,12 +50,12 @@ function executePromises(promises, callback) {
 const baseUrl = 'http://localhost:8000/'
 
 const deletePin = function(pinId, callback){
-  let body = {"query": `mutation { deletePin}`};
+  let body = {"query": `mutation { deletePin { ...on Return{ return } ...on Error{ message } } }`};
   performAxiosRequest("post", baseUrl + 'pin/' + pinId, body, callback);
 }
 
 const deletePolygon = function (polyId, callback) {
-  let body = {"query": `mutation { deletePolygon}`};
+  let body = {"query": `mutation { deletePolygon { ...on Return{ return } ...on Error{ message } } }`};
   performAxiosRequest("post", baseUrl + `polygon/${polyId}`, body, callback);
 }
 
@@ -66,8 +66,13 @@ const searchTags = function (pos, tags, callback) {
 
 const createPin = function (marker, callback) {
   console.log(marker);
-  let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" tags:${JSON.stringify(marker.tags)} } geometry: { type: \"Point\", coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) { ...on Pin{ _id type features { type properties { name description tags } geometry { type coordinates } } } ...on Error{ message } }}`}
+  let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" tags:${JSON.stringify(marker.tags)} } geometry: { type: \"Point\", coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) { ...on Pin{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } ...on Error{ message } }}`}
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
+}
+const createPolygon = function (polygon, callback) {
+  let coord = JSON.stringify(polygon.geometry.coordinates[0])
+  let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${polygon.name}\" description: \"${polygon.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`};
+  performAxiosRequest('post', baseUrl + 'polygon', body, callback);
 }
 
 const getPinsWithinPolygon = function (regionId, callback) {
@@ -89,13 +94,21 @@ const getImage = function (imgId, callback) {
   performAxiosRequest("post", baseUrl + `image/${imgId}`, {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}, callback);
 }
 
+const getImagesFromIds = function(idArr, callback){
+  let p = [];
+  for (let img of idArr){
+    p.push(getAxiosPromise('post', baseUrl + `image/${img._id}`, {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}));
+  }
+  executePromises(p, callback);
+}
+
 const getPins = function (pos, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 tags: []}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 tags: []}) { ...on Pins{ pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 
 const getPolygons = function (pos, callback) {
-  let body= {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 }) { ...on Polygons{ polygons{ _id type features { type properties { name description } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body= {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: 2000 }) { ...on Polygons{ polygons{ _id type owner features { type properties { name description } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest('post', baseUrl + 'polygon', body, callback);
 }
 
@@ -231,5 +244,7 @@ module.exports = {
   getPins,
   getPolygons,
   deletePolygon,
-  getLocationCoord
+  getLocationCoord,
+  getImagesFromIds,
+  createPolygon
 }

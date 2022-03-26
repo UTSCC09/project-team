@@ -24,6 +24,7 @@ const pinSchema = new mongoose.Schema({
     type: {type: String, required: true},
     features: {type: featureSchema, required: true},
     user: {type: Schema.Types.ObjectId, ref: 'User', required: true},
+    owner: {type: String, required: true},
 });
 
 pinSchema.index({"features.geometry": '2dsphere'}, {unique: false})

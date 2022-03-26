@@ -108,7 +108,7 @@ export default class UserForm extends React.PureComponent{
             }}>
               Sign up
             </Button>
-            formTitle = <div className='account-form-title' id='signup'></div>                   
+            formTitle = <div className='account-form-title' id='signup'></div>
             usernameHelper = <FormHelperText id="username-helper">Create your username</FormHelperText>;
             confirmPasswordElement= <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
              <InputLabel htmlFor="outlined-adornment-password">Confirm Password</InputLabel>

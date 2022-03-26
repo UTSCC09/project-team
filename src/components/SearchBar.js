@@ -4,6 +4,9 @@ import TextField from '@mui/material/TextField';
 import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import Fab from "@mui/material/Fab";
 import api from '../api'
+import IconButton from '@mui/material/IconButton';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import Button from '@mui/material/Button';
 const filter = createFilterOptions();
 const tags = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
 export default class addLocationForm extends React.PureComponent{
@@ -79,9 +82,9 @@ export default class addLocationForm extends React.PureComponent{
                 
                 )}
               />
-              <Fab color="primary" aria-label="search">
-                <SavedSearchIcon onClick={this.props.search} sx={{m: 1}} />
-              </Fab>
+              <IconButton color="primary" onClick={this.props.search}>
+                <SavedSearchIcon />
+              </IconButton>
             </div>
         );
     }

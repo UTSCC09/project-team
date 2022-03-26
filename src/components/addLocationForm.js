@@ -13,7 +13,6 @@ export default class addLocationForm extends React.PureComponent{
 
     constructor(props){
       super(props);
-      this.handleImage = this.handleImage.bind(this);
       this.state = {
         file: false,
         submitAttempt: false,
@@ -52,39 +51,6 @@ export default class addLocationForm extends React.PureComponent{
       }
     }
     
-    handleImage(e){
-      console.log(e)
-      if (e.target.files && e.target.files[0]) {
-        let img = {}
-        img.file = e.target.files[0];
-        
-        let data = new FormData();
-        //let data = {};
-        //data.append('operations', '{ "query" : "mutation($file:Upload!){createImage(input:{title: \\\"test\\\", image:$file}) {_id, title, image, pin}}"}');
-        const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
-        data.append("operations", JSON.stringify({ query }));
-        //data.operations = {"query":"mutation($file:Upload!){createImage(input:{title: \"test\", image:$file}) {_id, title, image, pin}}"};
-        const map = {"zero":["variables.file"]}
-        data.append('map', JSON.stringify(map))
-        //data.map = {"0":["variables.file"]};
-        data.append('zero', img);
-        //data[0] = img
-        console.log(data);
-        axios({
-          method: "post",
-          url: "http://localhost:8000/pin/62310a56ca26b64f107de717/image/",
-          data: data,
-        })
-          .then(function (res) {
-            console.log(res)
-          })
-          .catch(function(err){
-            console.error(err);
-          })
-
-
-      }
-    }
     
     render() {
         const categories = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];

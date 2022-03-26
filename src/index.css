@@ -38,12 +38,12 @@
 }
 .user-form {
 
-    margin: auto;
-    margin-top: 10%;
-    width: 300px;
-    background-color: #fff;
-    border-radius: 15px;
-    box-shadow: 0 15px 25px rgba(0,0,0,.6);
+  margin: auto;
+  margin-top: 10%;
+  width: 300px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 15px 25px rgba(0,0,0,.6);
 }
 /*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
 #overlay {
@@ -82,6 +82,13 @@
   /* fonts (Lemon milk) for login/signup: https://www.fontspace.com/popular/fonts?p=5 */
   #login {
       background-image: url("./media/login.png");
+  }
+  #add-image {
+    background-image: url("./media/text-1648257313193.png");
+    width: 200px;
+  }
+  #new-image-form{
+    overflow: auto;
   }
   #signup {
       background-image: url("./media/signup.png");

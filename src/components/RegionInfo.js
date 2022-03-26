@@ -42,7 +42,7 @@ export default function RegionInfo(props) {
   const [expanded, setExpanded] = React.useState(false);
   /*Ratings: https://mui.com/components/rating/ */
   const [rating, setRating] = React.useState(0);
-  const { owner, close , info, deleteRegion } = props;
+  const { owner, close , info, deleteRegion, user } = props;
   console.log(info)
   const handleExpandClick = () => {
     setExpanded(!expanded);
@@ -62,14 +62,24 @@ export default function RegionInfo(props) {
                 <CloseIcon />
             </IconButton>
         }
+        titleTypographyProps={{variant:'h3' }}
         title={info.name}
-        subheader={<div></div>}
       />
-      <Stack sx={{overflow: 'scroll'}} direction="row" spacing={1}>
-      <Typography sx={{marginLeft: '5px'}} variant="h6" color="text.secondary">
-          Found here:
+      <Stack sx={{overflow: 'scroll', m: 1}} direction="row" spacing={1}>
+      {
+        info.locationTags.length?
+        <div>
+          <Typography sx={{marginLeft: '0px'}} variant="h6" color="text.secondary">
+            Found here:
+          </Typography> 
+          {info.locationTags.map((tag) =>  <Chip sx={{m: 1}} label={tag} variant="outlined" />)}
+        </div>
+        :
+        <Typography sx={{margin: 'auto'}} variant="body" color="text.secondary">
+          Nothing here yet, try adding some pins within this region.
         </Typography> 
-        {info.locationTags.map((tag) =>  <Chip label={tag} variant="outlined" />)}
+      }        
+      
        
       </Stack>
 
@@ -82,9 +92,15 @@ export default function RegionInfo(props) {
       </CardContent>
 
       <CardActions disableSpacing>
-        <IconButton onClick={ deleteRegion } >
-          <DeleteForeverIcon />
-        </IconButton>
+        {
+          (user === owner)?
+          <IconButton onClick={ deleteRegion } >
+            <DeleteForeverIcon />
+          </IconButton>
+          :
+          null
+        }
+        
         <IconButton >
           <AddCommentIcon />
         </IconButton>
