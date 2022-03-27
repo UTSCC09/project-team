@@ -9,6 +9,10 @@ import IconButton from '@mui/material/IconButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import AudioReactRecorder, { RecordState } from 'audio-react-recorder'
 import Voice from './Voice'
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import Box from '@mui/material/Box';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import { Typography } from '@mui/material';
 const filter = createFilterOptions();
@@ -35,7 +39,7 @@ export default class addLocationForm extends React.PureComponent{
         if(err)console.error(err);
         if(res){
           console.log(res);
-          t.props.displayVoiceSearch(res.data.data.searchByTag.pins, audioData);
+          t.props.displayVoiceSearch(res.data.data.searchByTag.pins, res.data.data.searchByTag.tags, audioData);
           
         }
       });
@@ -81,7 +85,7 @@ export default class addLocationForm extends React.PureComponent{
               {
                 this.state.voiceSearch?
                 <div>
-                  <AudioReactRecorder backgroundColor={'white'} canvasWidth={300} canvasHeight={50} state={recordState} onStop={this.onStop} />
+                  <AudioReactRecorder backgroundColor={'white'} canvasWidth={300} canvasHeight={75} state={recordState} onStop={this.onStop} />
                   
                 </div>
                 :
@@ -123,16 +127,31 @@ export default class addLocationForm extends React.PureComponent{
               
               {
                 this.state.voiceSearch?
-                <div>
+                <Box backgroundColor='white' sx={{p: 2, borderRadius:'10px'}}>
                   {
                     this.state.recordState?
-                      <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
+                      <div>
+                      {
+                        this.state.recordState === RecordState.STOP?
+                        <div>
+                          <IconButton color='success' onClick={()=>{this.setState({recordState: RecordState.START})}}>
+                            <KeyboardVoiceIcon />
+                          </IconButton>
+                          <IconButton onClick={() => {this.setState({voiceSearch: false})}} color='error'>
+                            <CancelIcon />
+                          </IconButton>
+                        </div>
+
+                        :
+                        <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
                           <StopCircleIcon />
-                      </IconButton>
+                        </IconButton>
+                      }
+                      </div>
                     
                       :
                       <div>
-                        <Typography variant='h6'>Click on the green mic and start speaking</Typography>
+                        <Typography variant='caption'>Click on the green mic and start speaking</Typography>
                         <IconButton color='success' onClick={()=>{this.setState({recordState: RecordState.START})}}>
                           <KeyboardVoiceIcon />
                         </IconButton>
@@ -140,9 +159,9 @@ export default class addLocationForm extends React.PureComponent{
 
                   }
                       
-                </div>
+                </Box>
                 :
-                  <div>
+                  <div id='search-btns-container' sx={{m: 1}}>
                     <IconButton color="primary" onClick={this.props.search}>
                       <SavedSearchIcon />
                     </IconButton>

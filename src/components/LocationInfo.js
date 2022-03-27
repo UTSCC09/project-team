@@ -39,8 +39,7 @@ const ExpandMore = styled((props) => {
     duration: theme.transitions.duration.shortest,
   }),
 }));
-const testImages = ["https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Toronto_-_ON_-_Royal_York_Hotel.jpg/2560px-Toronto_-_ON_-_Royal_York_Hotel.jpg",
-"https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_Toronto_Harbourfront7.jpg/480px-Toronto_-_ON_-_Toronto_Harbourfront7.jpg"];
+
 export default function LocationInfo(props) {
   /* Card: https://mui.com/components/cards/#complex-interaction*/
   const [expanded, setExpanded] = React.useState(false);

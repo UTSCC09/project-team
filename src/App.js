@@ -9,6 +9,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddLocationIcon from '@mui/icons-material/AddLocation'
 import LogoutIcon from '@mui/icons-material/Logout';
 import DoneIcon from '@mui/icons-material/Done';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Voice from './components/Voice'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinDropIcon from '@mui/icons-material/PinDrop';
@@ -260,27 +262,14 @@ export default class App extends React.PureComponent {
           marker.getPopup().setHTML(t.producePopup(m.features.properties.name, marker.tags[0], marker.description, m._id, url))
           marker.getPopup().addTo(t.map);
           document.getElementById(m._id).onclick = function () {
-            t.setState({detailedLocation: true});
             console.log(t.state.currentMarker);
+            t.setState({detailedLocation: true});
+            
           }
           t.setState({displayImgs: res.map((x) => x.data.data.getPhoto.url)});
           
         }
       });
-      /* api.getImage(imgId, function (err, res2) {
-        if(err) console.error(err);
-        if (res2) {
-          console.log(res2)
-          let url = res2.data.data.getPhoto.url;
-          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, marker.tags[0], marker.description, m._id, url))
-          marker.getPopup().addTo(t.map);
-          document.getElementById(m._id).onclick = function () {
-            t.setState({detailedLocation: true});
-            console.log(t.state.currentMarker);
-          }
-        }
-      }); */
-
     }
 
     getMarkers(t, removeOld=false, search=false){
@@ -482,17 +471,19 @@ export default class App extends React.PureComponent {
           t.getMarkers(t, true);
           t.getRegions(t, true);
         }
-        if (t.state.displayTagSearchResults && t.state.searching) {
+        if (t.state.displayTagSearchResults && t.state.searching && !t.state.audioTags) {
+          console.log('here');
           t.searchForTags();
         }
         else if(t.state.searching && t.state.displayingCustomSearchResults){
           console.log('custom');
-          t.performSearch(null, true)
+          t.performSearch(null, false);
         }
+        else if(t.state.audioTags) t.performSearch(null, true);
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
-      map.on('click', (e) => {this.setState({searching: false, searchTags: [], displayingCustomSearchResults: false})})
+      map.on('click', (e) => {this.setState({searching: false, searchTags: [], customSearchTags: null, displayingCustomSearchResults: false, audioTags: null})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
@@ -822,18 +813,7 @@ export default class App extends React.PureComponent {
           marker.getPopup().addTo(m);
         }
       }
-      /* let more = document.createElement('button');
-      //more.id='more-btn';
-      more.className='btn-menu';
-      //more.innerHTML='See more'
-      more.onclick= function () {
-        document.locationName = name;
-        document.locationDesc = desc;
-        document.locationTag = currTags;
-        document.currentMarker = marker;
-        document.querySelector('.view-btn').click();
-      }
-      document.querySelector('.card-header-bar').append(more); */
+      
 
       this.setState(prevState => ({
         renderedMarkers: [...prevState.renderedMarkers, marker]
@@ -847,14 +827,20 @@ export default class App extends React.PureComponent {
 
     displayCustomSearchResults(pins){
       this.setState({displayingCustomSearchResults: true});
+      console.log(pins)
+      if(!pins)this.setState({noMatches: true});
       let t = this;
+      
       for (let pin of pins){
         let marker = new mapboxgl.Marker({
           color: "#FF0000",
           draggable: false
         }).setLngLat(pin.features.geometry.coordinates)
           .setPopup(new mapboxgl.Popup().setHTML(""));
-        let old = t.state.renderedMarkers.find((x) => x.id === pins._id);
+        console.log(pin);
+        
+        let old = t.state.renderedMarkers.find((x) => x.id === pin._id);
+        console.log(old);
         if (old) {
           old.remove();
           let copy = [...this.state.renderedMarkers];
@@ -864,9 +850,10 @@ export default class App extends React.PureComponent {
             this.setState({renderedMarkers: copy});
           }
         }
+        marker.owner = pin.owner;
         marker.id = pin._id;
         marker.togglePopup = function(){
-          t.setState({currentMarker: marker})
+          //t.setState({currentMarker: marker})
 
           if(marker.getPopup().isOpen()){
             marker.getPopup().remove();
@@ -881,8 +868,20 @@ export default class App extends React.PureComponent {
                 t.setState({currentMarkerImages: res.data.data.getImages.images});
                 let imgId = res.data.data.getImages.images[0]._id;
                 t.getImage(marker, pin, imgId, t);
+                console.log(marker.id);
+                console.log(document.getElementById(String(marker.id)));
+                //console.log(document.querySelector('#' + marker.id));
+                /* document.getElementById(marker.id).onclick = function () {
+                  let urls = [];
+                  for (let i of res.data.data.getImages.images){
+                    urls.push(t.getImage(marker, pin, i._id))
+                  }
+                  t.setState({detailedLocation: true, currentMarker: marker, currentMarkerImages: urls});
+                  
+                  console.log(t.state.currentMarker);
+                } */
               }
-            })
+            });
             
           }
         }
@@ -927,7 +926,7 @@ export default class App extends React.PureComponent {
 
             }
             marker.id = match._id;
-            
+            marker.owner = match.owner
             marker.togglePopup = function(){
               t.setState({currentMarker: marker})
 
@@ -945,19 +944,6 @@ export default class App extends React.PureComponent {
                     t.getImage(marker, match, imgId, t)
                   }
                 })
-                /* axios({
-                  method: "post",
-                  url: `http://localhost:8000/pin/${marker.id}/image/`,
-                  data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
-                }).then(function (res) {
-                  console.log(res);
-                  t.setState({currentMarkerImages: res.data.data.getImages.images});
-                  let imgId = res.data.data.getImages.images[0]._id;
-                  t.getImage(marker, match, imgId, t)
-                })
-                .catch(function (err) {
-                  console.error(err);
-                }) */
               }
             }
             console.log(match);
@@ -982,19 +968,33 @@ export default class App extends React.PureComponent {
     removeHighlighted(custom=false){
       let keep =[];
       console.log(this.state.renderedMarkers);
+      console.log(this.state.customSearchTags);
+      console.log(this.state.custom);
       for (let h of this.state.renderedMarkers){
         console.log(h);
-        if (!custom) {
+        if (!custom && !this.state.audioTags && !this.state.customSearchTags) {
           if (h._color === "#FF0000") {
             h.remove();
           }
           else keep.push(h)
         }
-        else{
-          if (h._color === "#FF0000" && this) {
+        else if(this.state.audioTags){
+          let intersection = this.state.audioTags.filter(value => h.tags.includes(value));
+          console.log(intersection);
+          if (h._color === "#FF0000" && !intersection.length) {
             h.remove();
           }
+          else keep.push(h);
         }
+        else if (this.state.customSearchTags) {
+          let intersection = this.state.customSearchTags.filter(value => h.tags.includes(value));
+          console.log(intersection);
+          if (h._color === "#FF0000" && !intersection.length) {
+            h.remove();
+          }
+          else keep.push(h);
+        }
+        
         
       }
       console.log(keep);
@@ -1012,9 +1012,27 @@ export default class App extends React.PureComponent {
       }
     }
 
-    voiceSearch(pins, audio){
-      this.setState({audioSearch: audio});
+    voiceSearch(pins, tags, audio){
+      console.log(tags);
+      console.log(pins)
+      if (this.state.audioTags && this.state.audioTags.length) {
+        this.setState({audioTags: null}, function () {
+          this.removeHighlighted();
+        });
+      }
+      /* if (this.state.customSearchTags) {
+        console.log('removing');
+        this.setState({customSearchTags: null, customSearch: null}, function () {
+          this.removeHighlighted();
+        });
+      }
+      else this.removeHighlighted(); */
+      this.setState({customSearchTags: null, customSearch: null}, function () {
+        this.removeHighlighted();
+      });
+      this.setState({audioTags: tags});
       this.displayCustomSearchResults(pins)
+      
     }
     performSearch(e, custom=null){
 
@@ -1022,6 +1040,10 @@ export default class App extends React.PureComponent {
       console.log(this.state.flyTo && !custom);
       this.removeHighlighted();
       console.log(this.state.customSearch);
+      console.log(this.state.audioTags);
+      if(this.state.audioTags)console.log(true);
+      if (this.state.flyTo.length) console.log(true);
+      if(this.state.customSearch || custom) console.log(true);
       if (this.state.flyTo.length) {
         if(this.state.addressSearchMarkers) this.removeMarkerFromRendered(this.state.addressSearchMarkers);
         console.log(this.state.flyTo)
@@ -1039,6 +1061,7 @@ export default class App extends React.PureComponent {
           renderedMarkers: [...prevState.renderedMarkers, marker],
           addressSearchMarkers: marker
         }));
+        this.setState({flyTo: [], searchTags: [], customSearchTags: null})
       }
       else if (this.state.customSearch || custom) {
         console.log(this.state.customSearch);
@@ -1047,27 +1070,41 @@ export default class App extends React.PureComponent {
           api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
             if (err) return console.error(err);
             console.log(res);
+            t.setState({customSearchTags: res.data.data.searchByTag.tags});
+
             t.displayCustomSearchResults(res.data.data.searchByTag.pins);
           });
         }
-        else{
-          console.log(this.state.audioSearch)
-          api.voiceSeach({lat: this.state.lat, lng: this.state.lng}, this.state.audioSearch, function (err, res) {
-            if (err) return console.error(err);
-            if (res) {
-              t.displayCustomSearchResults(res.data.data.searchByTag.pins);
-            }
-          })
-        }
+        
         
         
       }
-      else if (!custom) {
-        this.setState({displayTagSearchResults: true});
-        console.log(this.state.searchTags);
+      else if(this.state.audioTags){
+          
+        this.setState({customSearchTags: null});
+        api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.audioTags, function (err, res) {
+          if (err) return console.error(err);
+          if (res) {
+            console.log(res)
+            t.displayCustomSearchResults(res.data.data.getNear.pins);
+          }
+        });
+      }
+      else if (!custom && !this.state.audioTags) {
+        console.log(this.state.audioTags);
+        if (this.state.customSearchTags) {
+          this.setState({customSearchTags: null}, function () {
+            this.removeHighlighted();
+          });
+        }
+        this.setState({displayTagSearchResults: true}, function () {
+          console.log(this.state.customSearchTags);
+          this.searchForTags();
+        });
+        
         
         //this.removeRendered(true);
-        this.searchForTags();
+        //this.searchForTags();
       }
       
     }
@@ -1086,6 +1123,7 @@ export default class App extends React.PureComponent {
       this.setState({image: e.target.files[0]});
     }
     handleSearchChange(event, value){
+      this.setState({audioTags: null});
       console.log(value);
       if (value.place_name) {
         this.setState({customSearch: null});
@@ -1198,6 +1236,15 @@ export default class App extends React.PureComponent {
                     { locationButton }
                   </Fab>
                   
+                  :
+                  null
+                }
+                {
+                  this.state.noMatches?
+                  <Alert severity="warning">
+                    <AlertTitle>Warning</AlertTitle>
+                    Sorry, we couldn't find any matches, try refining your search
+                  </Alert>
                   :
                   null
                 }

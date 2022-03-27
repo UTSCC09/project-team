@@ -71,6 +71,9 @@
     margin-bottom: 0px;
 
   }
+  #search-btns-container{
+    margin-top: 5px;
+  }
   .voice{
     z-index: 99;
   }

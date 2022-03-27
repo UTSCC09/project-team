@@ -77,7 +77,7 @@ const deletePolygon = function (polyId, callback) {
 }
 
 const searchTags = function (pos, tags, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${searchRadius} tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${searchRadius} tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id owner type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin/', body, callback);
 }
 
@@ -103,7 +103,7 @@ const getLocationCoord = function (q, autocomplete, callback) {
 }
 
 const customSearch = function(pos, query, callback){
-  let body = {'query': `query { searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, message: \"${query}\" } ) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }} }`};
+  let body = {'query': `query { searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, message: \"${query}\" } ) { ...on Pins{ tags pins{ _id owner type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }} }`};
   performAxiosRequest('post', baseUrl + 'pin', body, callback);
 
 }
@@ -122,7 +122,7 @@ const uploadImage = function (marker, callback) {
 const voiceSeach = function (pos, audio, callback) {
   //return;
   let data = new FormData();
-  const query = `query($file:Upload!){searchByTag(input:{lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, speech:$file}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message } }}`;
+  const query = `query($file:Upload!){searchByTag(input:{lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, speech:$file}) { ...on Pins{ tags pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message } }}`;
   data.append("operations", JSON.stringify({ query }));
   const map = {"zero":["variables.file"]}
   data.append('map', JSON.stringify(map));
