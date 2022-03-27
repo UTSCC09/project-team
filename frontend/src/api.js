@@ -46,7 +46,7 @@ function executePromises(promises, callback) {
   })
 }
 
-const baseUrl = 'http://178.128.230.225/api/';
+const baseUrl = 'http://place-holder.live/api/';
 
 const deletePin = function(pinId, callback){
   let body = {"query": `mutation { deletePin}`};
