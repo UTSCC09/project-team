@@ -108,7 +108,7 @@ searchPinByTag = async function(input, context) {
         const lat = input.lat;
         const lon = input.lon;
         pins = await searchPins(radius, lat, lon, tags);
-        return {'pins': pins};
+        return {'tags': tags, 'pins': pins};
     }
     else {
         return UserInputError(text);

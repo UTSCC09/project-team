@@ -116,7 +116,8 @@ const pinType = new GraphQLObjectType({
 const pinMultipleType = new GraphQLObjectType({
     name: 'Pins',
     fields: {
-        pins: {type: new GraphQLList(pinType)}
+        pins: {type: new GraphQLList(pinType)},
+        tags: {type: new GraphQLList(GraphQLString)}
     }
 });
 
