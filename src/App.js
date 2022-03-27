@@ -97,6 +97,7 @@ export default class App extends React.PureComponent {
         this.searchForTags = this.searchForTags.bind(this);
         this.removeHighlighted = this.removeHighlighted.bind(this);
         this.displayCustomSearchResults = this.displayCustomSearchResults.bind(this);
+        this.voiceSearch = this.voiceSearch.bind(this);
     }
 
     getPinsWithinRegion(){
@@ -144,14 +145,9 @@ export default class App extends React.PureComponent {
     }
 
     uploadImage(marker, res, t){
-        let data = new FormData();
-        const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
-        data.append("operations", JSON.stringify({ query }));
-        const map = {"zero":["variables.file"]}
-        data.append('map', JSON.stringify(map))
-        data.append('zero', marker.image);
+        
         let id = marker.id;
-        api.uploadImage(id, data, function(upErr, res){
+        api.uploadImage(marker, function(upErr, res){
           if (upErr) return console.error(upErr);
           if (res)
             {
@@ -1016,6 +1012,10 @@ export default class App extends React.PureComponent {
       }
     }
 
+    voiceSearch(pins, audio){
+      this.setState({audioSearch: audio});
+      this.displayCustomSearchResults(pins)
+    }
     performSearch(e, custom=null){
 
       let t= this;
@@ -1043,11 +1043,23 @@ export default class App extends React.PureComponent {
       else if (this.state.customSearch || custom) {
         console.log(this.state.customSearch);
         this.setState({displayTagSearchResults: false});
-        api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
-          if (err) return console.error(err);
-          console.log(res);
-          t.displayCustomSearchResults(res.data.data.searchByTag.pins);
-        });
+        if (this.state.customSearch) {
+          api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
+            if (err) return console.error(err);
+            console.log(res);
+            t.displayCustomSearchResults(res.data.data.searchByTag.pins);
+          });
+        }
+        else{
+          console.log(this.state.audioSearch)
+          api.voiceSeach({lat: this.state.lat, lng: this.state.lng}, this.state.audioSearch, function (err, res) {
+            if (err) return console.error(err);
+            if (res) {
+              t.displayCustomSearchResults(res.data.data.searchByTag.pins);
+            }
+          })
+        }
+        
         
       }
       else if (!custom) {
@@ -1132,7 +1144,7 @@ export default class App extends React.PureComponent {
                 {
                   this.state.searching?
                   
-                  <SearchBar searchChange = {this.handleSearchChange.bind(this)} search={this.performSearch.bind(this)}> </SearchBar>
+                  <SearchBar displayVoiceSearch={this.voiceSearch} pos={{lat: this.state.lat, lng: this.state.lng}} searchChange = {this.handleSearchChange.bind(this)} search={this.performSearch.bind(this)}> </SearchBar>
                   :
                   <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
                     <SearchIcon />

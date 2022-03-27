@@ -10,6 +10,7 @@ import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import AudioReactRecorder, { RecordState } from 'audio-react-recorder'
 import Voice from './Voice'
 import StopCircleIcon from '@mui/icons-material/StopCircle';
+import { Typography } from '@mui/material';
 const filter = createFilterOptions();
 const tags = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
 export default class addLocationForm extends React.PureComponent{
@@ -27,6 +28,17 @@ export default class addLocationForm extends React.PureComponent{
     }
     onStop(audioData){
       console.log('audioData', audioData);
+      
+      let t = this;
+      t.setState({voiceSeach: false});
+      api.voiceSeach(this.props.pos, audioData, function (err, res) {
+        if(err)console.error(err);
+        if(res){
+          console.log(res);
+          t.props.displayVoiceSearch(res.data.data.searchByTag.pins, audioData);
+          
+        }
+      });
     }
     start(){
       this.setState({recordState: RecordState.START});
@@ -70,7 +82,7 @@ export default class addLocationForm extends React.PureComponent{
                 this.state.voiceSearch?
                 <div>
                   <AudioReactRecorder backgroundColor={'white'} canvasWidth={300} canvasHeight={50} state={recordState} onStop={this.onStop} />
-                  <button onClick={this.start}>Start</button>
+                  
                 </div>
                 :
                 <Autocomplete
@@ -89,7 +101,7 @@ export default class addLocationForm extends React.PureComponent{
                         if (inputValue !== '' && !isExisting) {
                           filtered.push({
                             inputValue,
-                            title: `"${inputValue}"`,
+                            title: `${inputValue}`,
                           });
                         }
                 
@@ -111,14 +123,24 @@ export default class addLocationForm extends React.PureComponent{
               
               {
                 this.state.voiceSearch?
-                  <div>
-                    <IconButton color='success' onClick={()=>{this.setState({recordState: RecordState.START})}}>
-                      <KeyboardVoiceIcon />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
-                        <StopCircleIcon />
-                    </IconButton>
-                  </div>
+                <div>
+                  {
+                    this.state.recordState?
+                      <IconButton color="error" onClick={() => {this.setState({recordState: RecordState.STOP})}}>
+                          <StopCircleIcon />
+                      </IconButton>
+                    
+                      :
+                      <div>
+                        <Typography variant='h6'>Click on the green mic and start speaking</Typography>
+                        <IconButton color='success' onClick={()=>{this.setState({recordState: RecordState.START})}}>
+                          <KeyboardVoiceIcon />
+                        </IconButton>
+                      </div>
+
+                  }
+                      
+                </div>
                 :
                   <div>
                     <IconButton color="primary" onClick={this.props.search}>

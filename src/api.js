@@ -1,5 +1,6 @@
 const { default: axios } = require("axios");
 const { promise } = require("bcrypt/promises");
+const { fs } = require('fs');
 //const { base } = require("../api/db/models/pin-model");
 
 function send(method, url, data, callback) {
@@ -27,6 +28,20 @@ function performAxiosRequest(method, url, data, callback) {
   .catch(function (err) {
     callback(err, null)
   })
+}
+
+function performAxiosRequestFile(method, url, data, callback) {
+  axios({
+    method: method,
+    url: url,
+    headers: {'Content-Type':'multipart/form-data'},
+    data: data
+  }).then(function(res){
+    callback(null, res);
+  })
+  .catch(function (err) {
+    callback(err, null)
+  });
 }
 
 function getAxiosPromise(method, url, data) {
@@ -93,8 +108,31 @@ const customSearch = function(pos, query, callback){
 
 }
 
-const uploadImage = function (pinId, img, callback) {
-  performAxiosRequest("post", baseUrl + `pin/${pinId}/image/`, img, callback);
+const uploadImage = function (marker, callback) {
+  let data = new FormData();
+  const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
+  data.append("operations", JSON.stringify({ query }));
+  const map = {"zero":["variables.file"]}
+  data.append('map', JSON.stringify(map));
+  console.log(marker.image);
+  data.append('zero', marker.image);
+  performAxiosRequest("post", baseUrl + `pin/${marker.id}/image/`, data, callback);
+}
+
+const voiceSeach = function (pos, audio, callback) {
+  //return;
+  let data = new FormData();
+  const query = `query($file:Upload!){searchByTag(input:{lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, speech:$file}) { ...on Pins{ pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message } }}`;
+  data.append("operations", JSON.stringify({ query }));
+  const map = {"zero":["variables.file"]}
+  data.append('map', JSON.stringify(map));
+  let d = new Date();
+  console.log(audio.blob);
+  let f = new File([audio.blob], 'test.wav', { lastModified: new Date().getTime(), type: audio.type });
+  
+  data.append('zero', f);
+  //let id = marker.id;
+  performAxiosRequestFile('post', baseUrl + 'pin', data, callback); 
 }
 
 const getImage = function (imgId, callback) {
@@ -109,6 +147,7 @@ const getImagesFromIds = function(idArr, callback){
   }
   executePromises(p, callback);
 }
+
 
 const getPins = function (pos, callback) {
   let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) { ...on Pins{ pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
@@ -261,5 +300,6 @@ module.exports = {
   getImagesFromIds,
   createPolygon,
   customSearch,
-  getImageFromPinId
+  getImageFromPinId,
+  voiceSeach
 }
