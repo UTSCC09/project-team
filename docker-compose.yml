@@ -1,12 +1,22 @@
 version: '3'
 
 services:
+  nginx:
+    image: nginx:mainline-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d
+    depends_on:
+      - nodejs
+    networks:
+      - app-network
   frontend:
     build: frontend
     container_name: frontend
     restart: unless-stopped
-    ports: 
-      - "3000:3000"
     volumes:
       - ./frontend:/usr/src/app
       - /usr/src/app/node_modules
@@ -18,8 +28,6 @@ services:
     build: backend
     container_name: backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     env_file: .env
     environment:
       - MONGO_USERNAME=$MONGO_USERNAME
