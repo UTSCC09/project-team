@@ -46,7 +46,7 @@ function executePromises(promises, callback) {
   })
 }
 
-const baseUrl = 'http://place-holder.live/api/';
+const baseUrl = 'https://place-holder.live/api/';
 
 const deletePin = function(pinId, callback){
   let body = {"query": `mutation { deletePin}`};

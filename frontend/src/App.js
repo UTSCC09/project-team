@@ -199,7 +199,7 @@ export default class App extends React.PureComponent {
       let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`}
       axios({
         method: "post",
-        url: "http://place-holder.live/api/polygon/",
+        url: "https://place-holder.live/api/polygon/",
         data: body
       }).then(function (res) {
         console.log(res);
@@ -347,7 +347,7 @@ export default class App extends React.PureComponent {
                 }) */
                 axios({
                   method: "post",
-                  url: `http://place-holder.live/api/pin/${marker.id}/image/`,
+                  url: `https://place-holder.live/api/pin/${marker.id}/image/`,
                   data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
                 }).then(function (res) {
                   console.log(res);
@@ -837,7 +837,7 @@ export default class App extends React.PureComponent {
                 console.log(t.state.currentMarker);
                 axios({
                   method: "post",
-                  url: `http://place-holder.live/api/pin/${marker.id}/image/`,
+                  url: `https://place-holder.live/api/pin/${marker.id}/image/`,
                   data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
                 }).then(function (res) {
                   console.log(res);

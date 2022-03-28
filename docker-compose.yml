@@ -7,8 +7,11 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx-conf:/etc/nginx/conf.d
+      - ./certbot/www:/var/www/certbot/
+      - ./certbot/conf:/etc/nginx/ssl/
     depends_on:
       - nodejs
     networks:
@@ -24,6 +27,12 @@ services:
       - app-network
     depends_on:
       - backend
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot/
+      - ./certbot/conf:/etc/letsencrypt/
   backend:
     build: backend
     container_name: backend
@@ -61,4 +70,6 @@ networks:
 
 volumes:
   dbdata:
-  node_modules:  
+  node_modules:
+  certbot-etc:
+  certbot-var:
