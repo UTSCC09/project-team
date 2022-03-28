@@ -1,5 +1,4 @@
 import React from 'react';
-import axios from 'axios' 
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import Box from "@mui/material/Box";
@@ -11,23 +10,23 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import DoneIcon from '@mui/icons-material/Done';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
-import Voice from './components/Voice'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinDropIcon from '@mui/icons-material/PinDrop';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import InputAdornment from '@mui/material/InputAdornment';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import AddLocationForm from './components/addLocationForm.js'
 import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import RegionInfo from './components/RegionInfo.js'
-import SearchBar from './components/SearchBar'
+import SearchBar from './components/SearchBar';
+import CircularProgress from '@mui/material/CircularProgress';
 import sanitize from "sanitize-filename"
-//import MapboxDirections from '@mapbox/mapbox-gl-directions'
+import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 import api from './api';
-import { display } from '@mui/system';
+import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
+import { Typography } from '@mui/material';
+const DIRECTION_TIMEOUT = 6500;
+//import Directions from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
 export default class App extends React.PureComponent {
@@ -69,7 +68,7 @@ export default class App extends React.PureComponent {
             { id: 2, name: "Government" }
           ]
         };
-        //this.reactTags = React.createRef();
+        this.timeoutDirections = this.timeoutDirections.bind(this);
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
@@ -86,7 +85,6 @@ export default class App extends React.PureComponent {
         this.closingLocation = this.closingLocation.bind(this);
         this.producePopup=this.producePopup.bind(this);
         this.addRegion=this.addRegion.bind(this);
-        this.send = this.send.bind(this);
         this.createMarker = this.createMarker.bind(this);
         this.getMarkers = this.getMarkers.bind(this);
         this.getRegions = this.getRegions.bind(this);
@@ -131,19 +129,11 @@ export default class App extends React.PureComponent {
       });
     }
 
-    send(method, url, data, callback){
-      var xhr = new XMLHttpRequest();
-      xhr.onload = function() {
-          if (xhr.status !== 200) callback("[" + xhr.status + "]" + xhr.responseText, null);
-          else callback(null, JSON.parse(xhr.responseText));
-      };
-      xhr.open(method, url, true);
-      if (!data) xhr.send();
-      else{
-          xhr.setRequestHeader('Content-Type', 'application/json');
-          //xhr.setRequestHeader("Access-Control-Allow-Origin ","*");
-          xhr.send(JSON.stringify(data));
-      }
+    noMatchesFound = () =>{
+      this.setState({noMatches: true});
+      setTimeout(() => {
+        this.setState({noMatches: false});
+      }, 5000);
     }
 
     uploadImage(marker, res, t){
@@ -168,6 +158,26 @@ export default class App extends React.PureComponent {
                       t.setState({detailedLocation: true, currentMarker: marker, currentMarkerImages: [url]});
                       
                       console.log(t.state.currentMarker);
+                    }
+                    document.getElementById(marker.id + '_directions').onclick = function () {
+                      t.setState({loading: true});
+                      console.log('getting directions');
+                      let options = {timeout: DIRECTION_TIMEOUT};
+                      let error = (err) => {
+                        t.setState({viewingDirections: false}, t.timeoutDirections)
+                        console.error(err);
+                      };
+                      navigator.geolocation.getCurrentPosition(function (res) {
+                        console.log(marker);
+                        console.log(res);
+                        document.querySelector('.mapbox-directions-profile').style.display='block';
+                        
+                        t.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
+                        t.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+                        console.log(t.directions);
+                        t.setState({viewingDirections: true, loading: false});
+          
+                      }, error, options);
                     }
                   }
                 })
@@ -251,6 +261,14 @@ export default class App extends React.PureComponent {
       });
 
     }
+    timeoutDirections(){
+      this.directions.actions.clearDestination();
+      this.directions.removeRoutes();
+      this.setState({directionsTimedOut: true});
+      setTimeout(() => {
+        this.setState({directionsTimedOut: false});
+      }, 4000);
+    }
 
     getImage(marker, m, imgId, t){
       console.log(this.state.currentMarkerImages)
@@ -265,6 +283,27 @@ export default class App extends React.PureComponent {
             console.log(t.state.currentMarker);
             t.setState({detailedLocation: true});
             
+          }
+          document.getElementById(m._id + '_directions').onclick = function () {
+            t.setState({loading: true});
+            console.log('getting directions');
+            let options = {timeout: DIRECTION_TIMEOUT};
+            let error = (err) => {
+              console.error(err);
+              t.setState({loading: false}, t.timeoutDirections);
+            };
+            navigator.geolocation.getCurrentPosition(function (res) {
+              console.log(marker);
+              console.log(res);
+              document.querySelector('.mapbox-directions-profile').style.display='block';
+              t.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
+              t.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+              
+              
+              console.log(t.directions);
+              t.setState({viewingDirections: true, loading: false});
+
+            }, error, options);
           }
           t.setState({displayImgs: res.map((x) => x.data.data.getPhoto.url)});
           
@@ -345,19 +384,15 @@ export default class App extends React.PureComponent {
                     t.getImage(marker, m, imgId, t)
                   }
                 }) */
-                axios({
-                  method: "post",
-                  url: `http://localhost:8000/pin/${marker.id}/image/`,
-                  data: {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"}
-                }).then(function (res) {
-                  console.log(res);
-                  t.setState({currentMarkerImages: res.data.data.getImages.images});
-                  let imgId = res.data.data.getImages.images[0]._id;
-                  t.getImage(marker, m, imgId, t)
-                })
-                .catch(function (err) {
-                  console.error(err);
-                })
+                api.getImageFromPinId(marker.id, function (err, res) {
+                  if(err)return console.error(err);
+                  if (res) {
+                    console.log(res);
+                    t.setState({currentMarkerImages: res.data.data.getImages.images});
+                    let imgId = res.data.data.getImages.images[0]._id;
+                    t.getImage(marker, m, imgId, t)
+                  }
+                });
               }
             }
             t.setState(prevState => ({
@@ -467,6 +502,7 @@ export default class App extends React.PureComponent {
         
       });
       map.on('dragend', function () {
+        t.setState({noMatches: null});
         if (map.getZoom() >= 13.5) {
           t.getMarkers(t, true);
           t.getRegions(t, true);
@@ -483,7 +519,7 @@ export default class App extends React.PureComponent {
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
-      map.on('click', (e) => {this.setState({searching: false, searchTags: [], customSearchTags: null, displayingCustomSearchResults: false, audioTags: null})})
+      map.on('click', (e) => {this.setState({searching: false, searchTags: [], customSearchTags: null, displayingCustomSearchResults: false, audioTags: null, noMatches: null})})
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
         
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
@@ -558,36 +594,24 @@ export default class App extends React.PureComponent {
           })); */
         }
       })
-
-
-/*       api.getLocationCoord('CN tower', function (err, res) {
-        if (err) console.error(err);
-        if (res) {
-          console.log(res)
-        }
-      }) */
       this.draw = draw;
    
       map.addControl(draw);
-      map.addControl(
-        new mapboxgl.GeolocateControl({
-        positionOptions: {
-        enableHighAccuracy: true
-        },
-        // When active the map will receive updates to the device's location as it changes.
-        trackUserLocation: true,
-        // Draw an arrow next to the location dot to indicate which direction the device is heading.
-        showUserHeading: true
-        })
-      );
-/*       map.addControl(
-        new MapboxDirections({
-          accessToken: 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg',
-          unit: 'metric',
-          profile: 'mapbox/cycling'        
-        }),
-        'top-left'
-      ); */
+      let directions = new MapboxDirections({
+        accessToken: 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg',
+        unit: 'metric',
+        profile: 'mapbox/driving',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        interactive: false,
+        controls: {profileSwitcher: true}
+        
+      });     
+      directions.onClick = function () {
+        //prevent click to add waypoints
+        return;
+      }
+      this.directions = directions;
+      map.addControl(directions);
       
       this.map = map;
     }
@@ -709,9 +733,6 @@ export default class App extends React.PureComponent {
                   <div class="card-header"
                 style="background-image: url(${encodeURI(url)})"
                   >
-                        <div class="card-header-bar">
-                          <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
-                        </div>
                   </div>
 
                   <div class="card-body">
@@ -727,6 +748,7 @@ export default class App extends React.PureComponent {
                             <span class="value">-</span>
                           </div>
                       </div>
+                      <button id=${id + '_directions'} class="directions"></button>
                       <button id=${id} class="btn-menu"></button>
                   </div>
               </div>`
@@ -828,7 +850,7 @@ export default class App extends React.PureComponent {
     displayCustomSearchResults(pins){
       this.setState({displayingCustomSearchResults: true});
       console.log(pins)
-      if(!pins)this.setState({noMatches: true});
+      if(!pins)return this.noMatchesFound();
       let t = this;
       
       for (let pin of pins){
@@ -1037,7 +1059,6 @@ export default class App extends React.PureComponent {
     performSearch(e, custom=null){
 
       let t= this;
-      console.log(this.state.flyTo && !custom);
       this.removeHighlighted();
       console.log(this.state.customSearch);
       console.log(this.state.audioTags);
@@ -1090,8 +1111,9 @@ export default class App extends React.PureComponent {
           }
         });
       }
-      else if (!custom && !this.state.audioTags) {
+      else if (!custom) {
         console.log(this.state.audioTags);
+        console.log(this.state.customSearchTags);
         if (this.state.customSearchTags) {
           this.setState({customSearchTags: null}, function () {
             this.removeHighlighted();
@@ -1101,10 +1123,6 @@ export default class App extends React.PureComponent {
           console.log(this.state.customSearchTags);
           this.searchForTags();
         });
-        
-        
-        //this.removeRendered(true);
-        //this.searchForTags();
       }
       
     }
@@ -1148,6 +1166,16 @@ export default class App extends React.PureComponent {
       if (name) {
         this.setState({newCoord: arr.find((x) => x.place_name === name).geometry.coordinates})
       }
+    }
+    cancelDirections(){
+      this.setState({viewingDirections: false}, ()=> {
+        document.querySelector('.mapbox-directions-profile').style.display='none';
+        console.log(this.directions);
+        
+        this.directions.actions.clearDestination();
+        this.directions.removeRoutes();
+
+      });
     }
     render() {
         const { lng, lat, zoom } = this.state;
@@ -1240,10 +1268,27 @@ export default class App extends React.PureComponent {
                   null
                 }
                 {
+                  this.state.viewingDirections?
+                  <Fab onClick={this.cancelDirections.bind(this)}>
+                    <DirectionsOffIcon />
+                  </Fab>
+                  :
+                  null
+                }
+                {
                   this.state.noMatches?
                   <Alert severity="warning">
-                    <AlertTitle>Warning</AlertTitle>
+                    <AlertTitle>Uh-oh</AlertTitle>
                     Sorry, we couldn't find any matches, try refining your search
+                  </Alert>
+                  :
+                  null
+                }
+                {
+                  this.state.directionsTimedOut?
+                  <Alert severity="warning">
+                    <AlertTitle>Timed Out</AlertTitle>
+                    Sorry, we were unable to find directions, please try again.
                   </Alert>
                   :
                   null
@@ -1253,8 +1298,19 @@ export default class App extends React.PureComponent {
                 
             </Box>
             {
-              (this.state.detailedRegion || this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
+              (this.state.loading || this.state.detailedRegion || this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
               <div id='overlay' >
+              {
+                this.state.loading?
+                <div>
+                  <Typography sx={{margin: 0, left: '50%', transform: "translate(-50%, -50%)", position: 'absolute', top: '30%'}} color={'white'} variant='h6'>
+                    Hold tight, we're finding the quickest directions there
+                  </Typography>
+                  <CircularProgress sx={{margin: 0, position: 'absolute', top: '50%', left: '50%', transform: "translate(-50%, -50%)"}} />
+                </div>
+                :
+                null
+              }
 
               {
                 this.state.detailedLocation?

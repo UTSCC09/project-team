@@ -25,7 +25,8 @@ export default class Voice extends React.PureComponent {
      
       //audioData contains blob and blobUrl
       onStop = (audioData) => {
-        console.log('audioData', audioData)
+        console.log('audioData', audioData);
+        
       }
      
       render() {

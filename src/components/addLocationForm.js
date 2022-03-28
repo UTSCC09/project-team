@@ -3,11 +3,8 @@ import { Autocomplete } from '@mui/material';
 import FormControl from '@mui/material/FormControl'
 import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
-import FormData from "form-data"
 import api from '../api'
-import axios from 'axios' 
-import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
+import { Button } from '@mui/material';
 
 export default class addLocationForm extends React.PureComponent{
 

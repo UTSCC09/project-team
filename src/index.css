@@ -151,6 +151,24 @@ body{
 .mapboxgl-popup-close-button{
     visibility: hidden;
 }
+/* icon from <a href="https://www.flaticon.com/free-icons/direction" title="direction icons">Direction icons created by bqlqn - Flaticon</a> */
+.directions{
+  display: inline-block;
+  background: url('./media/traffic-sign.png') no-repeat;
+  background-size: contain;
+  width: 20px;
+  height: 20px;
+  margin-left:10px;
+  margin-top:10px;
+  float: left;
+  border: none;
+  cursor: pointer;
+
+}
+.mapbox-directions-component-keyline{
+  display: none;
+}
+
 #region-card{
   min-width: 175px;
   height: 300px; 

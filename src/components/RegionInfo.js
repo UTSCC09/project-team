@@ -12,17 +12,13 @@ import Collapse from '@mui/material/Collapse';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import { red } from '@mui/material/colors';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
 import ReactStreetview from 'react-streetview';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import QuiltedImageList from './QuiltedImageList.js';
 import CloseIcon from '@mui/icons-material/Close';
 /* https://mui.com/components/cards/#complex-interaction*/

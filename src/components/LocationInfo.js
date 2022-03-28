@@ -23,10 +23,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import api from '../api'
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FormControl from '@mui/material/FormControl'
-
-import QuiltedImageList from './QuiltedImageList.js';
 import CloseIcon from '@mui/icons-material/Close';
 /* https://mui.com/components/cards/#complex-interaction*/
 const ExpandMore = styled((props) => {
@@ -147,8 +144,8 @@ export default function LocationInfo(props) {
           title={info.name}
           subheader={<div></div>}
         />
-        <Stack direction="row" sx={{overflow: 'scroll', marginBottom:'5px'}} spacing={1}>
-          {info.locationTags.map((tag) =>  <Chip label={tag} variant="outlined" />)}
+        <Stack direction="row" sx={{overflow: 'scroll', marginTop:'7px', marginBottom:'2px'}} spacing={1}>
+          {info.locationTags.map((tag) =>  <Chip sx={{margin: 'auto'}} label={tag} variant="outlined" />)}
         
         </Stack>
 
