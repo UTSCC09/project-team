@@ -4,6 +4,7 @@ const {
     GraphQLString,
     GraphQLInputObjectType,
     GraphQLUnionType,
+    GraphQLNonNull
 } = require('graphql');
 const resolver = require('../../db/resolvers/user-resolver');
 const {ErrorType, stringResultType} = require('./error-schema');
@@ -11,8 +12,8 @@ const {ErrorType, stringResultType} = require('./error-schema');
 const userInputType = new GraphQLInputObjectType({
     name: 'UserInput',
     fields: {
-        username: {type: GraphQLString},
-        password: {type: GraphQLString}
+        username: {type: new GraphQLNonNull(GraphQLString)},
+        password: {type: new GraphQLNonNull(GraphQLString)}
     }
 });
 
