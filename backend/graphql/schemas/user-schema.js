@@ -6,7 +6,7 @@ const {
     GraphQLUnionType,
 } = require('graphql');
 const resolver = require('../../db/resolvers/user-resolver');
-const {ErrorType} = require('./error-schema');
+const {ErrorType, stringResultType} = require('./error-schema');
 
 const userInputType = new GraphQLInputObjectType({
     name: 'UserInput',
@@ -42,6 +42,11 @@ const queryType = new GraphQLObjectType({
                 input: {type: userInputType}
             },
             resolve: (_, {input}, context) => resolver.signin(input, context)
+        },
+        signout: {
+            type: stringResultType,
+            args: {},
+            resolve: (_, {input}, context) => resolver.signout(input, context)
         }
     }
 });
@@ -55,7 +60,7 @@ const mutationType = new GraphQLObjectType({
                 input: {type: userInputType}
             },
             resolve: (_, {input}) => resolver.createUser(input)
-        }
+        },
     }
 })
 

@@ -43,7 +43,7 @@ app.use(function(req, res, next){
     // Parse cookies fromr equest if they exist
     let cookies = cookie.parse(req.headers.cookie || '');
     // Set request user to current session user if exists, otherwise null
-    req.username = (req.session.user)? req.session.user._id : null;
+    req.username = (req.session.user)? req.session.user.username : null;
     console.log("HTTP request", req.method, req.url, req.body);
     next();
 });

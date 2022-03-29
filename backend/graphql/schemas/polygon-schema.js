@@ -6,12 +6,13 @@ const {
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLUnionType,
+    buildSchema
 } = require('graphql');
 const {
     pinMultipleResultType
 } = require('./pin-schema');
 const resolver = require('../../db/resolvers/polygon-resolver');
-const {ErrorType} = require('./error-schema');
+const {ErrorType, stringResultType} = require('./error-schema');
 
 const idInput = new GraphQLInputObjectType({
     name: 'IdInput',
@@ -92,7 +93,8 @@ const polygonType = new GraphQLObjectType({
     fields: {
         _id: {type: GraphQLString},
         type: {type: GraphQLString},
-        features: {type: polygonFeatureType}
+        features: {type: polygonFeatureType},
+        owner: {type: GraphQLString}
     }
 });
 
@@ -171,7 +173,7 @@ const idMutationType = new GraphQLObjectType({
     name: 'Mutation',
     fields: {
         deletePolygon: {
-            type: GraphQLString,
+            type: stringResultType,
             args: {},
             resolve: (_, {input}, context) => resolver.deletePolygon(input, context)
         }

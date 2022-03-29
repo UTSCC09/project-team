@@ -5,10 +5,15 @@ const {
     GraphQLFloat,
     GraphQLInputObjectType,
     GraphQLList,
-    GraphQLUnionType
+    GraphQLUnionType,
+    buildSchema
 } = require('graphql');
 const resolver = require('../../db/resolvers/pin-resolver');
-const {ErrorType} = require('./error-schema');
+const {ErrorType, stringResultType} = require('./error-schema');
+
+const {
+    GraphQLUpload,
+} = require('graphql-upload');
 
 const idInput = new GraphQLInputObjectType({
     name: 'IdInput',
@@ -65,9 +70,12 @@ const searchInput = new GraphQLInputObjectType({
         lat: {type: GraphQLFloat},
         lon: {type: GraphQLFloat},
         radius: {type: GraphQLFloat},
-        tags: {type: new GraphQLList(GraphQLString)}
+        tags: {type: new GraphQLList(GraphQLString)},
+        message: {type: GraphQLString},
+        speech: {type: GraphQLUpload},
     }
 });
+
 
 const pinPropertyType = new GraphQLObjectType({
     name: 'PinProperty',
@@ -100,14 +108,16 @@ const pinType = new GraphQLObjectType({
     fields: {
         _id: {type: GraphQLString},
         type: {type: GraphQLString},
-        features: {type: pinFeatureType}
+        features: {type: pinFeatureType},
+        owner: {type: GraphQLString}
     }
 });
 
 const pinMultipleType = new GraphQLObjectType({
     name: 'Pins',
     fields: {
-        pins: {type: new GraphQLList(pinType)}
+        pins: {type: new GraphQLList(pinType)},
+        tags: {type: new GraphQLList(GraphQLString)}
     }
 });
 
@@ -143,6 +153,13 @@ const queryType = new GraphQLObjectType({
             type: pinMultipleResultType,
             args: {},
             resolve: (_, {input}, context) => resolver.listPins(context)
+        },
+        searchByTag: {
+            type: pinMultipleResultType,
+            args: {
+                input: {type: searchInput}
+            },
+            resolve: (_, {input}, context) => resolver.searchPinByTag(input, context)
         }
     }
 });
@@ -175,7 +192,7 @@ const idMutationType = new GraphQLObjectType({
     name: 'Mutation',
     fields: {
         deletePin: {
-            type: GraphQLString,
+            type: stringResultType,
             args: {},
             resolve: (_, {input}, context) => resolver.deletePin(input, context)
         },

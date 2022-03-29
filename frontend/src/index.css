@@ -7,9 +7,7 @@
     position: absolute;
     top: 0;
 }
-/* #add-location-form{
-  max-height: 500px;
-} */
+
 .sidebar {
     background-color: rgba(35, 55, 75, 0.9);
     color: #fff;
@@ -22,6 +20,14 @@
     margin: 12px;
     border-radius: 4px;
 }
+
+.clear{
+  z-index: 1;
+  position: absolute;
+  bottom: 0;
+  left: 600px;
+}
+
 #location-info{
   max-height: 100vh;
   margin-top: 15px;
@@ -32,12 +38,12 @@
 }
 .user-form {
 
-    margin: auto;
-    margin-top: 10%;
-    width: 300px;
-    background-color: #fff;
-    border-radius: 15px;
-    box-shadow: 0 15px 25px rgba(0,0,0,.6);
+  margin: auto;
+  margin-top: 10%;
+  width: 300px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 15px 25px rgba(0,0,0,.6);
 }
 /*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
 #overlay {
@@ -65,6 +71,12 @@
     margin-bottom: 0px;
 
   }
+  #search-btns-container{
+    margin-top: 5px;
+  }
+  .voice{
+    z-index: 99;
+  }
   #types{
     float: right;
     margin-top: 0;
@@ -72,10 +84,23 @@
   #location-btn {
     float: right;
     margin-top: 0;
+    margin-bottom: 5px;
+  }
+  #errors-and-warnings{
+    position: absolute;
+    top: 75px;
+
   }
   /* fonts (Lemon milk) for login/signup: https://www.fontspace.com/popular/fonts?p=5 */
   #login {
       background-image: url("./media/login.png");
+  }
+  #add-image {
+    background-image: url("./media/text-1648257313193.png");
+    width: 200px;
+  }
+  #new-image-form{
+    overflow: auto;
   }
   #signup {
       background-image: url("./media/signup.png");
@@ -132,6 +157,24 @@ body{
 .mapboxgl-popup-close-button{
     visibility: hidden;
 }
+/* icon from <a href="https://www.flaticon.com/free-icons/direction" title="direction icons">Direction icons created by bqlqn - Flaticon</a> */
+.directions{
+  display: inline-block;
+  background: url('./media/traffic-sign.png') no-repeat;
+  background-size: contain;
+  width: 20px;
+  height: 20px;
+  margin-left:10px;
+  margin-top:10px;
+  float: left;
+  border: none;
+  cursor: pointer;
+
+}
+.mapbox-directions-component-keyline{
+  display: none;
+}
+
 #region-card{
   min-width: 175px;
   height: 300px; 

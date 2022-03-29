@@ -3,20 +3,18 @@ import { Autocomplete } from '@mui/material';
 import FormControl from '@mui/material/FormControl'
 import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
-import FormData from "form-data"
+import api from '../api'
+import { Button } from '@mui/material';
 
-import axios from 'axios' 
-import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
-
-export default class addingLocationForm extends React.PureComponent{
+export default class addLocationForm extends React.PureComponent{
 
     constructor(props){
       super(props);
-      this.handleImage = this.handleImage.bind(this);
       this.state = {
         file: false,
-        submitAttempt: false
+        submitAttempt: false,
+        matches: [],
+        completeMatchInfo: []
       }
       this.fileChange = this.fileChange.bind(this);
       this.attemptSubmit = this.attemptSubmit.bind(this);
@@ -35,40 +33,21 @@ export default class addingLocationForm extends React.PureComponent{
 
       } 
     }
-    
-    handleImage(e){
-      console.log(e)
-      if (e.target.files && e.target.files[0]) {
-        let img = {}
-        img.file = e.target.files[0];
-        
-        let data = new FormData();
-        //let data = {};
-        //data.append('operations', '{ "query" : "mutation($file:Upload!){createImage(input:{title: \\\"test\\\", image:$file}) {_id, title, image, pin}}"}');
-        const query = 'mutation($file:Upload!){createImage(input:{title: "test", image:$file}) {_id, title, image, pin}}';
-        data.append("operations", JSON.stringify({ query }));
-        //data.operations = {"query":"mutation($file:Upload!){createImage(input:{title: \"test\", image:$file}) {_id, title, image, pin}}"};
-        const map = {"zero":["variables.file"]}
-        data.append('map', JSON.stringify(map))
-        //data.map = {"0":["variables.file"]};
-        data.append('zero', img);
-        //data[0] = img
-        console.log(data);
-        axios({
-          method: "post",
-          url: "http://178.128.230.225:8000/pin/62310a56ca26b64f107de717/image/",
-          data: data,
+    updateResults(e){
+      let t = this;
+      console.log(e.target.value);
+      if (e.target.value.length > 4) {
+        api.getLocationCoord(e.target.value, true, function (err, res) {
+          if (err) console.error(err);
+          if (res) {
+            console.log(res);
+            t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});
+          }
         })
-          .then(function (res) {
-            console.log(res)
-          })
-          .catch(function(err){
-            console.error(err);
-          })
-
-
+        
       }
     }
+    
     
     render() {
         const categories = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
@@ -147,6 +126,23 @@ export default class addingLocationForm extends React.PureComponent{
                       />
                     )}
                   />
+                  </FormControl>
+
+                  <FormControl sx={{ m: 1, width: 231}}>
+                    <Autocomplete 
+                    options={this.state.matches} 
+                    onChange={
+                      (e, val) => {
+                        console.log(this.state.completeMatchInfo)
+                        console.log(e)
+                        this.props.updateAddress(this.state.completeMatchInfo, val)
+                      }
+                    }
+                    renderInput={(params) => (
+                      <TextField placeholder='Address (optional)' onChange={this.updateResults.bind(this)} {...params} />
+                    )}
+                    />
+
                   </FormControl>
                   <FormControl required={true} sx={{ m: 1, width: 231}} >
                   <input
