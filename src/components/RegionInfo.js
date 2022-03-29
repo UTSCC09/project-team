@@ -12,17 +12,13 @@ import Collapse from '@mui/material/Collapse';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import { red } from '@mui/material/colors';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
 import ReactStreetview from 'react-streetview';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import QuiltedImageList from './QuiltedImageList.js';
 import CloseIcon from '@mui/icons-material/Close';
 /* https://mui.com/components/cards/#complex-interaction*/
@@ -42,7 +38,7 @@ export default function RegionInfo(props) {
   const [expanded, setExpanded] = React.useState(false);
   /*Ratings: https://mui.com/components/rating/ */
   const [rating, setRating] = React.useState(0);
-  const { owner, close , info, deleteRegion } = props;
+  const { owner, close , info, deleteRegion, user } = props;
   console.log(info)
   const handleExpandClick = () => {
     setExpanded(!expanded);
@@ -62,14 +58,24 @@ export default function RegionInfo(props) {
                 <CloseIcon />
             </IconButton>
         }
+        titleTypographyProps={{variant:'h3' }}
         title={info.name}
-        subheader={<div></div>}
       />
-      <Stack sx={{overflow: 'scroll'}} direction="row" spacing={1}>
-      <Typography sx={{marginLeft: '5px'}} variant="h6" color="text.secondary">
-          Found here:
+      <Stack sx={{overflow: 'scroll', m: 1}} direction="row" spacing={1}>
+      {
+        info.locationTags.length?
+        <div>
+          <Typography sx={{marginLeft: '0px'}} variant="h6" color="text.secondary">
+            Found here:
+          </Typography> 
+          {info.locationTags.map((tag) =>  <Chip sx={{m: 1}} label={tag} variant="outlined" />)}
+        </div>
+        :
+        <Typography sx={{margin: 'auto'}} variant="body" color="text.secondary">
+          Nothing here yet, try adding some pins within this region.
         </Typography> 
-        {info.locationTags.map((tag) =>  <Chip label={tag} variant="outlined" />)}
+      }        
+      
        
       </Stack>
 
@@ -82,9 +88,15 @@ export default function RegionInfo(props) {
       </CardContent>
 
       <CardActions disableSpacing>
-        <IconButton onClick={ deleteRegion } >
-          <DeleteForeverIcon />
-        </IconButton>
+        {
+          (user === owner)?
+          <IconButton onClick={ deleteRegion } >
+            <DeleteForeverIcon />
+          </IconButton>
+          :
+          null
+        }
+        
         <IconButton >
           <AddCommentIcon />
         </IconButton>
