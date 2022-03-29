@@ -25,7 +25,7 @@ import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 import api from './api';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import { Typography } from '@mui/material';
-const DIRECTION_TIMEOUT = 6500;
+const DIRECTION_TIMEOUT = 6000;
 //import Directions from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 
@@ -96,6 +96,7 @@ export default class App extends React.PureComponent {
         this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
         this.searchForTags = this.searchForTags.bind(this);
         this.removeHighlighted = this.removeHighlighted.bind(this);
+        this.error = this.error.bind(this);
         this.displayCustomSearchResults = this.displayCustomSearchResults.bind(this);
         this.voiceSearch = this.voiceSearch.bind(this);
     }
@@ -107,13 +108,19 @@ export default class App extends React.PureComponent {
       
   
       api.getPinsWithinPolygon(this.state.currentRegion.backId, function (err, res) {
-        if (err) return console.error(err);
+        if (err){
+          t.error(err);
+          return console.error(err);
+        }
         if (res){
           console.log(res);
           let regionTags = []
 
           api.getImagesOfPins(res.data.data.getPinsWithin.pins, function (imgErr, imgRes) {
-            if(err) return console.error(imgErr);
+            if(imgErr) {
+              t.error(imgErr);
+              return console.error(imgErr);
+            }
             if (imgRes) {
               t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
@@ -140,7 +147,10 @@ export default class App extends React.PureComponent {
         
         let id = marker.id;
         api.uploadImage(marker, function(upErr, res){
-          if (upErr) return console.error(upErr);
+          if (upErr) {
+            t.error(upErr);
+            return console.error(upErr);
+          }
           if (res)
             {
               console.log(res)
@@ -148,7 +158,10 @@ export default class App extends React.PureComponent {
               console.log(marker);
               marker.togglePopup = function () {
                 api.getImage(marker.imageId, function (imgErr, imgRes) {
-                  if(imgErr) return console.error(imgErr);
+                  if(imgErr) {
+                    t.error(imgErr);
+                    return console.error(imgErr);
+                  }
                   if (imgRes) {
                     console.log(imgRes)
                     let url = imgRes.data.data.getPhoto.url;
@@ -218,6 +231,13 @@ export default class App extends React.PureComponent {
           }));
         }
       })
+    }
+
+    error(err){
+      this.setState({genericError: err});
+      setTimeout(() => {
+        this.setState({genericError: null})
+      }, 4000);
     }
 
     getRegions(t, removeOld=false){
@@ -575,6 +595,9 @@ export default class App extends React.PureComponent {
         t.setState({drawingRegion: false});
         console.log(t.state.newRegions);
       });
+      map.on('draw.modechange', function (e) {
+        t.setState({drawingRegion: false});
+      });
       map.on('draw.update', function(e) {
         console.log(e.features);
         console.log(t.state.newRegions.find((x) => x.id === e.features[0].id));
@@ -587,6 +610,7 @@ export default class App extends React.PureComponent {
           let newRegion = e.features[0];
           newRegion.name = old.name;
           newRegion.description = old.description;
+          newRegion.owner = old.owner;
           copy[idx] = newRegion;
           t.setState({newRegions: copy});
           /* t.setState(prevState => ({
@@ -622,6 +646,9 @@ export default class App extends React.PureComponent {
     };
 
     signOut(event) {
+      for(let r of this.state.newRegions){
+        this.draw.delete(r.id);
+      }
       this.setState({signedIn: false, user: null});
       
     }
@@ -699,7 +726,7 @@ export default class App extends React.PureComponent {
             t.setState({renderedRegions: copy});
           }
           t.setState({detailedRegion: false});
-          t.draw.delete(t.state.currentRegion.id)
+          t.draw.delete(t.state.currentRegion.id);
           if (t.state.currentPopup) t.state.currentPopup.remove();
         }
       });
@@ -1229,7 +1256,7 @@ export default class App extends React.PureComponent {
                     (this.state.addingLocation || this.state.drawingRegion || this.state.movingMarker)?
                     null
                     :
-                    <Fab sx={{marginTop: '7px'}} onClick={ this.signOut } color="error" aria-label="account">
+                    <Fab sx={{marginTop: '7px'}} onClick={ this.signOut } color="error">
                     <LogoutIcon />
                   </Fab>
                   }
@@ -1241,6 +1268,7 @@ export default class App extends React.PureComponent {
                     <AccountCircleIcon />
                   </Fab>
                 }
+                
                 {
                   (this.state.signedIn && this.state.choosingType && !this.state.searching)?
                     <div id='types'>
@@ -1275,7 +1303,12 @@ export default class App extends React.PureComponent {
                   :
                   null
                 }
-                {
+                
+                
+                
+            </Box>
+            <Box id='errors-and-warnings'>
+              {
                   this.state.noMatches?
                   <Alert severity="warning">
                     <AlertTitle>Uh-oh</AlertTitle>
@@ -1286,17 +1319,15 @@ export default class App extends React.PureComponent {
                 }
                 {
                   this.state.directionsTimedOut?
-                  <Alert severity="warning">
+                  <Alert sx={{m:1}} severity="warning">
                     <AlertTitle>Timed Out</AlertTitle>
                     Sorry, we were unable to find directions, please try again.
                   </Alert>
                   :
                   null
                 }
-
-                
-                
             </Box>
+            
             {
               (this.state.loading || this.state.detailedRegion || this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
               <div id='overlay' >

@@ -84,6 +84,12 @@
   #location-btn {
     float: right;
     margin-top: 0;
+    margin-bottom: 5px;
+  }
+  #errors-and-warnings{
+    position: absolute;
+    top: 75px;
+
   }
   /* fonts (Lemon milk) for login/signup: https://www.fontspace.com/popular/fonts?p=5 */
   #login {
