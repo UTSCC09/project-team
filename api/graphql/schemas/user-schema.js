@@ -59,7 +59,7 @@ const mutationType = new GraphQLObjectType({
             args: {
                 input: {type: userInputType}
             },
-            resolve: (_, {input}) => resolver.createUser(input)
+            resolve: (_, {input}, context) => resolver.createUser(input, context)
         },
     }
 })
