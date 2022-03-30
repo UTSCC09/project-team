@@ -41,7 +41,7 @@ getImages = async function (context) {
 getPhoto = async function(context) {
     const image = await Image.findOne({_id: context.req.params.id}).exec();
     console.log(image);
-    return ({url: "http://place-holder.live/api/images/" + image.image});
+    return ({url: "https://place-holder.live/api/images/" + image.image});
 }
 
 deleteImage = async function(context) {
