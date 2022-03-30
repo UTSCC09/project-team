@@ -18,7 +18,6 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
-
 app.use(express.static('static'));
 
 const {
@@ -47,6 +46,7 @@ app.use(function(req, res, next){
 });
 
 app.use('/user', graphqlHTTP((req, res)=>{
+    console.log(req);
     return {
         schema: userSchema.schema,
         graphiql: true,
