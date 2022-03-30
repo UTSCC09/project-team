@@ -24,7 +24,6 @@ createPin = async function (input, context) {
 
 getPin = async function (context) {
     const pin = await Pin.findOne({_id: context.req.params.id}).exec();
-    console.log(pin);
     return pin;
 };
 
@@ -55,6 +54,9 @@ getNear = async function (input) {
     const lat = input.lat;
     const lon = input.lon;
     pins = await searchPins(radius, lat, lon, tags);
+    if (!pins) {
+        return UserInputError(radius);
+    }
     return {'pins': pins};
 };
 
@@ -72,11 +74,9 @@ deletePin = async function(input, context) {
     Pin.deleteOne({_id: pin._id}).exec();
     const images = await Image.find({pin: pin._id}).exec();
     let upload_path = "";
-    console.log(images);
     for (const image of images) {
         Image.deleteOne({_id: image.id}).exec();
         upload_path = path.join(__dirname, `/../../static/images/${image.image}`);
-        console.log(upload_path);
         fs.unlinkSync(upload_path);
     }
     return null;
@@ -108,6 +108,9 @@ searchPinByTag = async function(input, context) {
         const lat = input.lat;
         const lon = input.lon;
         pins = await searchPins(radius, lat, lon, tags);
+        if (!pins) {
+            return UserInputError(radius);
+        }
         return {'tags': tags, 'pins': pins};
     }
     else {
@@ -117,7 +120,7 @@ searchPinByTag = async function(input, context) {
 
 searchPins = async function(radius, lat, lon, tags) {
     if (radius > 20000){
-        console.log("Too large");
+        return null;
     }
     let pins = Pin.find({
             'features.geometry': {
