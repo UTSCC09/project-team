@@ -17,7 +17,7 @@ getRatings = async function (input) {
 updateRating = async function (input, context) {
   let auth = isAuthenticated(context.req);
   if (auth) return auth();
-  const rating = await Rating.findOneAndUpdate({ lId: input.IId, createdBy: context.req.session.user.username }, input).exec();
+  const rating = await Rating.findOneAndUpdate({ lId: input.lId, createdBy: context.req.session.user.username }, input, { returnOriginal: false });
   return rating;
 }
 
