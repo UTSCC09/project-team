@@ -36,10 +36,11 @@
 #street {
   height: 500px;
 }
-.user-form {
-
-  margin: auto;
+#account-form-containter{
   margin-top: 10%;
+}
+.user-form {
+  margin: auto;
   width: 300px;
   background-color: #fff;
   border-radius: 15px;
@@ -101,6 +102,9 @@
   }
   #new-image-form{
     overflow: auto;
+  }
+  #add-location-from{
+    margin-top: 5px;
   }
   #signup {
       background-image: url("./media/signup.png");

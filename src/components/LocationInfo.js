@@ -205,7 +205,7 @@ export default function LocationInfo(props) {
         />
         
         <Stack direction="row" sx={{overflow: 'scroll', marginTop:'7px', marginBottom:'2px'}} spacing={1}>
-          {info.locationTags.map((tag) =>  <Chip sx={{margin: 'auto'}} key={tag} label={tag} variant="outlined" />)}
+          {info.locationTags.map((tag) =>  <Chip sx={{margin: '5px'}} key={tag} label={tag} variant="outlined" />)}
         
         </Stack>
 

@@ -90,7 +90,7 @@ export default class addLocationForm extends React.PureComponent{
                         
                 </form>
                 :
-                <form className='user-form' id='add-location-form' onSubmit={this.attemptSubmit} >
+                <form sx={{marginTop: '5px'}} className='user-form' id='add-location-form' onSubmit={this.attemptSubmit} >
                   <div id='form-title-container'><div className='account-form-title' id='new-location'></div></div>
                   <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
                     <TextField onChange={this.props.changeLocationName} id='location-name' required={true} variant='outlined' label="Location Name">

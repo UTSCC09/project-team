@@ -241,6 +241,7 @@ const getRatings = function (id, callback) {
   let query = `query getRatings($input: RatingSearchInput) {
     getRatings(input: $input) {
       ... on Ratings {
+        average
         ratings {_id, stars, createdBy}
       }
 

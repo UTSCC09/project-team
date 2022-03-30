@@ -165,6 +165,7 @@ export default class App extends React.PureComponent {
                   if (imgRes) {
                     console.log(imgRes)
                     let url = imgRes.data.data.getPhoto.url;
+                    t.setState({displayImgs: [url]});
                     marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
                     marker.getPopup().addTo(t.map);
                     document.getElementById(marker.id).onclick = function () {
@@ -297,14 +298,14 @@ export default class App extends React.PureComponent {
         if (res) {
           console.log(res);
           let url = res[0].data.data.getPhoto.url;
-          marker.getPopup().setHTML(t.producePopup(m.features.properties.name, marker.tags[0], marker.description, m._id, url))
+          marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
           marker.getPopup().addTo(t.map);
-          document.getElementById(m._id).onclick = function () {
+          document.getElementById(marker.id).onclick = function () {
             console.log(t.state.currentMarker);
             t.setState({detailedLocation: true});
             
           }
-          document.getElementById(m._id + '_directions').onclick = function () {
+          document.getElementById(marker.id + '_directions').onclick = function () {
             t.setState({loading: true});
             console.log('getting directions');
             let options = {timeout: DIRECTION_TIMEOUT};
@@ -387,6 +388,21 @@ export default class App extends React.PureComponent {
             marker.id = m._id;
             marker.owner = m.owner;
             marker.tags = m.features.properties.tags;
+            /* api.getRatings(marker.id, function (ratingErr, ratingsRes) {
+              if(ratingErr){
+                return console.error(ratingErr);
+              }
+              if(ratingsRes){
+                console.log(ratingsRes);
+                
+                if (ratingsRes.data.getRatings.average) {
+                  marker.ratings = ;
+                }
+                else {
+                  marker.ratings = '-';
+                }
+              }
+            }); */
             marker.togglePopup = function(){
               t.setState({currentMarker: marker})
 
@@ -1119,6 +1135,7 @@ export default class App extends React.PureComponent {
             if (err) return console.error(err);
             console.log(res);
             t.setState({customSearchTags: res.data.data.searchByTag.tags});
+            t.removeHighlighted()
 
             t.displayCustomSearchResults(res.data.data.searchByTag.pins);
           });
@@ -1321,7 +1338,7 @@ export default class App extends React.PureComponent {
                   this.state.directionsTimedOut?
                   <Alert sx={{m:1}} severity="warning">
                     <AlertTitle>Timed Out</AlertTitle>
-                    Sorry, we were unable to find directions, please try again.
+                    Sorry, we were unable to find directions, please make sure you have enabled location services.
                   </Alert>
                   :
                   null
