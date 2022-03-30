@@ -5,6 +5,7 @@ var uuid = require('node-uuid');
 const Image = require('../models/image-model');
 const Pin = require('../models/pin-model');
 const {isAuthenticated, isAuthorized} = require('../../util');
+const {UserInputError} = require('../../graphql/schemas/error-schema')
 
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -12,11 +13,20 @@ createImage = async function (input, context) {
     // Validate location exists in db
     const pin = await Pin.findOne({_id: context.req.params.id}).exec();
 
-    console.log(input);
     const {createReadStream, filename, mimetype, encoding} = await input.image;
-    console.log(filename);
+    console.log(mimetype);
+    let fileExt = null;
+    if (mimetype == 'image/jpeg') {
+        fileExt = 'jpg';
+    }
+    else if (mimetype == 'image/png') {
+        fileExt = 'png';
+    }
+    else {
+        return UserInputError("Image file");
+    }
+
     const file_id = uuid.v4()
-    const fileExt = filename.split('.').pop();
     const upload_path = path.join(__dirname, `/../../static/images/${file_id + '.' + fileExt}`);
     const stream = createReadStream();
     const out = fs.createWriteStream(upload_path);

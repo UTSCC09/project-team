@@ -46,6 +46,9 @@
   border-radius: 15px;
   box-shadow: 0 15px 25px rgba(0,0,0,.6);
 }
+#new-image-form{
+  margin-top: 10%;
+}
 /*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
 #overlay {
     position: absolute;

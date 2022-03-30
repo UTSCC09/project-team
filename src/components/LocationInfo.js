@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { styled } from '@mui/material/styles';
+import Alert from '@mui/material/Alert';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import AddCommentIcon from '@mui/icons-material/AddComment';
@@ -25,6 +26,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import api from '../api'
 import FormControl from '@mui/material/FormControl'
 import CloseIcon from '@mui/icons-material/Close';
+const MAX_FILE_SIZE = 1; //mb
 /* https://mui.com/components/cards/#complex-interaction*/
 const ExpandMore = styled((props) => {
   const { expand, ...other } = props;
@@ -46,18 +48,20 @@ export default function LocationInfo(props) {
   const [streetView, setStreetView] = React.useState(true);
   const [fileUploaded, setFileUpload] = React.useState(false);
   const [file, setFile] = React.useState(null);
-  const [image, setImage] = React.useState(null);
-  const { owner, close , info, pos, deleteLocation, user, images, updateImages } = props;
+  const [fileTooBig, setFileTooBig] = React.useState(false);
+  const { owner, close , deleteLocation, user, images, updateImages, marker } = props;
+  console.log(marker);
   const [displayImages, setDisplayImages] = React.useState(images);
-  console.log(info)
   React.useEffect(() => {
-    api.getRatings(info.id, function (err, res) {
+    api.getRatings(marker.id, function (err, res) {
       if(err){
         return console.error(err);
       }
       if (res) {
         console.log(res);
+        console.log(res.data.getRatings.ratings);
         let original = res.data.getRatings.ratings.find((x) => x.createdBy === user);
+        console.log(original);
         if (original) {
           setRating(original.stars);
         }
@@ -74,13 +78,9 @@ export default function LocationInfo(props) {
     let img = {}
     img.file = file;
     
-    let data = new FormData();
-    const query = `mutation($file:Upload!){createImage(input:{title: "${info.name}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
-    data.append("operations", JSON.stringify({ query }));
-    const map = {"zero":["variables.file"]}
-    data.append('map', JSON.stringify(map))
-    data.append('zero', file);
-    api.uploadImage(info.id, data, function (err, res) {
+    let copy = marker;
+    copy.image = file;
+    api.uploadImage(copy, function (err, res) {
       if (err) return console.error(err);
       if (res) {
         console.log(res);
@@ -104,7 +104,7 @@ export default function LocationInfo(props) {
   const updateRatings = (e, val) => {
     console.log(user);
     setRating(val);
-    api.getRatings(info.id, function (getErr, getRes) {
+    api.getRatings(marker.id, function (getErr, getRes) {
       if (getErr) {
         return console.error(getErr);
       }
@@ -112,7 +112,7 @@ export default function LocationInfo(props) {
         let original = getRes.data.getRatings.ratings.find((x) => x.createdBy === user);
         console.log(original);
         if (original) {
-          api.updateRating(val, info.id, 'fdfsa', function (upErr, upRes) {
+          api.updateRating(val, marker.id, 'fdfsa', function (upErr, upRes) {
             if(upErr){
               return console.error(upErr);
             }
@@ -123,7 +123,7 @@ export default function LocationInfo(props) {
           })
         }
         else {
-          api.createRating(val, info.id, 'dasda', function (err, res) {
+          api.createRating(val, marker.id, 'dasda', function (err, res) {
             if (err) {
               return console.error(err);
             }
@@ -131,14 +131,6 @@ export default function LocationInfo(props) {
               console.log(res);
             }
           });
-        /* api.createRating(val, info.id, 'dasdas', function (err, res) {
-                  if (err) {
-                    return console.error(err);
-                  }
-                  if (res) {
-                    console.log(res);
-                  }
-                }); */
         }
         
       }
@@ -147,13 +139,25 @@ export default function LocationInfo(props) {
     
   }
   const fileChange = (e) => {
-    setFileUpload(true);
-    setFile(e.target.files[0]);
     console.log(e);
+    let bytes = e.target.files[0].size;
+    console.log(bytes);
+    let size = bytes/1000000;
+    console.log(size);
+    if (size<MAX_FILE_SIZE) {
+      setFileTooBig(false);
+      setFileUpload(true);
+      setFile(e.target.files[0]);
+    }
+    else{
+      setFileTooBig(true);
+    }
+    
+    
     //this.props.imageChange(e);
   }
   /*streetview https://github.com/alexus37/react-google-streetview */
-  
+  const signInPrompt = user ? '' : "\n(You'll need to sign in first.)";
   return (
     <div>
     {
@@ -163,7 +167,7 @@ export default function LocationInfo(props) {
         
         <FormControl required={true} sx={{ m: 1, width: 231}} >
           <input
-            accept="image/*"
+            accept=".png,.jpg,.jpeg"
             style={{ display: 'none' }}
             id="raised-button-file"
             type="file"
@@ -175,6 +179,14 @@ export default function LocationInfo(props) {
             </Button>
           </label> 
         </FormControl>
+        {
+          fileTooBig?
+          <Alert severity="error">
+            This file is too big, only files of up to {MAX_FILE_SIZE} MB are supported.
+          </Alert>
+          :
+          null
+        }
         <Button disabled={file==null} type='submit' className='form-button' variant="contained" sx={{
           marginBottom: "10px",
         }}>
@@ -200,12 +212,12 @@ export default function LocationInfo(props) {
                   <CloseIcon />
               </IconButton>
           }
-          title={info.name}
+          title={marker.name}
           subheader={<div></div>}
         />
         
         <Stack direction="row" sx={{overflow: 'scroll', marginTop:'7px', marginBottom:'2px'}} spacing={1}>
-          {info.locationTags.map((tag) =>  <Chip sx={{margin: '5px'}} key={tag} label={tag} variant="outlined" />)}
+          {marker.tags.map((tag) =>  <Chip sx={{margin: '5px'}} key={tag} label={tag} variant="outlined" />)}
         
         </Stack>
 
@@ -218,7 +230,7 @@ export default function LocationInfo(props) {
         {
           streetView?
           <div id='street'>
-            <Streetview streetViewPanoramaOptions={{position: pos,
+            <Streetview streetViewPanoramaOptions={{position: marker._lngLat,
             pov: { heading: 0, pitch: 0 },
             zoom: 1,}} apiKey={'AIzaSyDkrJcHAWMRsbbL9i5rzvysM3wyoEl6zQc'}></Streetview>
           </div>
@@ -232,10 +244,11 @@ export default function LocationInfo(props) {
         
         <CardContent>
           <Typography paragraph variant="body2" color="text.secondary">
-            {info.description}
+            {marker.description}
           </Typography>
         </CardContent>
         <Typography component="legend">Rate this location</Typography>
+        <Typography component='legend' color='text.secondary'> {signInPrompt} </Typography>
         <Rating
           name="simple-controlled"
           value={rating}

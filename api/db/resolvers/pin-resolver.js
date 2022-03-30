@@ -4,7 +4,7 @@ const path = require('path');
 const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
-const {isAuthenticated, isAuthorized, capitalizeFirst} = require('../../util');
+const {isAuthenticated, isAuthorized, capitalizeFirst, sanitizeInput} = require('../../util');
 const {DupelicateError, UserInputError} = require('../../graphql/schemas/error-schema')
 
 const {Wit, log} = require('node-wit');
@@ -17,7 +17,10 @@ const client = new Wit({
 createPin = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    const pinInput = Object.assign({}, input, {user: context.req.session.user, owner: context.req.session.user.username});
+    console.log("test");
+    let cleanInput = sanitizeInput(input);
+    console.log(cleanInput, input);
+    const pinInput = Object.assign({}, cleanInput, {user: context.req.session.user, owner: context.req.session.user.username});
     const pin = await new Pin(pinInput).save();
     return pin;
 };
@@ -61,7 +64,8 @@ getNear = async function (input) {
 };
 
 listPins = async function (context) {
-    const pins = await Pin.find().exec();
+    const pins = await Pin.find().sort({updated_at: -1}).exec();
+    console.log(pins[0].updated_at);
     return {'pins': pins};
 };
 
@@ -135,11 +139,9 @@ searchPins = async function(radius, lat, lon, tags) {
         },
     );
     if (tags.length > 0) {
-        pins = await pins.find({'features.properties.tags': {"$in": tags}},).exec();
+        pins = pins.find({'features.properties.tags': {"$in": tags}},);
     }
-    else {
-        pins = await pins.exec();
-    }
+    pins = await pins.sort({updated_at: -1}).limit(50).exec();
     return pins;
 }
 

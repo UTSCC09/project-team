@@ -298,7 +298,8 @@ export default class App extends React.PureComponent {
         if (res) {
           console.log(res);
           let url = res[0].data.data.getPhoto.url;
-          marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
+          console.log(marker.rating)
+          marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url, marker.rating))
           marker.getPopup().addTo(t.map);
           document.getElementById(marker.id).onclick = function () {
             console.log(t.state.currentMarker);
@@ -388,21 +389,15 @@ export default class App extends React.PureComponent {
             marker.id = m._id;
             marker.owner = m.owner;
             marker.tags = m.features.properties.tags;
-            /* api.getRatings(marker.id, function (ratingErr, ratingsRes) {
+            api.getRatings(marker.id, function (ratingErr, ratingsRes) {
               if(ratingErr){
                 return console.error(ratingErr);
               }
               if(ratingsRes){
                 console.log(ratingsRes);
-                
-                if (ratingsRes.data.getRatings.average) {
-                  marker.ratings = ;
-                }
-                else {
-                  marker.ratings = '-';
-                }
+                marker.rating = ratingsRes.data.getRatings.average? Math.round(ratingsRes.data.getRatings.average *10) / 10 : '-';
               }
-            }); */
+            });
             marker.togglePopup = function(){
               t.setState({currentMarker: marker})
 
@@ -599,7 +594,15 @@ export default class App extends React.PureComponent {
         // Set mapbox-gl-draw to draw by default.
         // The user does not have to click the polygon control button first.
         //defaultMode: 'draw_polygon'
-        });
+      });
+      /* const drawHot = new MapboxDraw({
+        displayControlsDefault: false,
+        modes: modes
+      });
+      map.on('drawHot.create', function (e) {
+        console.log('hot');
+      });
+      map.addControl(drawHot); */
       map.on('draw.create', function (e) {
         console.log(e.features);
         e.features[0].name = t.state.locationName;
@@ -769,8 +772,9 @@ export default class App extends React.PureComponent {
       });
       
     }
-    producePopup(name, tag, desc, id, url){
+    producePopup(name, tag, desc, id, url, ratings='-'){
       console.log(url);
+      console.log(ratings);
       //let newurl = "http://localhost:8000/images/Screen Shot 2021-07-12 at 9.56.11 AM.png"
       if (id && url) return `<div id="marker-card" class="card">
                   <div class="card-header"
@@ -788,7 +792,7 @@ export default class App extends React.PureComponent {
                       <div class="stats">
                           <div class="stat">
                             <span class="label">Rating</span>
-                            <span class="value">-</span>
+                            <span class="value">${ratings}</span>
                           </div>
                       </div>
                       <button id=${id + '_directions'} class="directions"></button>
@@ -814,7 +818,7 @@ export default class App extends React.PureComponent {
                 <div class="stats">
                     <div class="stat">
                       <span class="label">Rating</span>
-                      <span class="value">-</span>
+                      <span class="value">${ratings}</span>
                     </div>
                 </div>
             </div>
@@ -1174,7 +1178,7 @@ export default class App extends React.PureComponent {
     addRegion(e){
       //e.preventDefault();
       this.setState({addingLocation:false, drawingRegion: true});
-      this.draw.changeMode('draw_polygon')
+      this.draw.changeMode('draw_polygon');
       
       return;
     }
@@ -1363,9 +1367,7 @@ export default class App extends React.PureComponent {
               {
                 this.state.detailedLocation?
                 <LocationInfo deleteLocation={this.deleteLocation.bind(this)} 
-                  pos={this.state.currentMarker._lngLat} 
-                  info={{name: this.state.currentMarker.name, description: this.state.currentMarker.description, 
-                    locationTags: this.state.currentMarker.tags, id: this.state.currentMarker.id}} 
+                  marker={this.state.currentMarker}
                   close={this.closingLocation} owner={this.state.currentMarker.owner}
                   user={this.state.user}
                   images={this.state.displayImgs}

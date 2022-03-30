@@ -6,6 +6,7 @@ const imageSchema = new mongoose.Schema({
     image: { type: String, required: true },
     pin: { type: String, required: true},
     user: {type: Schema.Types.ObjectId, ref: 'User', required: true},
-});
+},
+{timestamps: {createdAt: 'created_at', updatedAt: 'updated_at'}});
 
 module.exports = mongoose.model('Image', imageSchema);

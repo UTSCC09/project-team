@@ -3,17 +3,18 @@ const cookie = require('cookie');
 const { DupelicateError, AuthenticationError } = require('../../graphql/schemas/error-schema')
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const {checkInput} = require('../../util');
 
-createUser = async function (input, context) {
-  const hash = await bcrypt.hash(input.password, saltRounds);
-  var user = await new User({username: input.username, password: hash}).save().then(usr => user = usr).catch(err => error = err);
-  if (user && user.code == 11000) return DupelicateError(input.username);
-  context.req.session.user = user;
-  context.res.setHeader('Set-Cookie', cookie.serialize('username', user.username, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7
-  }));
-  return ({'username': user.username, 'password': input.password});
+createUser = async function (input) {
+    let bad_input = checkInput(input.username);
+    if (bad_input) return bad_input(input.username);
+    bad_input = checkInput(input.password);
+    if (bad_input) return bad_input(input.password);
+
+    const hash = await bcrypt.hash(input.password, saltRounds);
+    var user = await new User({username: input.username, password: hash}).save().then(usr => user = usr).catch(err => error = err);
+    if (user && user.code == 11000) return DupelicateError(input.username);
+    return ({'username': user.username, 'password': input.password});
 };
 
 signin = async function (input, context) {
