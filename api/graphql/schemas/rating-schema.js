@@ -15,7 +15,7 @@ const {ErrorType} = require('./error-schema');
 const ratingSearch = new GraphQLInputObjectType({
     name: 'RatingSearchInput',
     fields: {
-        IId: {type: GraphQLString}
+        lId: {type: GraphQLString}
     }
 });
 
@@ -23,8 +23,7 @@ const ratingInput = new GraphQLInputObjectType({
     name: 'RatingInput',
     fields: {
         stars: {type: GraphQLInt},
-        IId: {type: GraphQLString},
-        createdBy: {type: GraphQLString},
+        lId: {type: GraphQLString},
         review: {type: GraphQLString}
     }
 });
@@ -34,7 +33,7 @@ const ratingType = new GraphQLObjectType({
     fields: {
         _id: {type: GraphQLString},
         stars: {type: GraphQLInt},
-        IId: {type: GraphQLString},
+        lId: {type: GraphQLString},
         createdBy: {type: GraphQLString},
         review: {type: GraphQLString}
     }
@@ -47,12 +46,30 @@ const ratingMultipleType = new GraphQLObjectType({
     }
 });
 
+const ratingSearchResultType = new GraphQLUnionType({
+    name: 'RatingSearchResult',
+    types: [ratingMultipleType, ErrorType],
+    resolveType: (value) => {
+        return value.message ? ErrorType.name : ratingMultipleType.name;
+    }
+});
+
+const ratingResultType = new GraphQLUnionType({
+    name: 'RatingResult',
+    types: [ratingType, ErrorType],
+    resolveType: (value) => {
+        return value.message ? ErrorType.name : ratingType.name;
+    }
+});
+
 const queryType = new GraphQLObjectType({
     name: 'Query',
     fields: {
         getRatings: {
-            type: ratingMultipleType,
-            args: {ratingSearch},
+            type: ratingSearchResultType,
+            args: {
+                input: {type: ratingSearch}
+            },
             resolve: (_, {input}) => resolver.getRatings(input)
         }
     }
@@ -62,14 +79,18 @@ const mutationType = new GraphQLObjectType({
     name: 'Mutation',
     fields: {
         createRating: {
-            type: ratingType,
-            args: {ratingInput},
-            resolve: (_, {input}) => resolver.createRating(input)
+            type: ratingResultType,
+            args: {
+                input: {type: ratingInput}
+            },
+            resolve: (_, {input}, context) => resolver.createRating(input, context)
         },
         updateRating: {
-            type: ratingType,
-            args: {ratingInput},
-            resolve: (_, {input}) => resolver.updateRating(input)
+            type: ratingResultType,
+            args: {
+                input: {type: ratingInput}
+            },
+            resolve: (_, {input}, context) => resolver.updateRating(input, context)
         }
     }
 });

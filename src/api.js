@@ -230,6 +230,93 @@ const getImagesOfPins = function (pins, callback) {
 
 }
 
+const getRatings = function (id, callback) {
+  let query = `query getRatings($input: RatingSearchInput) {
+    getRatings(input: $input) {
+      ... on Ratings {
+        ratings {_id, stars, createdBy}
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        lId: id
+      }
+    }
+  }
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
+const createRating = function (stars, lId, review, callback) {
+  let query = `mutation createRating($input: RatingInput) {
+    createRating(input: $input) {
+      ... on Rating {
+        _id,
+        stars,
+        lId,
+        createdBy,
+        review
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        stars: stars,
+        lId: lId,
+        review: review
+      }
+    }
+  };
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
+const updateRating = function (stars, lId, review, callback) {
+  let query = `mutation updateRating($input: RatingInput) {
+    updateRating(input: $input) {
+      ... on Rating {
+        _id,
+        stars,
+        lId,
+        createdBy,
+        review
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        stars: stars,
+        lId: lId,
+        review: review
+      }
+    }
+  };
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
 const registerUser = function (username, password, callback) {
   let query = `mutation createUser($input: UserInput) { 
     createUser(input: $input) {
@@ -301,5 +388,8 @@ module.exports = {
   createPolygon,
   customSearch,
   getImageFromPinId,
-  voiceSeach
+  voiceSeach,
+  createRating,
+  updateRating,
+  getRatings
 }
