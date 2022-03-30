@@ -164,6 +164,15 @@ const getImageFromPinId = function (pinId, callback) {
   performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, callback);
 }
 
+const setRating = function (pinId, callback) {
+  
+  return;
+}
+
+const updateRating = function (pinId, callback) {
+  return;
+}
+
 const getImagesOfPins = function (pins, callback) {
   let p = [];
   for (let pin of pins){
@@ -301,5 +310,7 @@ module.exports = {
   createPolygon,
   customSearch,
   getImageFromPinId,
-  voiceSeach
+  voiceSeach,
+  updateRating,
+  setRating
 }

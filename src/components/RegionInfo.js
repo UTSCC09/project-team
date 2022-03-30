@@ -3,7 +3,6 @@ import { styled } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import AddCommentIcon from '@mui/icons-material/AddComment';
-import CardMedia from '@mui/material/CardMedia';
 import CardContent from '@mui/material/CardContent';
 import Streetview from 'react-google-streetview';
 
@@ -68,7 +67,7 @@ export default function RegionInfo(props) {
           <Typography sx={{marginLeft: '0px'}} variant="h6" color="text.secondary">
             Found here:
           </Typography> 
-          {info.locationTags.map((tag) =>  <Chip sx={{m: 1}} label={tag} variant="outlined" />)}
+          {info.locationTags.map((tag) =>  <Chip sx={{m: 1}} key={tag} label={tag} variant="outlined" />)}
         </div>
         :
         <Typography sx={{margin: 'auto'}} variant="body" color="text.secondary">

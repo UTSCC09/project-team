@@ -87,6 +87,11 @@ export default function LocationInfo(props) {
     })
   }
 
+  const updateRatings = (e, val) => {
+    console.log(user);
+    setRating(val);
+    
+  }
   const fileChange = (e) => {
     setFileUpload(true);
     setFile(e.target.files[0]);
@@ -144,15 +149,17 @@ export default function LocationInfo(props) {
           title={info.name}
           subheader={<div></div>}
         />
+        
         <Stack direction="row" sx={{overflow: 'scroll', marginTop:'7px', marginBottom:'2px'}} spacing={1}>
-          {info.locationTags.map((tag) =>  <Chip sx={{margin: 'auto'}} label={tag} variant="outlined" />)}
+          {info.locationTags.map((tag) =>  <Chip sx={{margin: 'auto'}} key={tag} label={tag} variant="outlined" />)}
         
         </Stack>
 
-        <FormGroup>
-          <FormControlLabel control={<Switch onChange={(e) => {setStreetView(!streetView)}} checked={streetView} />} label="Street View" />
+        <FormGroup >
+            <FormControlLabel control={<Switch onChange={(e) => {setStreetView(!streetView)}} checked={streetView} />} label="Street View" />
         </FormGroup>
-
+        
+        
 
         {
           streetView?
@@ -168,7 +175,7 @@ export default function LocationInfo(props) {
         }
         
         
-
+        
         <CardContent>
           <Typography paragraph variant="body2" color="text.secondary">
             {info.description}
@@ -178,9 +185,8 @@ export default function LocationInfo(props) {
         <Rating
           name="simple-controlled"
           value={rating}
-          onChange={(event, newValue) => {
-            setRating(newValue);
-          }}
+          onChange={updateRatings}
+          readOnly={!user}
         />
         <CardActions disableSpacing>
           {
@@ -200,37 +206,8 @@ export default function LocationInfo(props) {
             null
 
           }
-
           
-          <IconButton >
-            <AddCommentIcon />
-          </IconButton>
-          <ExpandMore
-            expand={expanded}
-            onClick={handleExpandClick}
-            aria-expanded={expanded}
-            aria-label="show more"
-          >
-            <ExpandMoreIcon />
-          </ExpandMore>
         </CardActions>
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
-          <CardContent>
-            <Typography paragraph>Method:</Typography>
-            <Typography paragraph>
-              review1
-            </Typography>
-            <Typography paragraph>
-              review2
-            </Typography>
-            <Typography paragraph>
-              review3
-            </Typography>
-            <Typography>
-              review5
-            </Typography>
-          </CardContent>
-        </Collapse>
       </Card>
 
     }
