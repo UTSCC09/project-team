@@ -150,7 +150,13 @@ const getImagesFromIds = function(idArr, callback){
 
 
 const getPins = function (pos, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) { ...on Pins{ pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query
+   { 
+     getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) 
+     { 
+       ...on Pins{ 
+         pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } 
+         ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 
@@ -164,14 +170,6 @@ const getImageFromPinId = function (pinId, callback) {
   performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, callback);
 }
 
-const setRating = function (pinId, callback) {
-  
-  return;
-}
-
-const updateRating = function (pinId, callback) {
-  return;
-}
 
 const getImagesOfPins = function (pins, callback) {
   let p = [];
@@ -237,6 +235,93 @@ const getImagesOfPins = function (pins, callback) {
     
   })
 
+}
+
+const getRatings = function (id, callback) {
+  let query = `query getRatings($input: RatingSearchInput) {
+    getRatings(input: $input) {
+      ... on Ratings {
+        ratings {_id, stars, createdBy}
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        lId: id
+      }
+    }
+  }
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
+const createRating = function (stars, lId, review, callback) {
+  let query = `mutation createRating($input: RatingInput) {
+    createRating(input: $input) {
+      ... on Rating {
+        _id,
+        stars,
+        lId,
+        createdBy,
+        review
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        stars: stars,
+        lId: lId,
+        review: review
+      }
+    }
+  };
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
+const updateRating = function (stars, lId, review, callback) {
+  let query = `mutation updateRating($input: RatingInput) {
+    updateRating(input: $input) {
+      ... on Rating {
+        _id,
+        stars,
+        lId,
+        createdBy,
+        review
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        stars: stars,
+        lId: lId,
+        review: review
+      }
+    }
+  };
+
+  send("post", baseUrl + 'rating', body, callback);
 }
 
 const registerUser = function (username, password, callback) {
@@ -311,6 +396,7 @@ module.exports = {
   customSearch,
   getImageFromPinId,
   voiceSeach,
+  createRating,
   updateRating,
-  setRating
+  getRatings
 }

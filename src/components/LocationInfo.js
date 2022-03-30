@@ -50,6 +50,20 @@ export default function LocationInfo(props) {
   const { owner, close , info, pos, deleteLocation, user, images, updateImages } = props;
   const [displayImages, setDisplayImages] = React.useState(images);
   console.log(info)
+  React.useEffect(() => {
+    api.getRatings(info.id, function (err, res) {
+      if(err){
+        return console.error(err);
+      }
+      if (res) {
+        console.log(res);
+        let original = res.data.getRatings.ratings.find((x) => x.createdBy === user);
+        if (original) {
+          setRating(original.stars);
+        }
+      }
+    })
+  }, []);
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
@@ -90,6 +104,46 @@ export default function LocationInfo(props) {
   const updateRatings = (e, val) => {
     console.log(user);
     setRating(val);
+    api.getRatings(info.id, function (getErr, getRes) {
+      if (getErr) {
+        return console.error(getErr);
+      }
+      if (getRes) {
+        let original = getRes.data.getRatings.ratings.find((x) => x.createdBy === user);
+        console.log(original);
+        if (original) {
+          api.updateRating(val, info.id, 'fdfsa', function (upErr, upRes) {
+            if(upErr){
+              return console.error(upErr);
+            }
+            if (upRes) {
+              
+              console.log(upRes);
+            }
+          })
+        }
+        else {
+          api.createRating(val, info.id, 'dasda', function (err, res) {
+            if (err) {
+              return console.error(err);
+            }
+            if (res) {
+              console.log(res);
+            }
+          });
+        /* api.createRating(val, info.id, 'dasdas', function (err, res) {
+                  if (err) {
+                    return console.error(err);
+                  }
+                  if (res) {
+                    console.log(res);
+                  }
+                }); */
+        }
+        
+      }
+    });
+    
     
   }
   const fileChange = (e) => {
