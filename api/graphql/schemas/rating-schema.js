@@ -42,7 +42,8 @@ const ratingType = new GraphQLObjectType({
 const ratingMultipleType = new GraphQLObjectType({
     name: 'Ratings',
     fields: {
-        ratings: {type: new GraphQLList(ratingType)}
+        ratings: {type: new GraphQLList(ratingType)},
+        average: {type: GraphQLFloat}
     }
 });
 
