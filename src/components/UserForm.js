@@ -43,16 +43,22 @@ export default class UserForm extends React.PureComponent{
       const password = event.target.password.value;
 
       if (this.state.createAccount) {
-        api.registerUser(username, password, (err, user) => {
-          console.log(user);
-          if (user.data.createUser.message) { 
-            this.setState((prevState) => ({
-              errorMessage: user.data.createUser.message
-            }));
-            return;
-          }
-          this.props.onLoginFormSubmit(user.data.createUser);
-        });
+        const confirmPassword = event.target.confirmPassword.value;
+        if (confirmPassword != password) {
+          this.setState((prevState) => ({ errorMessage: "Password and confirm password don't match"}))
+          return;
+        } else {
+          api.registerUser(username, password, (err, user) => {
+            console.log(user);
+            if (user.data.createUser.message) { 
+              this.setState((prevState) => ({
+                errorMessage: user.data.createUser.message
+              }));
+              return;
+            }
+            this.props.onLoginFormSubmit(user.data.createUser);
+          });
+        }
       } else {
         api.signIn(username, password, (err, user) => {
           if (user.data.signin.message) {
@@ -115,7 +121,8 @@ export default class UserForm extends React.PureComponent{
              <OutlinedInput id="outlined-adornment-password"
                type={this.state.showPassword ? 'text' : 'password'}
                label="ConfirmPassword"
-               value={this.state.password}
+               id="confirmPassword"
+               value={this.state.confirmPassword}
                endAdornment={
                  <InputAdornment position="end">
                    <IconButton
