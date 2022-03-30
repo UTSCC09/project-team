@@ -11,7 +11,8 @@ createRating = async function (input, context) {
 
 getRatings = async function (input) {
   const ratings = await Rating.find(input).exec();
-  return { 'ratings': ratings };
+  const average = ratings.reduce((previousValue, currentValue) => previousValue + currentValue.stars, 0)/ratings.length
+  return { 'ratings': ratings, 'average': average };
 }
 
 updateRating = async function (input, context) {
