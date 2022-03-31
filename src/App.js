@@ -262,6 +262,7 @@ export default class App extends React.PureComponent {
           }
           t.draw.changeMode('static');
           let polygons = res.data.data.getNear.polygons;
+          console.log(polygons);
           for (let p of polygons){
             let f = t.state.renderedRegions.find(x => x.backId === p._id)
             if (f) continue;
@@ -719,6 +720,9 @@ export default class App extends React.PureComponent {
           .addTo(this.map);
       }) */
       this.draw && this.draw.changeMode('static');
+      if (this.state.zoom > 13.5) {
+        this.getRegions(this);
+      }
       
       for (let m of this.state.newMarkers){
         m.setDraggable(false);
@@ -1177,7 +1181,8 @@ export default class App extends React.PureComponent {
 
     addRegion(e){
       //e.preventDefault();
-      this.setState({addingLocation:false, drawingRegion: true});
+      this.setState({addingLocation:false, drawingRegion: true, renderedRegions: []});
+      this.draw.deleteAll();
       this.draw.changeMode('draw_polygon');
       
       return;
