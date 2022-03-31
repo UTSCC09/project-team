@@ -8,7 +8,6 @@ import api from '../api'
 import IconButton from '@mui/material/IconButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import AudioReactRecorder, { RecordState } from 'audio-react-recorder'
-import Voice from './Voice'
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -36,7 +35,7 @@ export default class addLocationForm extends React.PureComponent{
       let t = this;
       t.setState({voiceSeach: false});
       api.voiceSeach(this.props.pos, audioData, function (err, res) {
-        if(err)console.error(err);
+        if(err) return this.props.onError(err);
         if(res){
           console.log(res);
           t.props.displayVoiceSearch(res.data.data.searchByTag.pins, res.data.data.searchByTag.tags, audioData);
@@ -52,7 +51,7 @@ export default class addLocationForm extends React.PureComponent{
         console.log(e.target.value);
         if (e.target.value.length > 4) {
             api.getLocationCoord(e.target.value, true, function (err, res) {
-            if (err) console.error(err);
+            if (err) return this.props.onError(err);
             if (res) {
                 console.log(res);
                 t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});

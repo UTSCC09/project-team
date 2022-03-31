@@ -13,7 +13,7 @@ import AlertTitle from '@mui/material/AlertTitle';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinDropIcon from '@mui/icons-material/PinDrop';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
-import AddLocationForm from './components/addLocationForm.js'
+import AddLocationForm from './components/AddLocationForm.js'
 import UserForm from './components/UserForm.js'
 import LocationInfo from './components/LocationInfo.js'
 import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
@@ -99,8 +99,22 @@ export default class App extends React.PureComponent {
         this.error = this.error.bind(this);
         this.displayCustomSearchResults = this.displayCustomSearchResults.bind(this);
         this.voiceSearch = this.voiceSearch.bind(this);
+        this.unrenderRegion = this.unrenderRegion.bind(this);
+        this.unrenderMarker = this.unrenderMarker.bind(this);
     }
 
+    unrenderRegion(regionId){
+      let copy = [...this.state.renderedRegions];
+      let index = this.state.renderedRegions.indexOf(this.state.renderedRegions);
+      if (index !== -1){
+        copy.splice(index, 1);
+        this.setState({renderedRegions: copy});
+      }
+      this.setState({detailedRegion: false});
+      this.draw.delete(regionId);
+      if (this.state.currentPopup) this.state.currentPopup.remove();
+    }
+    
     getPinsWithinRegion(){
       
       console.log(this.state.currentRegion.backId);
@@ -108,23 +122,32 @@ export default class App extends React.PureComponent {
       
   
       api.getPinsWithinPolygon(this.state.currentRegion.backId, function (err, res) {
-        if (err){
-          t.error(err);
-          return console.error(err);
-        }
+        if (err) return t.error(err);
         if (res){
           console.log(res);
-          let regionTags = []
+          console.log(res.data.data.getPinsWithin);
+          console.log('test');
+          //console.log(res.data.errors[0].message);
+          if (res.data.errors && res.data.errors[0].message === "Cannot read properties of null (reading 'features')") {
+            console.log('deleted');
+            t.unrenderRegion(t.state.currentRegion.id);
+            //t.draw.delete(t.state.currentRegion.id);
+            return t.error('The region you were viewing has been deleted by its owner');
+          }
+          console.log(res);
+          let regionTags = [];
+          if (!res.data.data.getPinsWithin.pins.length) {
+            return t.setState({enclosedTags: [], enclosedImages: [], detailedRegion: true});
+          }
 
           api.getImagesOfPins(res.data.data.getPinsWithin.pins, function (imgErr, imgRes) {
-            if(imgErr) {
-              t.error(imgErr);
-              return console.error(imgErr);
-            }
+            if(imgErr) return t.error(imgErr);
             if (imgRes) {
+
               t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
           });
+          
           for(let p of res.data.data.getPinsWithin.pins){
             regionTags = regionTags.concat(p.features.properties.tags);
             regionTags = [...new Set(regionTags)];
@@ -147,10 +170,8 @@ export default class App extends React.PureComponent {
         
         let id = marker.id;
         api.uploadImage(marker, function(upErr, res){
-          if (upErr) {
-            t.error(upErr);
-            return console.error(upErr);
-          }
+          if (upErr) return t.error(upErr);
+            
           if (res)
             {
               console.log(res)
@@ -158,10 +179,7 @@ export default class App extends React.PureComponent {
               console.log(marker);
               marker.togglePopup = function () {
                 api.getImage(marker.imageId, function (imgErr, imgRes) {
-                  if(imgErr) {
-                    t.error(imgErr);
-                    return console.error(imgErr);
-                  }
+                  if(imgErr) return t.error(imgErr);
                   if (imgRes) {
                     console.log(imgRes)
                     let url = imgRes.data.data.getPhoto.url;
@@ -179,7 +197,7 @@ export default class App extends React.PureComponent {
                       let options = {timeout: DIRECTION_TIMEOUT};
                       let error = (err) => {
                         t.setState({viewingDirections: false}, t.timeoutDirections)
-                        console.error(err);
+                        return t.error(err);
                       };
                       navigator.geolocation.getCurrentPosition(function (res) {
                         console.log(marker);
@@ -205,7 +223,7 @@ export default class App extends React.PureComponent {
 
     createMarker(marker, t){
       api.createPin(marker, function (err, res) {
-        if (err) return console.error(err);
+        if (err) return t.error(err);
         if (res) {
           console.log(res);
           marker.id=res.data.data.createPin._id;
@@ -223,7 +241,7 @@ export default class App extends React.PureComponent {
       //let coord = JSON.stringify(region.geometry.coordinates[0])
       //let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`}
       api.createPolygon(region, function (err, res) {
-        if(err) return console.error(err);
+        if(err) return t.error(err);
         if (res) {
           console.log(res);
           region.backId = res.data.data.createPolygon._id;
@@ -235,6 +253,7 @@ export default class App extends React.PureComponent {
     }
 
     error(err){
+      console.error(err);
       this.setState({genericError: err});
       setTimeout(() => {
         this.setState({genericError: null})
@@ -244,7 +263,7 @@ export default class App extends React.PureComponent {
     getRegions(t, removeOld=false){
 
       api.getPolygons({lat: t.state.lat, lng: t.state.lng}, function (err, res) {
-        if (err) console.error(err);
+        if (err) t.error(err);
         if (res) {
           console.log(res);
           if (removeOld) {
@@ -295,7 +314,7 @@ export default class App extends React.PureComponent {
     getImage(marker, m, imgId, t){
       console.log(this.state.currentMarkerImages)
       api.getImagesFromIds(this.state.currentMarkerImages, function (err, res) {
-        if (err) return console.error(err);
+        if (err) return t.error(err);
         if (res) {
           console.log(res);
           let url = res[0].data.data.getPhoto.url;
@@ -312,7 +331,7 @@ export default class App extends React.PureComponent {
             console.log('getting directions');
             let options = {timeout: DIRECTION_TIMEOUT};
             let error = (err) => {
-              console.error(err);
+              t.error(err);
               t.setState({loading: false}, t.timeoutDirections);
             };
             navigator.geolocation.getCurrentPosition(function (res) {
@@ -337,7 +356,7 @@ export default class App extends React.PureComponent {
     getMarkers(t, removeOld=false, search=false){
 
       api.getPins({lat: t.state.lat, lng:t.state.lng}, function (err, markers) {
-        if (err) console.error(err);
+        if (err) return t.error(err);
         if (markers) {
           console.log(markers);
           console.log(t.state.renderedMarkers);
@@ -392,7 +411,7 @@ export default class App extends React.PureComponent {
             marker.tags = m.features.properties.tags;
             api.getRatings(marker.id, function (ratingErr, ratingsRes) {
               if(ratingErr){
-                return console.error(ratingErr);
+                return t.error(ratingErr);
               }
               if(ratingsRes){
                 console.log(ratingsRes);
@@ -417,8 +436,16 @@ export default class App extends React.PureComponent {
                   }
                 }) */
                 api.getImageFromPinId(marker.id, function (err, res) {
-                  if(err)return console.error(err);
+                  if(err)return t.error(err);
+                  
                   if (res) {
+                    if (res.data.errors) {
+                      if (res.data.errors[0].message === "Cannot read properties of null (reading '_id')") {
+                        t.unrenderMarker(marker);
+                        return t.error("The location you were trying to view has been deleted by its owner");
+                      }
+                      return t.error(res.data.errors[0].message);
+                    }
                     console.log(res);
                     t.setState({currentMarkerImages: res.data.data.getImages.images});
                     let imgId = res.data.data.getImages.images[0]._id;
@@ -739,37 +766,37 @@ export default class App extends React.PureComponent {
       let t = this;
       console.log(this.state.currentRegion.backId);
       api.deletePolygon(this.state.currentRegion.backId, function (err, res) {
-        if (err) console.error(err);
+        if (err) return t.error(err);
         if (res) {
-          console.log(res)
-          let copy = [...t.state.renderedRegions];
-          let index = t.state.renderedRegions.indexOf(t.state.renderedRegions);
-          if (index !== -1){
-            copy.splice(index, 1);
-            t.setState({renderedRegions: copy});
-          }
           t.setState({detailedRegion: false});
-          t.draw.delete(t.state.currentRegion.id);
-          if (t.state.currentPopup) t.state.currentPopup.remove();
+          console.log(res)
+          t.unrenderRegion(t.state.currentRegion.id)
         }
       });
       return;
       
     }
 
+
+    unrenderMarker(marker){
+      let copy = [...this.state.renderedMarkers];
+      let index = this.state.renderedMarkers.indexOf(marker);
+      console.log(index);
+      if (index !== -1){
+        copy.splice(index, 1);
+        this.setState({renderedMarkers: copy, detailedLocation: false});
+        marker.remove();
+      }
+    }
+
     deleteLocation(){
       let t = this;
       api.deletePin(this.state.currentMarker.id, function (err, res) {
-        if(err) return console.error(err);
+        if(err) return t.error(err);
         if(res){
-          let copy = [...t.state.renderedMarkers];
-          let index = t.state.renderedMarkers.indexOf(t.state.currentMarker);
-          if (index !== -1){
-            copy.splice(index, 1);
-            t.setState({renderedMarkers: copy});
-          }
+          t.unrenderMarker(t.state.currentMarker);
           t.setState({detailedLocation: false});
-          t.state.currentMarker.remove();
+          //t.state.currentMarker.remove();
           t.setState({currentMarker: null});
         }
 
@@ -935,7 +962,7 @@ export default class App extends React.PureComponent {
             t.setState({currentMarker: marker})
             console.log(t.state.currentMarker);
             api.getImageFromPinId(marker.id, function (err, res) {
-              if(err) return console.error(err);
+              if(err) return t.error(err);
               if (res) {
                 console.log(res);
                 t.setState({currentMarkerImages: res.data.data.getImages.images});
@@ -975,7 +1002,7 @@ export default class App extends React.PureComponent {
       if (!this.state.searchTags.length) return;
       let t = this;
       api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.searchTags, function (err, res) {
-        if(err) return console.error(err);
+        if(err) return t.error(err);
         if (res){
           console.log(res);
           for(let match of res.data.data.getNear.pins){
@@ -1010,7 +1037,7 @@ export default class App extends React.PureComponent {
                 t.setState({currentMarker: marker})
                 console.log(t.state.currentMarker);
                 api.getImageFromPinId(marker.id, function (err, res) {
-                  if (err)console.error(err);
+                  if (err)return t.error(err);
                   if (res) {
                     t.setState({currentMarkerImages: res.data.data.getImages.images});
                     let imgId = res.data.data.getImages.images[0]._id;
@@ -1140,7 +1167,7 @@ export default class App extends React.PureComponent {
         this.setState({displayTagSearchResults: false});
         if (this.state.customSearch) {
           api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
-            if (err) return console.error(err);
+            if (err) return t.error(err);
             console.log(res);
             t.setState({customSearchTags: res.data.data.searchByTag.tags});
             t.removeHighlighted()
@@ -1156,7 +1183,7 @@ export default class App extends React.PureComponent {
           
         this.setState({customSearchTags: null});
         api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.audioTags, function (err, res) {
-          if (err) return console.error(err);
+          if (err) return t.error(err);
           if (res) {
             console.log(res)
             t.displayCustomSearchResults(res.data.data.getNear.pins);
@@ -1263,7 +1290,12 @@ export default class App extends React.PureComponent {
                 {
                   this.state.searching?
                   
-                  <SearchBar displayVoiceSearch={this.voiceSearch} pos={{lat: this.state.lat, lng: this.state.lng}} searchChange = {this.handleSearchChange.bind(this)} search={this.performSearch.bind(this)}> </SearchBar>
+                  <SearchBar displayVoiceSearch={this.voiceSearch} 
+                    pos={{lat: this.state.lat, lng: this.state.lng}} 
+                    searchChange = {this.handleSearchChange.bind(this)} 
+                    search={this.performSearch.bind(this)}> 
+                    onError={this.error}
+                  </SearchBar>
                   :
                   <Fab onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
                     <SearchIcon />
@@ -1335,6 +1367,15 @@ export default class App extends React.PureComponent {
             </Box>
             <Box id='errors-and-warnings'>
               {
+                this.state.genericError?
+                <Alert severity="error">
+                    <AlertTitle>Uh-oh</AlertTitle>
+                    {this.state.genericError}
+                  </Alert>
+                  :
+                  null
+              }
+              {
                   this.state.noMatches?
                   <Alert severity="warning">
                     <AlertTitle>Uh-oh</AlertTitle>
@@ -1375,6 +1416,8 @@ export default class App extends React.PureComponent {
                   marker={this.state.currentMarker}
                   close={this.closingLocation} owner={this.state.currentMarker.owner}
                   user={this.state.user}
+                  onError={this.error}
+                  unrender={this.unrenderMarker}
                   images={this.state.displayImgs}
                   updateImages={(newImg)=>{
                     let c = this.state.displayImgs;
@@ -1390,6 +1433,7 @@ export default class App extends React.PureComponent {
                 <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} 
                   submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} 
                   tags={this.state.tags} 
+                  onError={this.error}
                   categoryChange={this.handleCategoryChange.bind(this)} 
                   changeLocationDescription={this.handleLocationDescription} 
                   changeLocationName={this.handleLocationName}></AddLocationForm>
@@ -1401,7 +1445,12 @@ export default class App extends React.PureComponent {
               {
                 this.state.accountForm?
 
-                <UserForm cancel={this.cancelAccount} onLoginFormSubmit={this.onLoginFormSubmit} createAccount={true}></UserForm>
+                <UserForm 
+                  cancel={this.cancelAccount} 
+                  onLoginFormSubmit={this.onLoginFormSubmit} 
+                  createAccount={true}>
+                  onError={this.error}
+                </UserForm>
                 :
                 null
               }

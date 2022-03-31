@@ -52,7 +52,7 @@ export default class addLocationForm extends React.PureComponent{
       console.log(e.target.value);
       if (e.target.value.length > 4) {
         api.getLocationCoord(e.target.value, true, function (err, res) {
-          if (err) console.error(err);
+          if (err) return this.props.onError(err);
           if (res) {
             console.log(res);
             t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});

@@ -60,6 +60,7 @@ export default class UserForm extends React.PureComponent{
         else {
           api.registerUser(username, password, (err, user) => {
             console.log(user);
+            if (err) this.props.onError(err);
             if (user.data.createUser.message) { 
               this.setState((prevState) => ({
                 errorMessage: user.data.createUser.message
@@ -71,6 +72,7 @@ export default class UserForm extends React.PureComponent{
         }
       } else {
         api.signIn(username, password, (err, user) => {
+          if (err) this.props.onError(err);
           if (user.data.signin.message) {
             this.setState((prevState) => ({
               errorMessage: user.data.signin.message

@@ -49,14 +49,12 @@ export default function LocationInfo(props) {
   const [fileUploaded, setFileUpload] = React.useState(false);
   const [file, setFile] = React.useState(null);
   const [fileTooBig, setFileTooBig] = React.useState(false);
-  const { owner, close , deleteLocation, user, images, updateImages, marker } = props;
+  const { onError, unrender, owner, close , deleteLocation, user, images, updateImages, marker } = props;
   console.log(marker);
   const [displayImages, setDisplayImages] = React.useState(images);
   React.useEffect(() => {
     api.getRatings(marker.id, function (err, res) {
-      if(err){
-        return console.error(err);
-      }
+      if(err) return onError(err)
       if (res) {
         console.log(res);
         console.log(res.data.getRatings.ratings);
@@ -81,11 +79,20 @@ export default function LocationInfo(props) {
     let copy = marker;
     copy.image = file;
     api.uploadImage(copy, function (err, res) {
-      if (err) return console.error(err);
+      if (err) return onError(err);
       if (res) {
         console.log(res);
+        if (res.data.errors) {
+          setAddImage(false);
+          if (res.data.errors[0].message === "Cannot read properties of null (reading '_id')") {
+            unrender(marker);
+            return onError('Sorry, this location no longer exists');
+          }
+          return onError(res.data.errors[0].message);
+        }
+        
         api.getImage(res.data.data.createImage._id, function (err2, res2) {
-          if(err2) return console.error(err2);
+          if(err2) return onError(err2);
           if (res2){
             console.log(res2);
             let copy = [...displayImages];
@@ -105,17 +112,13 @@ export default function LocationInfo(props) {
     console.log(user);
     setRating(val);
     api.getRatings(marker.id, function (getErr, getRes) {
-      if (getErr) {
-        return console.error(getErr);
-      }
+      if (getErr) return onError(getErr);
       if (getRes) {
         let original = getRes.data.getRatings.ratings.find((x) => x.createdBy === user);
         console.log(original);
         if (original) {
           api.updateRating(val, marker.id, 'fdfsa', function (upErr, upRes) {
-            if(upErr){
-              return console.error(upErr);
-            }
+            if(upErr) return onError(upErr);
             if (upRes) {
               
               console.log(upRes);
@@ -124,9 +127,7 @@ export default function LocationInfo(props) {
         }
         else {
           api.createRating(val, marker.id, 'dasda', function (err, res) {
-            if (err) {
-              return console.error(err);
-            }
+            if (err) return onError(err);
             if (res) {
               console.log(res);
             }
