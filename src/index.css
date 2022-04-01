@@ -49,6 +49,16 @@
 #new-image-form{
   margin-top: 10%;
 }
+
+#map-style-control{
+  position: absolute;
+  right: 5px;
+  top: 5px;
+
+}
+#map-style-control:hover{
+  opacity: 100%;
+}
 /*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
 #overlay {
     position: absolute;

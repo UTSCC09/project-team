@@ -214,15 +214,16 @@ export default function LocationInfo(props) {
               </IconButton>
           }
           title={marker.name}
-          subheader={<div></div>}
         />
-        
+        <Typography sx={{marginLeft: '5px', width: '10px'}} variant="h6" color="text.secondary">
+          Tags:
+        </Typography> 
         <Stack direction="row" sx={{overflow: 'scroll', marginTop:'7px', marginBottom:'2px'}} spacing={1}>
-          {marker.tags.map((tag) =>  <Chip sx={{margin: '5px'}} key={tag} label={tag} variant="outlined" />)}
+          {marker.tags.map((tag) =>  <Chip key={tag} label={tag} variant="outlined" />)}
         
         </Stack>
 
-        <FormGroup >
+        <FormGroup sx={{marginLeft: '5%'}} >
             <FormControlLabel control={<Switch onChange={(e) => {setStreetView(!streetView)}} checked={streetView} />} label="Street View" />
         </FormGroup>
         
@@ -231,9 +232,11 @@ export default function LocationInfo(props) {
         {
           streetView?
           <div id='street'>
+            
             <Streetview streetViewPanoramaOptions={{position: marker._lngLat,
             pov: { heading: 0, pitch: 0 },
-            zoom: 1,}} apiKey={'AIzaSyDkrJcHAWMRsbbL9i5rzvysM3wyoEl6zQc'}></Streetview>
+            zoom: 1,}} apiKey={'AIzaSyDkrJcHAWMRsbbL9i5rzvysM3wyoEl6zQc'}>
+            </Streetview>
           </div>
           :
           <div id='images'>
