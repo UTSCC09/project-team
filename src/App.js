@@ -152,7 +152,7 @@ export default class App extends React.PureComponent {
           api.getImagesOfPins(res.data.data.getPinsWithin.pins, function (imgErr, imgRes) {
             if(imgErr) return t.error(imgErr);
             if (imgRes) {
-              if (imgRes.data.errors) return t.error(imgRes.data.errors[0].message);
+              console.log(imgRes);
               t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
           });
@@ -291,11 +291,11 @@ export default class App extends React.PureComponent {
                       navigator.geolocation.getCurrentPosition(function (res) {
                         console.log(marker);
                         console.log(res);
-                        document.querySelector('.mapbox-directions-profile').style.display='block';
                         
-                        t.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
-                        t.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
-                        console.log(t.directions);
+                        t.state.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
+                        t.state.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+                        document.querySelector('.mapbox-directions-profile').style.display='block';
+                        console.log(t.state.directions);
                         t.setState({viewingDirections: true, loading: false});
           
                       }, error, options);
@@ -314,6 +314,7 @@ export default class App extends React.PureComponent {
       api.createPin(marker, function (err, res) {
         if (err) return t.error(err);
         if (res) {
+          if(res.data.errors) return t.error(res.data.errors[0].message);
           console.log(res);
           marker.id=res.data.data.createPin._id;
           marker.owner = res.data.data.createPin.owner;
@@ -332,6 +333,7 @@ export default class App extends React.PureComponent {
       api.createPolygon(region, function (err, res) {
         if(err) return t.error(err);
         if (res) {
+          if(res.data.errors) return t.error(res.data.errors[0].message);
           console.log(res);
           region.backId = res.data.data.createPolygon._id;
           t.setState(prevState => ({
@@ -354,6 +356,7 @@ export default class App extends React.PureComponent {
       api.getPolygons({lat: t.state.lat, lng: t.state.lng}, function (err, res) {
         if (err) t.error(err);
         if (res) {
+          if(res.data.errors) return t.error(res.data.errors[0].message);
           console.log(res);
           if (removeOld) {
             // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
@@ -392,8 +395,9 @@ export default class App extends React.PureComponent {
 
     }
     timeoutDirections(){
-      this.directions.actions.clearDestination();
-      this.directions.removeRoutes();
+      this.state.directions.actions.clearOrigin();
+      this.state.directions.actions.clearDestination();
+      this.state.directions.removeRoutes();
       this.setState({directionsTimedOut: true});
       setTimeout(() => {
         this.setState({directionsTimedOut: false});
@@ -406,6 +410,7 @@ export default class App extends React.PureComponent {
         if (err) return t.error(err);
         if (res) {
           console.log(res);
+          
           let url = res[0].data.data.getPhoto.url;
           console.log(marker.rating)
           marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url, marker.rating))
@@ -429,12 +434,13 @@ export default class App extends React.PureComponent {
             navigator.geolocation.getCurrentPosition(function (res) {
               console.log(marker);
               console.log(res);
+              
+              t.state.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
+              t.state.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+              
               document.querySelector('.mapbox-directions-profile').style.display='block';
-              t.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
-              t.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
               
-              
-              console.log(t.directions);
+              console.log(t.state.directions);
               t.setState({viewingDirections: true, loading: false});
 
             }, error, options);
@@ -450,6 +456,7 @@ export default class App extends React.PureComponent {
       api.getPins({lat: t.state.lat, lng:t.state.lng}, function (err, markers) {
         if (err) return t.error(err);
         if (markers) {
+          if(markers.data.errors) return t.error(markers.data.errors[0].message);
           console.log(markers);
           console.log(t.state.renderedMarkers);
           if (removeOld) {
@@ -506,6 +513,7 @@ export default class App extends React.PureComponent {
                 return t.error(ratingErr);
               }
               if(ratingsRes){
+                if(ratingsRes.data.errors) return t.error(ratingsRes.data.errors[0].message);
                 console.log(ratingsRes);
                 marker.rating = ratingsRes.data.getRatings.average? Math.round(ratingsRes.data.getRatings.average *10) / 10 : '-';
               }
@@ -519,14 +527,7 @@ export default class App extends React.PureComponent {
               else{
                 t.setState({currentMarker: marker})
                 console.log(t.state.currentMarker);
-                /* api.getImagesOfPins([marker], function (imgErr, res) {
-                  if (imgErr) return console.error(imgErr);
-                  if (res) {
-                    console.log(res);
-                    let imgId = res.data.data.getImages[0]._id;
-                    t.getImage(marker, m, imgId, t)
-                  }
-                }) */
+                
                 api.getImageFromPinId(marker.id, function (err, res) {
                   if(err)return t.error(err);
                   
@@ -778,7 +779,7 @@ export default class App extends React.PureComponent {
         //prevent click to add waypoints
         return;
       }
-      this.directions = directions;
+      this.state.directions = directions;
       map.addControl(directions);
       
     
@@ -853,6 +854,7 @@ export default class App extends React.PureComponent {
       api.deletePolygon(this.state.currentRegion.backId, function (err, res) {
         if (err) return t.error(err);
         if (res) {
+          if(res.data.errors) return t.error(res.data.errors[0].message);
           t.setState({detailedRegion: false});
           console.log(res)
           t.unrenderRegion(t.state.currentRegion.id)
@@ -879,6 +881,7 @@ export default class App extends React.PureComponent {
       api.deletePin(this.state.currentMarker.id, function (err, res) {
         if(err) return t.error(err);
         if(res){
+          if(res.data.errors) return t.error(res.data.errors[0].message);
           t.unrenderMarker(t.state.currentMarker);
           t.setState({detailedLocation: false});
           //t.state.currentMarker.remove();
@@ -1055,6 +1058,7 @@ export default class App extends React.PureComponent {
             api.getImageFromPinId(marker.id, function (err, res) {
               if(err) return t.error(err);
               if (res) {
+                if(res.data.errors) return t.error(res.data.errors[0].message);
                 console.log(res);
                 t.setState({currentMarkerImages: res.data.data.getImages.images});
                 let imgId = res.data.data.getImages.images[0]._id;
@@ -1083,6 +1087,7 @@ export default class App extends React.PureComponent {
       api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.searchTags, function (err, res) {
         if(err) return t.error(err);
         if (res){
+          if(res.data.errors) return t.error(res.data.errors[0].message);
           console.log(res);
           for(let match of res.data.data.getNear.pins){
             const marker = new mapboxgl.Marker({
@@ -1118,6 +1123,7 @@ export default class App extends React.PureComponent {
                 api.getImageFromPinId(marker.id, function (err, res) {
                   if (err)return t.error(err);
                   if (res) {
+                    if(res.data.errors) return t.error(res.data.errors[0].message);
                     t.setState({currentMarkerImages: res.data.data.getImages.images});
                     let imgId = res.data.data.getImages.images[0]._id;
                     t.getImage(marker, match, imgId, t)
@@ -1237,11 +1243,14 @@ export default class App extends React.PureComponent {
         if (this.state.customSearch) {
           api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
             if (err) return t.error(err);
-            console.log(res);
-            t.setState({customSearchTags: res.data.data.searchByTag.tags});
-            t.removeHighlighted()
+            if (res) {
+              if(res.data.errors) return t.error(res.data.errors[0].message);
+              console.log(res);
+              t.setState({customSearchTags: res.data.data.searchByTag.tags});
+              t.removeHighlighted()
 
-            t.displayCustomSearchResults(res.data.data.searchByTag.pins);
+              t.displayCustomSearchResults(res.data.data.searchByTag.pins);
+            }
           });
         }
         
@@ -1254,6 +1263,7 @@ export default class App extends React.PureComponent {
         api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.audioTags, function (err, res) {
           if (err) return t.error(err);
           if (res) {
+            if(res.data.errors) return t.error(res.data.errors[0].message);
             console.log(res)
             t.displayCustomSearchResults(res.data.data.getNear.pins);
           }
@@ -1319,11 +1329,11 @@ export default class App extends React.PureComponent {
     cancelDirections(){
       this.setState({viewingDirections: false}, ()=> {
         document.querySelector('.mapbox-directions-profile').style.display='none';
-        console.log(this.directions);
+        console.log(this.state.directions);
+        this.state.directions.removeRoutes();        
+        this.state.directions.actions.clearOrigin();
+        this.state.directions.actions.clearDestination();
         
-        this.directions.actions.clearDestination();
-        this.directions.removeRoutes();
-
       });
     }
     updateMapStyle(index){
@@ -1453,7 +1463,12 @@ export default class App extends React.PureComponent {
                   <MapIcon />
                 </IconButton>
                 :
-                <Accordion >
+                <div>
+                {
+                  this.state.viewingDirections?
+                  null
+                  :
+                  <Accordion >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />} >
                     <Typography>Map Style</Typography>
                   </AccordionSummary>
@@ -1466,6 +1481,9 @@ export default class App extends React.PureComponent {
                     </FormGroup>
                   </AccordionDetails>
                 </Accordion>
+                }
+                </div>
+                
               }
               
               
