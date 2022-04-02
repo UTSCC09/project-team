@@ -134,7 +134,6 @@ const pinMultipleResultType = new GraphQLUnionType({
     name: 'PinMultipleResult',
     types: [pinMultipleType, ErrorType],
     resolveType: (value) => {
-        console.log(value);
         return value.message? ErrorType.name : pinMultipleType.name;
     }
 })

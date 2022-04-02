@@ -17,9 +17,7 @@ const client = new Wit({
 createPin = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    console.log("test");
     let cleanInput = sanitizeInput(input);
-    console.log(cleanInput, input);
     const pinInput = Object.assign({}, cleanInput, {user: context.req.session.user, owner: context.req.session.user.username});
     const pin = await new Pin(pinInput).save();
     return pin;
@@ -33,11 +31,13 @@ getPin = async function (context) {
 addTag = async function (input , context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    let pin = await Pin.findOne({_id: context.req.params.id}).exec();
-    if (pin.features.properties.tags.includes(input.tag)) {
-        return(DupelicateError(input.tag));
+    let id = sanitizeInput(context.req.params.id);
+    let tag = sanitizeInput(input.tag);
+    let pin = await Pin.findOne({_id: id}).exec();
+    if (pin.features.properties.tags.includes(tag)) {
+        return(DupelicateError(tag));
     }
-    pin.features.properties.tags.push(input.tag);
+    pin.features.properties.tags.push(tag);
     pin.save();
     return pin;
 }
@@ -45,17 +45,19 @@ addTag = async function (input , context) {
 deleteTag = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    let pin = await Pin.findOne({_id: context.req.params.id}).exec();
-    pin.features.properties.tags.pop(input.tag);
+    let id = sanitizeInput(context.req.params.id);
+    let tag = sanitizeInput(input.tag);
+    let pin = await Pin.findOne({_id: id}).exec();
+    pin.features.properties.tags.pop(tag);
     pin.save();
     return pin;
 }
 
 getNear = async function (input) {
-    const radius = input.radius;
-    const tags = input.tags;
-    const lat = input.lat;
-    const lon = input.lon;
+    const radius = sanitizeInput(input.radius);
+    const tags = sanitizeInput(input.tags);
+    const lat = sanitizeInput(input.lat);
+    const lon = sanitizeInput(input.lon);
     pins = await searchPins(radius, lat, lon, tags);
     if (!pins) {
         return UserInputError(radius);
@@ -65,14 +67,14 @@ getNear = async function (input) {
 
 listPins = async function (context) {
     const pins = await Pin.find().sort({updated_at: -1}).exec();
-    console.log(pins[0].updated_at);
     return {'pins': pins};
 };
 
 deletePin = async function(input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    pin = await Pin.findOne({_id: id}).exec();
     let perm = isAuthorized(context.req, pin.user);
     if (perm) return perm();
     Pin.deleteOne({_id: pin._id}).exec();
@@ -108,9 +110,9 @@ searchPinByTag = async function(input, context) {
         if (tags.length == 0) {
             return UserInputError(text);
         }
-        const radius = input.radius;
-        const lat = input.lat;
-        const lon = input.lon;
+        const radius = sanitizeInput(input.radius);
+        const lat = sanitizeInput(input.lat);
+        const lon = sanitizeInput(input.lon);
         pins = await searchPins(radius, lat, lon, tags);
         if (!pins) {
             return UserInputError(radius);
