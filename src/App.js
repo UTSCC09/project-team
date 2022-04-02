@@ -135,10 +135,13 @@ export default class App extends React.PureComponent {
           console.log(res);
           console.log(res.data.data.getPinsWithin);
           console.log('test');
-          if (res.data.errors && res.data.errors[0].message === "Cannot read properties of null (reading 'features')") {
-            console.log('deleted');
-            t.unrenderRegion(t.state.currentRegion.id);
-            return t.error('The region you were viewing has been deleted by its owner');
+          if (res.data.errors) {
+            if (res.data.errors[0].message === "Cannot read properties of null (reading 'features')") {
+              console.log('deleted');
+              t.unrenderRegion(t.state.currentRegion.id);
+              return t.error('The region you were viewing has been deleted by its owner');
+            }
+            return t.error(res.data.errors[0].message);
           }
           console.log(res);
           let regionTags = [];
@@ -149,7 +152,7 @@ export default class App extends React.PureComponent {
           api.getImagesOfPins(res.data.data.getPinsWithin.pins, function (imgErr, imgRes) {
             if(imgErr) return t.error(imgErr);
             if (imgRes) {
-
+              if (imgRes.data.errors) return t.error(imgRes.data.errors[0].message);
               t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
           });
@@ -263,6 +266,7 @@ export default class App extends React.PureComponent {
                 api.getImage(marker.imageId, function (imgErr, imgRes) {
                   if(imgErr) return t.error(imgErr);
                   if (imgRes) {
+                    if (imgRes.data.errors) return t.error(imgRes.data.errors[0].message);
                     console.log(imgRes)
                     let url = imgRes.data.data.getPhoto.url;
                     t.setState({displayImgs: [url]});
