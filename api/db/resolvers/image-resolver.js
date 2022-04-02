@@ -4,7 +4,7 @@ var uuid = require('node-uuid');
 
 const Image = require('../models/image-model');
 const Pin = require('../models/pin-model');
-const {isAuthenticated, isAuthorized} = require('../../util');
+const {isAuthenticated, isAuthorized, sanitizeInput} = require('../../util');
 const {UserInputError} = require('../../graphql/schemas/error-schema')
 
 createImage = async function (input, context) {
