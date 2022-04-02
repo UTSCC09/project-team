@@ -10,11 +10,12 @@ const {UserInputError} = require('../../graphql/schemas/error-schema')
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
+    let id = sanitizeInput(context.req.params.id);
+    let title = sanitizeInput(input.title);
     // Validate location exists in db
-    const pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    const pin = await Pin.findOne({_id: id}).exec();
 
     const {createReadStream, filename, mimetype, encoding} = await input.image;
-    console.log(mimetype);
     let fileExt = null;
     if (mimetype == 'image/jpeg') {
         fileExt = 'jpg';
@@ -33,7 +34,7 @@ createImage = async function (input, context) {
     await stream.pipe(out);
     const image = await new Image({
         user: context.req.session.user,
-        title: input.title,
+        title: title,
         image: file_id + '.' + fileExt,
         pin: pin._id
     }).save();
@@ -42,26 +43,28 @@ createImage = async function (input, context) {
 
 getImages = async function (context) {
     // Validate location exists in db
-    const pin = await Pin.findOne({_id: context.req.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    const pin = await Pin.findOne({_id: id}).exec();
 
     const images = await Image.find({pin: pin._id}).exec();
     return {'images': images};
 }
 
 getPhoto = async function(context) {
-    const image = await Image.findOne({_id: context.req.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    const image = await Image.findOne({_id: id}).exec();
     return ({url: "http://localhost:8000/images/" + image.image});
 }
 
 deleteImage = async function(context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    const image = await Image.findOne({_id: context.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    const image = await Image.findOne({_id: id}).exec();
     let perm = isAuthorized(context.req, image.user);
     if (perm) return perm();
-    const status = Image.deleteOne({_id: context.params.id}).exec();
+    const status = Image.deleteOne({_id: image._id}).exec();
     const upload_path = path.join(__dirname, `/../../static/images/${image.image}`);
-    console.log(status, upload_path);
     fs.unlinkSync(upload_path);
     return null;
 }

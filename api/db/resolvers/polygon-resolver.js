@@ -11,7 +11,8 @@ createPolygon = async function (input, context) {
 };
 
 getPolygon = async function (input, context) {
-    const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    const polygon = await Polygon.findOne({_id: id}).exec();
     return polygon;
 };
 
@@ -21,10 +22,11 @@ listPolygons = async function ({input}) {
 };
 
 getNear = async function (input) {
-    console.log("test");
-    const radius = input.radius
+    const radius = sanitizeInput(input.radius);
+    const lat = sanitizeInput(input.lat);
+    const lon = sanitizeInput(input.lon);
     if (radius > 2000){
-        console.log("Too large");
+        return UserInputError(radius);
     }
     const polygons = await Polygon.find({
         'features.geometry': {
@@ -32,7 +34,7 @@ getNear = async function (input) {
                 $maxDistance: radius,
                 $geometry: {
                     type: "Point",
-                    coordinates: [input.lon, input.lat]
+                    coordinates: [lon, lat]
                 }
             }
         }
@@ -41,7 +43,8 @@ getNear = async function (input) {
 };
 
 getPinsWithin = async function(input, context) {
-    const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    const polygon = await Polygon.findOne({_id: id}).exec();
     const pins = await Pin.find({
         'features.geometry': {
             $geoWithin: {
@@ -55,7 +58,8 @@ getPinsWithin = async function(input, context) {
 deletePolygon = async function(input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
-    const polygon = await Polygon.findOne({_id: context.req.params.id}).exec();
+    let id = sanitizeInput(context.req.params.id);
+    const polygon = await Polygon.findOne({_id: id}).exec();
     let perm = isAuthorized(context.req, polygon.user);
     if (perm) return perm();
     Polygon.deleteOne({_id: polygon._id}).exec();

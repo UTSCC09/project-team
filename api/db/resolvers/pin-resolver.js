@@ -67,7 +67,6 @@ getNear = async function (input) {
 
 listPins = async function (context) {
     const pins = await Pin.find().sort({updated_at: -1}).exec();
-    console.log(pins[0].updated_at);
     return {'pins': pins};
 };
 
@@ -92,7 +91,6 @@ deletePin = async function(input, context) {
 searchPinByTag = async function(input, context) {
     const text = input.message;
     const speech = input.speech;
-    console.log(speech);
     let data = null
     if (speech) {
         const {createReadStream, filename, mimetype, encoding} = await input.speech;
