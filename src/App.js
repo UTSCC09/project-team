@@ -24,9 +24,11 @@ import Checkbox from '@mui/material/Checkbox';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Accordion from '@mui/material/Accordion';
+import MapIcon from '@mui/icons-material/Map';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import IconButton from '@mui/material/IconButton';
 import sanitize from "sanitize-filename"
 import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 import api from './api';
@@ -71,6 +73,8 @@ export default class App extends React.PureComponent {
           flyTo: [],
           checked: 0
         };
+        this.defaultView = this.defaultView.bind(this);
+        this.lookAround = this.lookAround.bind(this);
         this.timeoutDirections = this.timeoutDirections.bind(this);
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
@@ -169,6 +173,82 @@ export default class App extends React.PureComponent {
       }, 5000);
     }
 
+    defaultView(){
+      this.setState({lookingAround: false});
+      this.state.map.removeLayer('add-3d-buildings');
+      this.state.map.removeLayer('sky');
+      this.state.map.setPitch(0);
+    }
+    
+
+    lookAround(){
+      if (this.state.checked && this.state.checked !== 0){
+        return this.error('Please select the standard map style to look around', 'warning');
+      }
+
+      console.log(this.state.currentMarker);
+      let lng = this.state.currentMarker._lngLat.lng;
+      let ltt = this.state.currentMarker._lngLat.lat;
+      this.setState({lookingAround: true});
+      //add sky
+      this.state.map.addLayer({
+        'id': 'sky',
+        'type': 'sky',
+        'paint': {
+        'sky-type': 'atmosphere',
+        'sky-atmosphere-sun': [0.0, 0.0],
+        'sky-atmosphere-sun-intensity': 15
+        }
+      });
+      this.flyToCoord([lng, ltt], 16, 90);
+      //source: https://docs.mapbox.com/mapbox-gl-js/example/3d-buildings/
+      const layers = this.state.map.getStyle().layers;
+      const labelLayerId = layers.find(
+      (layer) => layer.type === 'symbol' && layer.layout['text-field']
+      ).id;
+      
+      // The 'building' layer in the Mapbox Streets
+      // vector tileset contains building height data
+      // from OpenStreetMap.
+      this.state.map.addLayer(
+          {
+          'id': 'add-3d-buildings',
+          'source': 'composite',
+          'source-layer': 'building',
+          'filter': ['==', 'extrude', 'true'],
+          'type': 'fill-extrusion',
+          'minzoom': 15,
+          'paint': {
+          'fill-extrusion-color': '#aaa',
+          
+          // Use an 'interpolate' expression to
+          // add a smooth transition effect to
+          // the buildings as the user zooms in.
+          'fill-extrusion-height': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          15,
+          0,
+          15.05,
+          ['get', 'height']
+          ],
+          'fill-extrusion-base': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          15,
+          0,
+          15.05,
+          ['get', 'min_height']
+          ],
+          'fill-extrusion-opacity': 0.6
+          }
+          },
+          labelLayerId
+          );
+
+    }
 
     uploadImage(marker, res, t){
         api.uploadImage(marker, function(upErr, res){
@@ -192,6 +272,9 @@ export default class App extends React.PureComponent {
                       t.setState({detailedLocation: true, currentMarker: marker, currentMarkerImages: [url]});
                       
                       console.log(t.state.currentMarker);
+                    }
+                    document.getElementById('look-around-btn').onclick = function () {
+                      t.lookAround();
                     }
                     document.getElementById(marker.id + '_directions').onclick = function () {
                       t.setState({loading: true});
@@ -254,9 +337,9 @@ export default class App extends React.PureComponent {
       })
     }
 
-    error(err){
+    error(err, severity='error'){
       console.error(err);
-      this.setState({genericError: err});
+      this.setState({genericError: err, severity: severity});
       setTimeout(() => {
         this.setState({genericError: null})
       }, 4000);
@@ -327,6 +410,9 @@ export default class App extends React.PureComponent {
             console.log(t.state.currentMarker);
             t.setState({detailedLocation: true});
             
+          }
+          document.getElementById('look-around-btn').onclick = function () {
+            t.lookAround();
           }
           document.getElementById(marker.id + '_directions').onclick = function () {
             t.setState({loading: true});
@@ -612,7 +698,7 @@ export default class App extends React.PureComponent {
           t.getPinsWithinRegion();
         }
         this.setState({currentPopup: n});
-        //document.querySelector("")
+        
       });
       
       //this.getMarkers(this);
@@ -691,27 +777,7 @@ export default class App extends React.PureComponent {
       this.directions = directions;
       map.addControl(directions);
       
-      map.on('load', () => {
-        map.addSource('mapbox-dem', {
-        'type': 'raster-dem',
-        'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        'tileSize': 512,
-        'maxzoom': 14
-        });
-        // add the DEM source as a terrain layer with exaggerated height
-        map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
-         
-        // add a sky layer that will show when the map is highly pitched
-        map.addLayer({
-        'id': 'sky',
-        'type': 'sky',
-        'paint': {
-        'sky-type': 'atmosphere',
-        'sky-atmosphere-sun': [0.0, 0.0],
-        'sky-atmosphere-sun-intensity': 15
-        }
-        });
-        });
+    
       this.state.map = map;
       
     }
@@ -841,8 +907,11 @@ export default class App extends React.PureComponent {
                             <span class="value">${ratings}</span>
                           </div>
                       </div>
-                      <button id=${id + '_directions'} class="directions"></button>
-                      <button id=${id} class="btn-menu"></button>
+                      <div class="actions">
+                        <button id=${id + '_directions'} class="directions"></button>
+                        <button id='look-around-btn'></button>
+                        <button id=${id} class="btn-menu"></button>
+                      </div>
                   </div>
               </div>`
       if (url) return `<div id="marker-card" class="card">
@@ -879,10 +948,12 @@ export default class App extends React.PureComponent {
                   </div>
               </div>` 
     }
-    flyToCoord(coord) {
+    flyToCoord(coord, zoom=13.6, pitch=0, bearing=0){
       this.state.map.flyTo({
         center: coord,
-        zoom: 13.6
+        zoom: zoom,
+        pitch: pitch,
+        bearing: bearing
       });
     }
     addMarker(event){
@@ -1285,105 +1356,120 @@ export default class App extends React.PureComponent {
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
             
-            <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
-                {
-                  this.state.searching?
-                  
-                  <SearchBar displayVoiceSearch={this.voiceSearch} 
-                    pos={{lat: this.state.lat, lng: this.state.lng}} 
-                    searchChange = {this.handleSearchChange.bind(this)} 
-                    search={this.performSearch.bind(this)}> 
-                    onError={this.error}
-                  </SearchBar>
-                  :
-                  <Fab disabled={this.state.drawingRegion} onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
-                    <SearchIcon />
-                  </Fab>
-                }
+            {
+              this.state.lookingAround?
+              null
+              :
+              <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
+              {
+                this.state.searching?
                 
+                <SearchBar displayVoiceSearch={this.voiceSearch} 
+                  pos={{lat: this.state.lat, lng: this.state.lng}} 
+                  searchChange = {this.handleSearchChange.bind(this)} 
+                  search={this.performSearch.bind(this)}> 
+                  onError={this.error}
+                </SearchBar>
+                :
+                <Fab disabled={this.state.drawingRegion} onClick={()=>{this.setState({searching: true})}} color="primary" aria-label="search">
+                  <SearchIcon />
+                </Fab>
+              }
+              
+              {
+                this.state.searching?
+                
+                null
+                :
+                
+                this.state.signedIn?
+                <div id='location-btn'>
                 {
-                  this.state.searching?
-                  
+                  (this.state.addingLocation || this.state.drawingRegion || this.state.movingMarker)?
                   null
                   :
-                  
-                  this.state.signedIn?
-                  <div id='location-btn'>
-                  {
-                    (this.state.addingLocation || this.state.drawingRegion || this.state.movingMarker)?
-                    null
-                    :
-                    <Fab sx={{marginTop: '7px'}} onClick={ this.signOut } color="error">
-                    <LogoutIcon />
-                  </Fab>
-                  }
+                  <Fab sx={{marginTop: '7px'}} onClick={ this.signOut } color="error">
+                  <LogoutIcon />
+                </Fab>
+                }
+                </div>
+
+                
+                :
+                <Fab onClick={ this.accountSettings } color="secondary" aria-label="account">
+                  <AccountCircleIcon />
+                </Fab>
+              }
+              
+              {
+                (this.state.signedIn && this.state.choosingType && !this.state.searching)?
+                  <div id='types'>
+                    <Fab disabled={this.state.drawingRegion} onClick={ this.addLocation } sx={{m: 1}}>
+                      <PinDropIcon/>
+                    </Fab>
+
+                    <Fab disabled={this.state.drawingRegion} onClick={ () => {this.setState({addingLocation: 'region'})} } sx={{m: 1}}>
+                          <HighlightAltIcon />
+                    </Fab>
                   </div>
-
-                  
-                  :
-                  <Fab onClick={ this.accountSettings } color="secondary" aria-label="account">
-                    <AccountCircleIcon />
-                  </Fab>
-                }
                 
-                {
-                  (this.state.signedIn && this.state.choosingType && !this.state.searching)?
-                    <div id='types'>
-                      <Fab disabled={this.state.drawingRegion} onClick={ this.addLocation } sx={{m: 1}}>
-                        <PinDropIcon/>
-                      </Fab>
-
-                      <Fab disabled={this.state.drawingRegion} onClick={ () => {this.setState({addingLocation: 'region'})} } sx={{m: 1}}>
-                            <HighlightAltIcon />
-                      </Fab>
-                    </div>
-                  
-                      :
-                    null
-                }
-
-                {
-                  (this.state.signedIn && !this.state.searching)?
-                  
-                  <Fab color={locationColor} onClick={ locationClick } aria-label="add">
-                    { locationButton }
-                  </Fab>
-                  
-                  :
+                    :
                   null
-                }
-                {
-                  this.state.viewingDirections?
-                  <Fab onClick={this.cancelDirections.bind(this)}>
-                    <DirectionsOffIcon />
-                  </Fab>
-                  :
-                  null
-                }
+              }
+
+              {
+                (this.state.signedIn && !this.state.searching)?
                 
+                <Fab color={locationColor} onClick={ locationClick } aria-label="add">
+                  { locationButton }
+                </Fab>
                 
-                
-            </Box>
+                :
+                null
+              }
+              {
+                this.state.viewingDirections?
+                <Fab onClick={this.cancelDirections.bind(this)}>
+                  <DirectionsOffIcon />
+                </Fab>
+                :
+                null
+              }
+              
+              
+              
+          </Box>
+            }
+            
             
             <Box id='map-style-control'>
-              <Accordion >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} >
-                  <Typography>Map Style</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <FormGroup >
-                    <FormControlLabel control={<Checkbox onChange={() => {this.updateMapStyle(0)}} checked={this.state.checked === 0} />} label="Standard" />
-                    <FormControlLabel control={<Checkbox checked={this.state.checked === 1} onChange={() => {this.updateMapStyle(1)}} />} label="Satellite" />
-                    <FormControlLabel control={<Checkbox checked={this.state.checked === 2} onChange={() => {this.updateMapStyle(2)}} />} label="Dark" />
-                    <FormControlLabel control={<Checkbox checked={this.state.checked === 3} onChange={() => {this.updateMapStyle(3)}} />} label="Satellite-Streets" />
-                  </FormGroup>
-                </AccordionDetails>
-              </Accordion>
+              {
+                this.state.lookingAround?
+                <IconButton onClick={this.defaultView}>
+                  <MapIcon />
+                </IconButton>
+                :
+                <Accordion >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} >
+                    <Typography>Map Style</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <FormGroup >
+                      <FormControlLabel control={<Checkbox onChange={() => {this.updateMapStyle(0)}} checked={this.state.checked === 0} />} label="Standard" />
+                      <FormControlLabel control={<Checkbox checked={this.state.checked === 1} onChange={() => {this.updateMapStyle(1)}} />} label="Satellite" />
+                      <FormControlLabel control={<Checkbox checked={this.state.checked === 2} onChange={() => {this.updateMapStyle(2)}} />} label="Dark" />
+                      <FormControlLabel control={<Checkbox checked={this.state.checked === 3} onChange={() => {this.updateMapStyle(3)}} />} label="Satellite-Streets" />
+                    </FormGroup>
+                  </AccordionDetails>
+                </Accordion>
+              }
+              
+              
             </Box>
             <Box id='errors-and-warnings'>
               {
                 this.state.genericError?
-                <Alert severity="error">
+                <Alert severity={this.state.severity}>
                     <AlertTitle>Uh-oh</AlertTitle>
                     {this.state.genericError}
                   </Alert>
