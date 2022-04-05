@@ -7,6 +7,8 @@ const Pin = require('../models/pin-model');
 const {isAuthenticated, isAuthorized, sanitizeInput} = require('../../util');
 const {UserInputError, NotFoundError} = require('../../graphql/schemas/error-schema')
 
+const GoToEnum = {oldest: 'oldest', newest: 'newest', page: 'page'};
+
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
     if (auth) return auth();
@@ -50,24 +52,43 @@ getImages = async function (context) {
     return {'images': images};
 }
 
-getImagePage = async function (context) {
+getImagePage = async function (input, context) {
     // Validate location exists in db
     let id = sanitizeInput(context.req.params.id);
     const pin = await Pin.findOne({_id: id}).exec();
-    let page = sanitizeInput(context.req.params.page);
-    let nextPage = (page - 1 < 0) ? 0 : page - 1;
-    const images = await Image.find({pin: pin._id}).sort({createdAt: -1}).skip(nextPage).limit(3).exec();
+    let page;
+    let ordering = -1;
+    switch(input.goto) {
+        case GoToEnum.newest:
+            page = 0;
+            break;
+        case GoToEnum.oldest:
+            page = 0;
+            ordering = 1;
+            break;
+        case GoToEnum.page:
+            page = sanitizeInput(context.req.params.id);
+            break;
+    }
+
+    // Determine if there is a newer image
+    let hasNewerPage = page - 1 > 0;
+    let newerPage = hasNewerPage ? page - 1 : 0;
+    const images = await Image.find({pin: pin._id}).sort({createdAt: ordering}).skip(newerPage).limit(3).exec();
     if (images.length == 0) return NotFoundError("page = " + page);
-    let currentImage = nextPage == page ? images[0] : images[1];
-    let nextImage = nextPage == page ? null : images[0];
-    let previousImage = null;
-    if (currentImage == images[0] && images.length == 2) {
-        previousImage = images[1];
-    } else if (currentImage == images[1] && images.length == 3) {
-        previousImage = images[2];
+    // Determine which index has the current image based on if theres a newer image
+    let currentImage = hasNewerPage ? images[1] : images[0];
+    // Determine which index has the image newer then the current
+    let newerImage = hasNewerPage ? images[0] : null;
+    // Determine which index has the older image based on whether indices of current and newer image
+    let olderImage = null;
+    if (!hasNewerPage && images.length == 2) {
+        olderImage = images[1];
+    } else if (hasNewerPage && images.length == 3) {
+        olderImage = images[2];
     }
     
-    return {'previous': previousImage, 'current': currentImage, 'next': nextImage};
+    return {'older': olderImage, 'current': currentImage, 'newer': newerImage};
 }
 
 getPhoto = async function(context) {
@@ -94,5 +115,6 @@ module.exports = {
   getImages,
   getImagePage,
   getPhoto,
-  deleteImage
+  deleteImage,
+  GoToEnum
 }
