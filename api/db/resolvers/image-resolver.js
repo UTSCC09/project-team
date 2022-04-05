@@ -91,8 +91,8 @@ getImagePage = async function (input, context) {
             currentImage = images[0];
             olderImage = images[1];
         } else if (input.goto == GoToEnum.oldest) {
-            currentImage = images[1];
-            newerImage = images[0];
+            currentImage = images[0];
+            newerImage = images[1];
         } else if (hasNewerPage) {
             newerImage = images[0];
             currentImage = images[1];

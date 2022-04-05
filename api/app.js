@@ -3,11 +3,8 @@ const app = express();
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const db = require('./db/db');
-const commentResolver = require('./db/resolvers/comment-resolver');
-const ratingResolver = require('./db/resolvers/rating-resolver');
 const userSchema = require('./graphql/schemas/user-schema');
 const pinSchema = require('./graphql/schemas/pin-schema');
-const commentSchema = require('./graphql/schemas/comment-schema');
 const ratingSchema = require('./graphql/schemas/rating-schema');
 const polygonSchema = require('./graphql/schemas/polygon-schema');
 const imageSchema = require('./graphql/schemas/image-schema');
@@ -82,14 +79,6 @@ app.use('/pin/:id', graphqlHTTP((req, res)=>{
 app.use('/pin', graphqlHTTP((req, res)=>{
     return {
         schema: pinSchema.schema,
-        graphiql: true,
-        context: {req, res},
-    };
-}));
-
-app.use('/comment', graphqlHTTP((req, res)=>{
-    return {
-        schema: commentSchema.schema,
         graphiql: true,
         context: {req, res},
     };
