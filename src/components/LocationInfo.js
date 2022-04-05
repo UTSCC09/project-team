@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { styled } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
@@ -25,20 +24,10 @@ import FormControl from '@mui/material/FormControl'
 import CloseIcon from '@mui/icons-material/Close';
 const MAX_FILE_SIZE = 8; //mb
 /* https://mui.com/components/cards/#complex-interaction*/
-const ExpandMore = styled((props) => {
-  const { expand, ...other } = props;
-  return <IconButton {...other} />;
-})(({ theme, expand }) => ({
-  transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
-  marginLeft: 'auto',
-  transition: theme.transitions.create('transform', {
-    duration: theme.transitions.duration.shortest,
-  }),
-}));
+
 
 export default function LocationInfo(props) {
   /* Card: https://mui.com/components/cards/#complex-interaction*/
-  const [expanded, setExpanded] = React.useState(false);
   const [addingImage, setAddImage] = React.useState(false);
   /*Ratings: https://mui.com/components/rating/ */
   const [rating, setRating] = React.useState(0);
@@ -46,8 +35,8 @@ export default function LocationInfo(props) {
   const [file, setFile] = React.useState(null);
   const [fileTooBig, setFileTooBig] = React.useState(false);
   const { onError, unrender, owner, close , deleteLocation, user, images, updateImages, marker } = props;
-  console.log(marker);
-  const [displayImages, setDisplayImages] = React.useState(images);
+  const [order, setOrder] = React.useState(images);
+  const [displayImages, setDisplayImages] = React.useState([marker.currentImage]);
   React.useEffect(() => {
     api.getRatings(marker.id, function (err, res) {
       if(err) return onError(err)
@@ -62,9 +51,6 @@ export default function LocationInfo(props) {
       }
     })
   }, [marker.id, onError, user]);
-  const handleExpandClick = () => {
-    setExpanded(!expanded);
-  };
 
   const addImage = (e) => {
     e.preventDefault();
@@ -134,6 +120,78 @@ export default function LocationInfo(props) {
     });
     
     
+  }
+  const toggleView = (e) => {
+    
+    //will display latest image first
+
+    //if no next => only image
+    /* if (!order.newer) {
+      console.log('this is the latest image');
+      api.getImageTrio(order, function (err, res) {
+        if(err)return onError(err);
+        if (res) {
+          console.log(res);
+          let urls = res.map(a => a.data.data.getPhoto.url);
+          setDisplayImages(urls);
+          setStreetView(!streetView)
+        }
+      });
+    }
+    else{
+      //next exists, so need to set 
+    } */
+
+    api.getImageTrio(order, function (err, res) {
+      if(err)return onError(err);
+      if (res) {
+        console.log(res);
+        let urls = res.map(a => a.data.data.getPhoto.url);
+        setDisplayImages(urls);
+        setStreetView(!streetView)
+      }
+    });
+    console.log(order);
+    console.log(displayImages);
+    
+    return;
+    //only one image
+    if (!order.older && !order.newer) return;
+    if(order.newer){
+      /* api.getImage(order.newer._id, function(newErr, newRes){
+        if(newErr) return onError(newErr);
+        if(newRes){
+          console.log(newRes);
+          let copy = [...displayImages];
+          copy.push(newRes.data.data.getPhoto.url);
+          if (!order.older) {
+            //get newest image
+            api.getImagePage(marker.id, 'NEWEST', function(newestErr, newestRes){
+              if(newestErr) return onError(newestErr);
+              if (newestRes) {
+                console.log(newestRes);
+                api.getImage(newestRes.data.data.getPhoto)
+              }
+            });
+          }
+            
+          setDisplayImages(copy);
+
+          setStreetView(!streetView);
+        }
+      }); */
+    }
+    else if (order.older) {
+      api.getImage(order.older._id, function (oldErr, oldRes) {
+        if(oldErr) return onError(oldErr);
+        if (oldRes) {
+          console.log(oldRes);
+          setStreetView(!streetView);
+        }
+      })
+    }
+    
+    //api.getImage(marker.)
   }
   const fileChange = (e) => {
     console.log(e);
@@ -219,7 +277,7 @@ export default function LocationInfo(props) {
         </Stack>
 
         <FormGroup sx={{marginLeft: '5%'}} >
-            <FormControlLabel control={<Switch onChange={(e) => {setStreetView(!streetView)}} checked={streetView} />} label="Street View" />
+            <FormControlLabel control={<Switch onChange={toggleView} checked={streetView} />} label="Street View" />
         </FormGroup>
         
         

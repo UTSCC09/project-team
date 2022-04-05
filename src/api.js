@@ -137,6 +137,42 @@ const customSearch = function(pos, query, callback){
 
 }
 
+const getImagePage = function(id, page, callback){
+  let goto = (page==='OLDEST' || page==='NEWEST')? page : 'PAGE';
+  let p = page==='PAGE'? page : -1;
+  console.log(goto);
+  console.log(p);
+  let q = `query {
+    getImagePage(input: {goto: ${goto}, page: ${p}}) {
+      ... on ImagePage {
+        older {
+          _id
+          title
+          image
+          pin
+        }
+        current {
+          _id
+          title
+          image
+          pin
+        }
+        newer {
+          _id
+          title
+          image
+          pin
+        }
+      }
+      ... on Error {
+        message
+      }
+    }
+  }`;
+  let body = {'query': q};
+  performAxiosRequest('post', baseUrl + `pin/${id}/image/`, body, callback);
+}
+
 const uploadImage = function (marker, callback) {
   let data = new FormData();
   const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
@@ -186,6 +222,24 @@ const getPins = function (pos, callback) {
          pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } 
          ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
+}
+
+const getImageTrio = function (order, callback) {
+  let body = {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}
+  let prev = order.older? getAxiosPromise('post', baseUrl + `image/${order.older._id}`, body) : null;
+  let curr = getAxiosPromise('post', baseUrl + `image/${order.current._id}`, body);
+  let next = order.newer ? getAxiosPromise('post', baseUrl + `image/${order.newer._id}`, body) : null;
+  let p = [];
+  if(prev) p.push(prev);
+  p.push(curr);
+  if(next) p.push(next);
+  Promise.all(p).then(function (res) {
+    callback(null, res);
+  })
+  .catch(function (err) {
+    callback(err, null);
+  })
+
 }
 
 const getPolygons = function (pos, callback) {
@@ -395,5 +449,7 @@ module.exports = {
   voiceSeach,
   createRating,
   updateRating,
-  getRatings
+  getRatings,
+  getImagePage,
+  getImageTrio
 }

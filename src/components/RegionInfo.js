@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { styled } from '@mui/material/styles';
+
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
@@ -15,27 +15,13 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import QuiltedImageList from './QuiltedImageList.js';
 import CloseIcon from '@mui/icons-material/Close';
 /* https://mui.com/components/cards/#complex-interaction*/
-const ExpandMore = styled((props) => {
-  const { expand, ...other } = props;
-  return <IconButton {...other} />;
-})(({ theme, expand }) => ({
-  transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
-  marginLeft: 'auto',
-  transition: theme.transitions.create('transform', {
-    duration: theme.transitions.duration.shortest,
-  }),
-}));
+
 
 export default function RegionInfo(props) {
   /* Card: https://mui.com/components/cards/#complex-interaction*/
-  const [expanded, setExpanded] = React.useState(false);
   /*Ratings: https://mui.com/components/rating/ */
   const { owner, close , info, deleteRegion, user } = props;
   console.log(info)
-  const handleExpandClick = () => {
-    setExpanded(!expanded);
-  };
-  
   
   return (
     <Card id='location-info' sx={{ maxWidth: 500, overflow: 'scroll', margin: 'auto' }}>
