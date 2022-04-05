@@ -148,11 +148,6 @@ const queryType = new GraphQLObjectType({
             },
             resolve: (_, {input}, context) => resolver.getNear(input, context)
         },
-        listPins: {
-            type: pinMultipleResultType,
-            args: {},
-            resolve: (_, {input}, context) => resolver.listPins(context)
-        },
         searchByTag: {
             type: pinMultipleResultType,
             args: {
@@ -160,17 +155,6 @@ const queryType = new GraphQLObjectType({
             },
             resolve: (_, {input}, context) => resolver.searchPinByTag(input, context)
         }
-    }
-});
-
-const idQueryType = new GraphQLObjectType({
-    name: 'Query',
-    fields:{
-        getPin: {
-            type: pinResultType,
-            args: {},
-            resolve: (_, {input}, context) => resolver.getPin(context)
-        },
     }
 });
 
@@ -214,7 +198,7 @@ const idMutationType = new GraphQLObjectType({
 
 let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
 
-let idSchema = new GraphQLSchema({query: idQueryType, mutation: idMutationType})
+let idSchema = new GraphQLSchema({mutation: idMutationType})
 
 module.exports = {
     schema,

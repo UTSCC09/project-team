@@ -125,11 +125,6 @@ const polygonMultipleResultType = new GraphQLUnionType({
 const queryType = new GraphQLObjectType({
     name: 'Query',
     fields: {
-        listPolygons: {
-            type: polygonMultipleResultType,
-            args: {},
-            resolve: (_, {input}, context) => resolver.deletePolygon(input, context)
-        },
         getNear: {
             type: polygonMultipleResultType,
             args: {
@@ -143,11 +138,6 @@ const queryType = new GraphQLObjectType({
 const idQueryType = new GraphQLObjectType({
     name: 'Query',
     fields: {
-        getPolygon: {
-            type: polygonResultType,
-            args: {},
-            resolve: (_, {input}, context) => resolver.getPolygon(context)
-        },
         getPinsWithin: {
             type: pinMultipleResultType,
             args: {},

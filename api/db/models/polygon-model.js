@@ -25,6 +25,7 @@ const polygonSchema = new mongoose.Schema({
 },
 {timestamps: {createdAt: 'created_at', updatedAt: 'updated_at'}});
 
+// Create index for polygon coordinates so it can be queried
 polygonSchema.index({"features.geometry": '2dsphere'}, {unique: false})
 
 module.exports = mongoose.model('Polygon', polygonSchema);
