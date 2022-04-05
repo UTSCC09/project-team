@@ -5,7 +5,7 @@ var uuid = require('node-uuid');
 const Image = require('../models/image-model');
 const Pin = require('../models/pin-model');
 const {isAuthenticated, isAuthorized, sanitizeInput} = require('../../util');
-const {UserInputError} = require('../../graphql/schemas/error-schema')
+const {UserInputError, NotFoundError} = require('../../graphql/schemas/error-schema')
 
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -50,6 +50,26 @@ getImages = async function (context) {
     return {'images': images};
 }
 
+getImagePage = async function (context) {
+    // Validate location exists in db
+    let id = sanitizeInput(context.req.params.id);
+    const pin = await Pin.findOne({_id: id}).exec();
+    let page = sanitizeInput(context.req.params.page);
+    let nextPage = (page - 1 < 0) ? 0 : page - 1;
+    const images = await Image.find({pin: pin._id}).sort({createdAt: -1}).skip(nextPage).limit(3).exec();
+    if (images.length == 0) return NotFoundError("page = " + page);
+    let currentImage = nextPage == page ? images[0] : images[1];
+    let nextImage = nextPage == page ? null : images[0];
+    let previousImage = null;
+    if (currentImage == images[0] && images.length == 2) {
+        previousImage = images[1];
+    } else if (currentImage == images[1] && images.length == 3) {
+        previousImage = images[2];
+    }
+    
+    return {'previous': previousImage, 'current': currentImage, 'next': nextImage};
+}
+
 getPhoto = async function(context) {
     let id = sanitizeInput(context.req.params.id);
     const image = await Image.findOne({_id: id}).exec();
@@ -72,6 +92,7 @@ deleteImage = async function(context) {
 module.exports = {
   createImage,
   getImages,
+  getImagePage,
   getPhoto,
   deleteImage
 }

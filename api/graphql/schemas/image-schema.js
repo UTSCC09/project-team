@@ -48,6 +48,15 @@ const imageMultipleType = new GraphQLObjectType({
     }
 });
 
+const imagePageType = new GraphQLObjectType({
+    name: 'ImagePage',
+    fields: {
+        previous: {type: imageType},
+        current: {type: imageType},
+        next: {type: imageType}
+    }
+});
+
 const imageResultType = new GraphQLUnionType({
     name: 'ImageResult',
     types: [imageType, ErrorType],
@@ -64,6 +73,14 @@ const imageMultipleResultType = new GraphQLUnionType({
         return value.message? ErrorType.name : imageMultipleType.name;
     }
 })
+
+const imagePageResultType = new GraphQLUnionType({
+    name: 'ImagePageResult',
+    types: [imagePageType, ErrorType],
+    resolveType: (value) => {
+        return value.message ? ErrorType.name : imagePageType.name;
+    }
+});
 
 const photoType = new GraphQLObjectType({
     name: 'Photo',
@@ -89,6 +106,12 @@ const queryType = new GraphQLObjectType({
             args: {},
             resolve: (_, {input}, context) => resolver.getImages(context)
         },
+
+        getImagePage: {
+            type: imagePageResultType,
+            args: {},
+            resolve: (_, {input}, context) => resolver.getImagePage(context)
+        }
     }
 })
 
