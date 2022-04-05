@@ -259,15 +259,14 @@ const getRatings = function (id, callback) {
   send("post", baseUrl + 'rating', body, callback);
 }
 
-const createRating = function (stars, lId, review, callback) {
+const createRating = function (stars, lId, callback) {
   let query = `mutation createRating($input: RatingInput) {
     createRating(input: $input) {
       ... on Rating {
         _id,
         stars,
         lId,
-        createdBy,
-        review
+        createdBy
       }
 
       ... on Error {
@@ -282,7 +281,6 @@ const createRating = function (stars, lId, review, callback) {
       input: {
         stars: stars,
         lId: lId,
-        review: review
       }
     }
   };
@@ -290,7 +288,7 @@ const createRating = function (stars, lId, review, callback) {
   send("post", baseUrl + 'rating', body, callback);
 }
 
-const updateRating = function (stars, lId, review, callback) {
+const updateRating = function (stars, lId, callback) {
   let query = `mutation updateRating($input: RatingInput) {
     updateRating(input: $input) {
       ... on Rating {
@@ -298,7 +296,6 @@ const updateRating = function (stars, lId, review, callback) {
         stars,
         lId,
         createdBy,
-        review
       }
 
       ... on Error {
@@ -313,7 +310,6 @@ const updateRating = function (stars, lId, review, callback) {
       input: {
         stars: stars,
         lId: lId,
-        review: review
       }
     }
   };

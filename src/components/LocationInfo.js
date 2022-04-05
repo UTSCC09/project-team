@@ -113,7 +113,7 @@ export default function LocationInfo(props) {
         let original = getRes.data.getRatings.ratings.find((x) => x.createdBy === user);
         console.log(original);
         if (original) {
-          api.updateRating(val, marker.id, 'fdfsa', function (upErr, upRes) {
+          api.updateRating(val, marker.id, function (upErr, upRes) {
             if(upErr) return onError(upErr);
             if (upRes) {
               
@@ -122,7 +122,7 @@ export default function LocationInfo(props) {
           })
         }
         else {
-          api.createRating(val, marker.id, 'dasda', function (err, res) {
+          api.createRating(val, marker.id, function (err, res) {
             if (err) return onError(err);
             if (res) {
               console.log(res);

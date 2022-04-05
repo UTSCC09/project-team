@@ -23,8 +23,7 @@ const ratingInput = new GraphQLInputObjectType({
     name: 'RatingInput',
     fields: {
         stars: {type: GraphQLInt},
-        lId: {type: GraphQLString},
-        review: {type: GraphQLString}
+        lId: {type: GraphQLString}
     }
 });
 
@@ -34,8 +33,7 @@ const ratingType = new GraphQLObjectType({
         _id: {type: GraphQLString},
         stars: {type: GraphQLInt},
         lId: {type: GraphQLString},
-        createdBy: {type: GraphQLString},
-        review: {type: GraphQLString}
+        createdBy: {type: GraphQLString}
     }
 });
 

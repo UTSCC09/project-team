@@ -1,24 +1,29 @@
 const Rating = require('../models/rating-model');
-const { isAuthenticated } = require('../../util');
+const { isAuthenticated, sanitizeInput } = require('../../util');
 
 createRating = async function (input, context) {
   let auth = isAuthenticated(context.req);
   if (auth) return auth();
-  const ratingInput = Object.assign({}, input, { createdBy: context.req.session.user.username });
+  let cleanInput = sanitizeInput(input);
+  const ratingInput = Object.assign({}, cleanInput, { createdBy: context.req.session.user.username });
   const rating = await new Rating(ratingInput).save();
   return rating;
 }
 
 getRatings = async function (input) {
-  const ratings = await Rating.find(input).exec();
-  const average = ratings.reduce((previousValue, currentValue) => previousValue + currentValue.stars, 0)/ratings.length
+  let cleanInput = sanitizeInput(input);
+  const ratings = await Rating.find(cleanInput).exec();
+  const sum = ratings.reduce((previousValue, currentValue) => previousValue + currentValue.stars, 0)/ratings.length
+  const average = ratings.length == 0 ? 0 : sum/ratings.length;
   return { 'ratings': ratings, 'average': average };
 }
 
 updateRating = async function (input, context) {
   let auth = isAuthenticated(context.req);
   if (auth) return auth();
-  const rating = await Rating.findOneAndUpdate({ lId: input.lId, createdBy: context.req.session.user.username }, input, { returnOriginal: false });
+  let lId = sanitizeInput(input.lId);
+  let cleanInput = sanitizeInput(input);
+  const rating = await Rating.findOneAndUpdate({ lId: lId, createdBy: context.req.session.user.username }, cleanInput, { returnOriginal: false });
   return rating;
 }
 
