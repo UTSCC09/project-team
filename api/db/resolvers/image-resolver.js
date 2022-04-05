@@ -65,10 +65,9 @@ getImagePage = async function (input, context) {
         case GoToEnum.oldest:
             page = 0;
             ordering = 1;
-            
             break;
         case GoToEnum.page:
-            page = sanitizeInput(context.req.params.id);
+            page = input.page;
             break;
     }
 
@@ -77,29 +76,26 @@ getImagePage = async function (input, context) {
     // Determine if there is a newer image
     let hasNewerPage = page - 1 > 0;
     let newerPage = hasNewerPage ? page - 1 : 0;
-    const images = await Image.find({pin: pin._id}).sort({createdAt: ordering}).skip(newerPage).limit(limitPage).exec();
+    const images = await Image.find({pin: pin._id}).sort({created_at: ordering}).skip(newerPage).limit(limitPage).exec();
     let currentImage = null;
     let newerImage = null;
     let olderImage = null;
     console.log(images.length)
     if (images.length == 3) {
-        if (ordering == -1) {
-            newerImage = images[0];
-            currentImage = images[1];
-            olderImage = images[2];
-        } else {
-            newerImage = images[2];
-            currentImage = images[1];
-            olderImage = images[0];
-        }
+        newerImage = images[0];
+        currentImage = images[1];
+        olderImage = images[2];
     }
     if (images.length == 2) {
-        if (hasNewerPage && ordering == -1) {
+        if (input.goto == GoToEnum.newest) {
+            currentImage = images[0];
+            olderImage = images[1];
+        } else if (input.goto == GoToEnum.oldest) {
+            currentImage = images[1];
+            newerImage = images[0];
+        } else if (hasNewerPage) {
             newerImage = images[0];
             currentImage = images[1];
-        } else if (!hasNewerPage && ordering == 1) {
-            newerImage = images[1];
-            currentImage = images[0];
         } else {
             currentImage = images[0];
             olderImage = images[1];

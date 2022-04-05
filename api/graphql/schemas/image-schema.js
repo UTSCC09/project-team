@@ -50,7 +50,8 @@ const goToEnum = new GraphQLEnumType({
 const imagePageInput = new GraphQLInputObjectType({
     name: 'ImagePageInput',
     fields: {
-        goto: {type: goToEnum}
+        goto: {type: goToEnum},
+        page: {type: GraphQLFloat}
     }
 })
 

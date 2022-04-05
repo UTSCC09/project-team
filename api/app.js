@@ -71,14 +71,6 @@ app.use('/pin/:id/image/', graphqlHTTP((req, res)=>{
     };
 }));
 
-app.use('/pin/:id/image/:page', graphqlHTTP((req, res)=>{
-    return {
-        schema: imageSchema.schema,
-        graphiql: true,
-        context: {req, res},
-    };
-}));
-
 app.use('/pin/:id', graphqlHTTP((req, res)=>{
     return {
         schema: pinSchema.idSchema,
