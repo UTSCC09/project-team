@@ -2,21 +2,18 @@ import React from 'react';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import SavedSearchIcon from '@mui/icons-material/SavedSearch';
-import Fab from "@mui/material/Fab";
 import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
 import api from '../api'
 import IconButton from '@mui/material/IconButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import AudioReactRecorder, { RecordState } from 'audio-react-recorder'
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Box from '@mui/material/Box';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import { Typography } from '@mui/material';
 const filter = createFilterOptions();
 const tags = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
-export default class addLocationForm extends React.PureComponent{
+export default class SearchBar extends React.PureComponent{
 
     constructor(props){
         super(props);

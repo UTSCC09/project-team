@@ -1,7 +1,6 @@
 import React from 'react';
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material'
-import LogoutIcon from '@mui/icons-material/Logout';
 import FormControl from '@mui/material/FormControl';
 import Alert from '@mui/material/Alert';
 import InputLabel from '@mui/material/InputLabel';
@@ -45,7 +44,7 @@ export default class UserForm extends React.PureComponent{
 
       if (this.state.createAccount) {
         const confirmPassword = event.target.confirmPassword.value;
-        if (confirmPassword != password) {
+        if (confirmPassword !== password) {
           this.setState((prevState) => ({ errorMessage: "Password and confirm password don't match"}))
           return;
         }
@@ -130,7 +129,7 @@ export default class UserForm extends React.PureComponent{
             usernameHelper = <FormHelperText id="username-helper">Create your username</FormHelperText>;
             confirmPasswordElement= <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
              <InputLabel htmlFor="outlined-adornment-password">Confirm Password</InputLabel>
-             <OutlinedInput id="outlined-adornment-password"
+             <OutlinedInput
                type={this.state.showPassword ? 'text' : 'password'}
                label="ConfirmPassword"
                id="confirmPassword"

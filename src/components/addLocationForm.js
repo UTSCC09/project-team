@@ -5,7 +5,7 @@ import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
 import api from '../api'
 import { Button } from '@mui/material';
-const MAX_FILE_SIZE = 1; //mb
+const MAX_FILE_SIZE = 8; //mb
 export default class addLocationForm extends React.PureComponent{
 
     constructor(props){

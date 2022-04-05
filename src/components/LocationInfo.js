@@ -3,20 +3,17 @@ import { styled } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
-import AddCommentIcon from '@mui/icons-material/AddComment';
 import CardContent from '@mui/material/CardContent';
 import Streetview from 'react-google-streetview';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import CardActions from '@mui/material/CardActions';
-import Collapse from '@mui/material/Collapse';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import { red } from '@mui/material/colors';
 import MuiImageSlider from 'mui-image-slider';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button'
@@ -26,7 +23,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import api from '../api'
 import FormControl from '@mui/material/FormControl'
 import CloseIcon from '@mui/icons-material/Close';
-const MAX_FILE_SIZE = 1; //mb
+const MAX_FILE_SIZE = 8; //mb
 /* https://mui.com/components/cards/#complex-interaction*/
 const ExpandMore = styled((props) => {
   const { expand, ...other } = props;
@@ -46,7 +43,6 @@ export default function LocationInfo(props) {
   /*Ratings: https://mui.com/components/rating/ */
   const [rating, setRating] = React.useState(0);
   const [streetView, setStreetView] = React.useState(true);
-  const [fileUploaded, setFileUpload] = React.useState(false);
   const [file, setFile] = React.useState(null);
   const [fileTooBig, setFileTooBig] = React.useState(false);
   const { onError, unrender, owner, close , deleteLocation, user, images, updateImages, marker } = props;
@@ -65,7 +61,7 @@ export default function LocationInfo(props) {
         }
       }
     })
-  }, []);
+  }, [marker.id, onError, user]);
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
@@ -147,7 +143,6 @@ export default function LocationInfo(props) {
     console.log(size);
     if (size<MAX_FILE_SIZE) {
       setFileTooBig(false);
-      setFileUpload(true);
       setFile(e.target.files[0]);
     }
     else{

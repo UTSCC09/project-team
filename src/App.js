@@ -30,6 +30,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import IconButton from '@mui/material/IconButton';
 import sanitize from "sanitize-filename"
+import SourceIcon from '@mui/icons-material/Source';
 import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 import api from './api';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
@@ -763,7 +764,6 @@ export default class App extends React.PureComponent {
           })); */
         }
       })
-      this.state.draw = draw;
    
       map.addControl(draw);
       let directions = new MapboxDirections({
@@ -779,11 +779,10 @@ export default class App extends React.PureComponent {
         //prevent click to add waypoints
         return;
       }
-      this.state.directions = directions;
       map.addControl(directions);
       
     
-      this.state.map = map;
+      this.setState({map: map, directions: directions, draw: draw});
       
     }
 
@@ -816,8 +815,6 @@ export default class App extends React.PureComponent {
     }
 
     doneMarker(event){
-      const lngTolerance = 0.002;
-      const latTolerance = 0.003;
 
       for(let m of this.state.newMarkers){
         this.createMarker(m, this);
@@ -995,7 +992,7 @@ export default class App extends React.PureComponent {
       this.setState(prevState => ({
         newMarkers: [...prevState.newMarkers, marker]
       }));
-      this.state.currentMarker = marker;
+      this.setState({currentMarker: marker});
       let m = this.state.map;
       let t = this;
       marker.togglePopup = function(){
@@ -1553,8 +1550,8 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.addingLocation?
-                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation == 'region'} cancel={() => {this.setState({addingLocation: false}); }} 
-                  submit={this.state.addingLocation == 'region' ? this.addRegion : this.addMarker} 
+                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation === 'region'} cancel={() => {this.setState({addingLocation: false}); }} 
+                  submit={this.state.addingLocation === 'region' ? this.addRegion : this.addMarker} 
                   tags={this.state.tags} 
                   onError={this.error}
                   categoryChange={this.handleCategoryChange.bind(this)} 
@@ -1590,6 +1587,10 @@ export default class App extends React.PureComponent {
             :
             null
             }
+            <IconButton onClick={() => {window.location = '/credits.html'}} sx={{position: 'absolute', bottom:'5px', right:'5px', zIndex:99}}>
+              <SourceIcon />
+            </IconButton>
+
             <div ref={this.mapContainer} className="map-container" />
           </div>
         );
