@@ -5,7 +5,7 @@ import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
 import api from '../api'
 import { Button } from '@mui/material';
-
+const MAX_FILE_SIZE = 8; //mb
 export default class addLocationForm extends React.PureComponent{
 
     constructor(props){
@@ -19,9 +19,23 @@ export default class addLocationForm extends React.PureComponent{
       this.fileChange = this.fileChange.bind(this);
       this.attemptSubmit = this.attemptSubmit.bind(this);
     }
+    
     fileChange(e){
-      this.setState({file: true});
-      this.props.imageChange(e);
+      //console.log(e.files[0].size / 1024 / 1024);
+      console.log(e.target.files[0]);
+      let bytes = e.target.files[0].size;
+
+      console.log(bytes);
+      let size = bytes/1000000;
+      console.log(size);
+      if (size < MAX_FILE_SIZE) {
+        this.setState({file: true, fileTooBig: false});
+        this.props.imageChange(e);
+      }
+      else{
+        this.setState({fileTooBig: true});
+      }
+      
     }
     attemptSubmit(e){
       e.preventDefault();
@@ -38,7 +52,7 @@ export default class addLocationForm extends React.PureComponent{
       console.log(e.target.value);
       if (e.target.value.length > 4) {
         api.getLocationCoord(e.target.value, true, function (err, res) {
-          if (err) console.error(err);
+          if (err) return this.props.onError(err);
           if (res) {
             console.log(res);
             t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});
@@ -90,7 +104,7 @@ export default class addLocationForm extends React.PureComponent{
                         
                 </form>
                 :
-                <form className='user-form' id='add-location-form' onSubmit={this.attemptSubmit} >
+                <form sx={{marginTop: '5px'}} className='user-form' id='add-location-form' onSubmit={this.attemptSubmit} >
                   <div id='form-title-container'><div className='account-form-title' id='new-location'></div></div>
                   <FormControl sx={{ m: 1, width: 231}} variant="outlined" className='account-form-element'>
                     <TextField onChange={this.props.changeLocationName} id='location-name' required={true} variant='outlined' label="Location Name">
@@ -146,7 +160,7 @@ export default class addLocationForm extends React.PureComponent{
                   </FormControl>
                   <FormControl required={true} sx={{ m: 1, width: 231}} >
                   <input
-                    accept="image/*"
+                    accept=".png,.jpg,.jpeg"
                     style={{ display: 'none' }}
                     id="raised-button-file"
                     type="file"
@@ -166,6 +180,14 @@ export default class addLocationForm extends React.PureComponent{
                     :
                     null
                     
+                  }
+                  {
+                    this.state.fileTooBig?
+                    <Alert severity="error">
+                      This file is too big, only files of up to {MAX_FILE_SIZE} MB are supported.
+                    </Alert>
+                    :
+                    null
                   }
 
 

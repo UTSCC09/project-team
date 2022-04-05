@@ -29,21 +29,52 @@
 }
 
 #location-info{
-  max-height: 100vh;
-  margin-top: 15px;
+  max-height: 95vh;
+  margin-top: 10px;
 }
 
 #street {
   height: 500px;
 }
-.user-form {
-
-  margin: auto;
+#account-form-containter{
   margin-top: 10%;
+}
+.user-form {
+  margin: auto;
   width: 300px;
   background-color: #fff;
   border-radius: 15px;
   box-shadow: 0 15px 25px rgba(0,0,0,.6);
+}
+#new-image-form{
+  margin-top: 10%;
+}
+
+#map-style-control{
+  position: absolute;
+  right: 5px;
+  top: 5px;
+
+}
+/* <a href="https://www.flaticon.com/free-icons/look" title="look icons">Look icons created by Freepik - Flaticon</a> */
+#look-around-btn{
+  background-image: url('./media/big-binocoulars.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  margin: auto;
+  border: none;
+  background-color: white;
+  margin-top: 7px;
+  height: 25px;
+  width: 25px;
+}
+
+.actions{
+  display: flex;
+  justify-content: space-between;
+}
+#map-style-control:hover{
+  opacity: 100%;
 }
 /*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
 #overlay {
@@ -101,6 +132,9 @@
   }
   #new-image-form{
     overflow: auto;
+  }
+  #add-location-from{
+    margin-top: 5px;
   }
   #signup {
       background-image: url("./media/signup.png");
@@ -192,7 +226,6 @@ body{
 }
 #marker-card .location-summary {
   height: 250px;
-  
 }
 #marker-card .card-footer{
   height: 70px;
@@ -225,13 +258,6 @@ body{
   background-size: cover;
   background-position: top;
 }
-/* .card-header:after{
-  content:'';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to top, rgb(5,85,134), rgba(181,181,181, 0.1));
-} */
 
 .card-header-bar{
   position: absolute;
@@ -260,7 +286,7 @@ body{
 }
 .btn-menu{
   display: inline-block;
-  background: url("./media/more.png"); /*<a href="https://www.flaticon.com/free-icons/more" title="more icons">More icons created by Smartline - Flaticon</a>*/ /*url(https://res.cloudinary.com/dj14cmwoz/image/upload/v1491077483/profile-card/images/menu.svg) no-repeat;*/
+  background: url("./media/more.png"); /*<a href="https://www.flaticon.com/free-icons/more" title="more icons">More icons created by Smartline - Flaticon</a>*/
   background-repeat: no-repeat;
   background-size: contain;
   width: 20px;

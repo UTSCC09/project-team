@@ -1,8 +1,8 @@
 import React from 'react';
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material'
-import LogoutIcon from '@mui/icons-material/Logout';
-import FormControl from '@mui/material/FormControl'
+import FormControl from '@mui/material/FormControl';
+import Alert from '@mui/material/Alert';
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText'
 import TextField from '@mui/material/TextField';
@@ -43,18 +43,35 @@ export default class UserForm extends React.PureComponent{
       const password = event.target.password.value;
 
       if (this.state.createAccount) {
-        api.registerUser(username, password, (err, user) => {
-          console.log(user);
-          if (user.data.createUser.message) { 
-            this.setState((prevState) => ({
-              errorMessage: user.data.createUser.message
-            }));
-            return;
-          }
-          this.props.onLoginFormSubmit(user.data.createUser);
-        });
+        const confirmPassword = event.target.confirmPassword.value;
+        if (confirmPassword !== password) {
+          this.setState((prevState) => ({ errorMessage: "Password and confirm password don't match"}))
+          return;
+        }
+        else if (password.length < 8) {
+          this.setState((prevState) => ({errorMessage: "Password too short, must be at least 8 characters"}));
+          return;
+        }
+        else if (password.length > 16) {
+          this.setState((prevState) => ({errorMessage: "Password too long, must be less than 16 characters"}));
+          return;
+        }
+        else {
+          api.registerUser(username, password, (err, user) => {
+            console.log(user);
+            if (err) this.props.onError(err);
+            if (user.data.createUser.message) { 
+              this.setState((prevState) => ({
+                errorMessage: user.data.createUser.message
+              }));
+              return;
+            }
+            this.props.onLoginFormSubmit(user.data.createUser);
+          });
+        }
       } else {
         api.signIn(username, password, (err, user) => {
+          if (err) this.props.onError(err);
           if (user.data.signin.message) {
             this.setState((prevState) => ({
               errorMessage: user.data.signin.message
@@ -112,10 +129,11 @@ export default class UserForm extends React.PureComponent{
             usernameHelper = <FormHelperText id="username-helper">Create your username</FormHelperText>;
             confirmPasswordElement= <FormControl sx={{ m: 1}} variant="outlined" className='account-form-element'>
              <InputLabel htmlFor="outlined-adornment-password">Confirm Password</InputLabel>
-             <OutlinedInput id="outlined-adornment-password"
+             <OutlinedInput
                type={this.state.showPassword ? 'text' : 'password'}
                label="ConfirmPassword"
-               value={this.state.password}
+               id="confirmPassword"
+               value={this.state.confirmPassword}
                endAdornment={
                  <InputAdornment position="end">
                    <IconButton
@@ -167,9 +185,16 @@ export default class UserForm extends React.PureComponent{
                 :
                 null
               }
+              {
+                (this.state.errorMessage)?
+                <Alert severity="error">
+                  {this.state.errorMessage}
+                </Alert>
+                :
+                null
+                
+              }
 
-              <div id='error_message'>{this.state.errorMessage}</div>
-            
               <div id='account-form-buttons'>
                 <div id='submit-cancel'>
                   { submitFormBtn }

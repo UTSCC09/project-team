@@ -1,8 +1,6 @@
 const { default: axios } = require("axios");
-const { promise } = require("bcrypt/promises");
-const { fs } = require('fs');
 //const { base } = require("../api/db/models/pin-model");
-
+const MAPBOT_ACCESS_TOKEN = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
 function send(method, url, data, callback) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
@@ -83,27 +81,58 @@ const searchTags = function (pos, tags, callback) {
 
 const createPin = function (marker, callback) {
   console.log(marker);
-  let body = {"query": `mutation { createPin(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${marker.name}\" description:\"${marker.description}\" tags:${JSON.stringify(marker.tags)} } geometry: { type: \"Point\", coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) { ...on Pin{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } ...on Error{ message } }}`}
+  let body = {"query": `mutation 
+    { createPin(input: { 
+      type: "FeatureCollection", 
+      features: { 
+        type: "Feature", 
+        properties: { 
+          name: "${marker.name}" 
+          description:"${marker.description}" 
+          tags:${JSON.stringify(marker.tags)} } 
+          geometry: { 
+            type: "Point", 
+            coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) 
+            { ...on Pin{ _id type owner features { 
+              type properties { name description tags } 
+              geometry { type coordinates } } } ...on Error{ message } }}`}
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 const createPolygon = function (polygon, callback) {
   let coord = JSON.stringify(polygon.geometry.coordinates[0])
-  let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${polygon.name}\" description: \"${polygon.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`};
+  let body = {"query": `mutation { createPolygon(input: { 
+    type: "FeatureCollection", 
+    features: { 
+      type: "Feature", 
+      properties: { 
+        name: "${polygon.name}" 
+        description: "${polygon.description}" } 
+        geometry: { 
+          type: "Polygon", 
+          coordinates: [ ${coord} ] } } })
+           { ...on Polygon{ _id type features { 
+             type properties { name } geometry { type coordinates }} } 
+             ...on Error{ message } }}`};
   performAxiosRequest('post', baseUrl + 'polygon', body, callback);
 }
 
 const getPinsWithinPolygon = function (regionId, callback) {
-  //let body = {"query": `query { getPinsWithin(input: {_id: \"${regionId}\"}) { _id type features { type properties { name } geometry { type coordinates }}}}`};
   let body = {"query": "query { getPinsWithin  { ...on Pins { pins { _id type features { type properties { name tags } geometry { type coordinates } } } } ...on Error{message} }}"}
   performAxiosRequest("post", baseUrl + `polygon/${regionId}`, body, callback)
 }
 
 const getLocationCoord = function (q, autocomplete, callback) {
-  performAxiosRequest("get", `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?autocomplete=${autocomplete}&access_token=pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg`, null, callback);
+  performAxiosRequest("get", `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?autocomplete=${autocomplete}&access_token=${MAPBOT_ACCESS_TOKEN}`, null, callback);
 }
 
 const customSearch = function(pos, query, callback){
-  let body = {'query': `query { searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, message: \"${query}\" } ) { ...on Pins{ tags pins{ _id owner type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }} }`};
+  let body = {'query': `query { 
+    searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng}, 
+      radius: ${searchRadius}, message: "${query}" } ) 
+      { ...on Pins{ tags 
+        pins{ _id owner type features { 
+          type properties { name description tags } 
+          geometry { type coordinates } } } } ...on Error{ message }} }`};
   performAxiosRequest('post', baseUrl + 'pin', body, callback);
 
 }
@@ -126,7 +155,6 @@ const voiceSeach = function (pos, audio, callback) {
   data.append("operations", JSON.stringify({ query }));
   const map = {"zero":["variables.file"]}
   data.append('map', JSON.stringify(map));
-  let d = new Date();
   console.log(audio.blob);
   let f = new File([audio.blob], 'test.wav', { lastModified: new Date().getTime(), type: audio.type });
   
@@ -150,7 +178,13 @@ const getImagesFromIds = function(idArr, callback){
 
 
 const getPins = function (pos, callback) {
-  let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) { ...on Pins{ pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
+  let body = {"query": `query
+   { 
+     getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) 
+     { 
+       ...on Pins{ 
+         pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } 
+         ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 
@@ -163,6 +197,7 @@ const getImageFromPinId = function (pinId, callback) {
   let body = {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"};
   performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, callback);
 }
+
 
 const getImagesOfPins = function (pins, callback) {
   let p = [];
@@ -191,43 +226,99 @@ const getImagesOfPins = function (pins, callback) {
       .catch(function (imgErr) {
         console.error(imgErr);
       });
-      /* executePromises(p2, function (imgErr, imgs) {
-        let final = [];
-        for (let img of imgs){
-          console.log(img)
-          final.push({img: encodeURI(img.data.data.getPhoto.url)});
-        }
-        callback(null, final)
-      }) */
   })
   .catch(function (err) {
     console.error(err);
-  })
-
-
+  });
   return;
+}
 
-  executePromises(p, function (err, vals) {
-    console.log('a')
-    console.log(vals)
-    if(vals){
-      let p2 =[];
-      for (let i of vals){
-        let t = getAxiosPromise("post", baseUrl + `image/${i.data.data.getImages[0]._id}`, {"query":"query { getPhoto { url }}"});
-        p2.push(t);
+const getRatings = function (id, callback) {
+  let query = `query getRatings($input: RatingSearchInput) {
+    getRatings(input: $input) {
+      ... on Ratings {
+        average
+        ratings {_id, stars, createdBy}
       }
-      executePromises(p2, function (imgErr, imgs) {
-        let final = [];
-        for (let img of imgs){
-          console.log(img)
-          final.push({img: encodeURI(img.data.data.getPhoto.url)});
-        }
-        callback(null, final)
-      })
-    }
-    
-  })
 
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        lId: id
+      }
+    }
+  }
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
+const createRating = function (stars, lId, review, callback) {
+  let query = `mutation createRating($input: RatingInput) {
+    createRating(input: $input) {
+      ... on Rating {
+        _id,
+        stars,
+        lId,
+        createdBy,
+        review
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        stars: stars,
+        lId: lId,
+        review: review
+      }
+    }
+  };
+
+  send("post", baseUrl + 'rating', body, callback);
+}
+
+const updateRating = function (stars, lId, review, callback) {
+  let query = `mutation updateRating($input: RatingInput) {
+    updateRating(input: $input) {
+      ... on Rating {
+        _id,
+        stars,
+        lId,
+        createdBy,
+        review
+      }
+
+      ... on Error {
+        message
+      }
+    }
+  }`;
+
+  let body = {
+    query,
+    variables: {
+      input: {
+        stars: stars,
+        lId: lId,
+        review: review
+      }
+    }
+  };
+
+  send("post", baseUrl + 'rating', body, callback);
 }
 
 const registerUser = function (username, password, callback) {
@@ -301,5 +392,8 @@ module.exports = {
   createPolygon,
   customSearch,
   getImageFromPinId,
-  voiceSeach
+  voiceSeach,
+  createRating,
+  updateRating,
+  getRatings
 }

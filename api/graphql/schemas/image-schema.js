@@ -6,7 +6,8 @@ const {
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLUnionType,
-    buildSchema
+    buildSchema,
+    GraphQLEnumType
 } = require('graphql');
 
 const {
@@ -31,6 +32,28 @@ const imageInput = new GraphQLInputObjectType({
     }
 });
 
+const goToEnum = new GraphQLEnumType({
+    name: 'GoToEnum',
+    values: {
+        OLDEST: {
+            value: resolver.GoToEnum.oldest
+        },
+        NEWEST: {
+            value: resolver.GoToEnum.newest
+        },
+        PAGE: {
+            value: resolver.GoToEnum.page
+        }
+    }
+})
+
+const imagePageInput = new GraphQLInputObjectType({
+    name: 'ImagePageInput',
+    fields: {
+        goto: {type: goToEnum}
+    }
+})
+
 const imageType = new GraphQLObjectType({
     name: 'Image',
     fields: {
@@ -45,6 +68,15 @@ const imageMultipleType = new GraphQLObjectType({
     name: 'Images',
     fields: {
         images: {type: new GraphQLList(imageType)}
+    }
+});
+
+const imagePageType = new GraphQLObjectType({
+    name: 'ImagePage',
+    fields: {
+        older: {type: imageType},
+        current: {type: imageType},
+        newer: {type: imageType}
     }
 });
 
@@ -64,6 +96,14 @@ const imageMultipleResultType = new GraphQLUnionType({
         return value.message? ErrorType.name : imageMultipleType.name;
     }
 })
+
+const imagePageResultType = new GraphQLUnionType({
+    name: 'ImagePageResult',
+    types: [imagePageType, ErrorType],
+    resolveType: (value) => {
+        return value.message ? ErrorType.name : imagePageType.name;
+    }
+});
 
 const photoType = new GraphQLObjectType({
     name: 'Photo',
@@ -89,6 +129,14 @@ const queryType = new GraphQLObjectType({
             args: {},
             resolve: (_, {input}, context) => resolver.getImages(context)
         },
+
+        getImagePage: {
+            type: imagePageResultType,
+            args: {
+                input: {type: imagePageInput}
+            },
+            resolve: (_, {input}, context) => resolver.getImagePage(input, context)
+        }
     }
 })
 

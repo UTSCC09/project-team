@@ -5,7 +5,9 @@ var uuid = require('node-uuid');
 const Image = require('../models/image-model');
 const Pin = require('../models/pin-model');
 const {isAuthenticated, isAuthorized, sanitizeInput} = require('../../util');
-const {UserInputError} = require('../../graphql/schemas/error-schema')
+const {UserInputError, NotFoundError} = require('../../graphql/schemas/error-schema')
+
+const GoToEnum = {oldest: 'oldest', newest: 'newest', page: 'page'};
 
 createImage = async function (input, context) {
     let auth = isAuthenticated(context.req);
@@ -50,6 +52,68 @@ getImages = async function (context) {
     return {'images': images};
 }
 
+getImagePage = async function (input, context) {
+    // Validate location exists in db
+    let id = sanitizeInput(context.req.params.id);
+    const pin = await Pin.findOne({_id: id}).exec();
+    let page;
+    let ordering = -1;
+    switch(input.goto) {
+        case GoToEnum.newest:
+            page = 0;
+            break;
+        case GoToEnum.oldest:
+            page = 0;
+            ordering = 1;
+            
+            break;
+        case GoToEnum.page:
+            page = sanitizeInput(context.req.params.id);
+            break;
+    }
+
+    let limitPage = page == 0 ? 2 : 3;
+
+    // Determine if there is a newer image
+    let hasNewerPage = page - 1 > 0;
+    let newerPage = hasNewerPage ? page - 1 : 0;
+    const images = await Image.find({pin: pin._id}).sort({createdAt: ordering}).skip(newerPage).limit(limitPage).exec();
+    let currentImage = null;
+    let newerImage = null;
+    let olderImage = null;
+    console.log(images.length)
+    if (images.length == 3) {
+        if (ordering == -1) {
+            newerImage = images[0];
+            currentImage = images[1];
+            olderImage = images[2];
+        } else {
+            newerImage = images[2];
+            currentImage = images[1];
+            olderImage = images[0];
+        }
+    }
+    if (images.length == 2) {
+        if (hasNewerPage && ordering == -1) {
+            newerImage = images[0];
+            currentImage = images[1];
+        } else if (!hasNewerPage && ordering == 1) {
+            newerImage = images[1];
+            currentImage = images[0];
+        } else {
+            currentImage = images[0];
+            olderImage = images[1];
+        }
+    }
+    if (images.length == 1) {
+        currentImage = images[0];
+    }
+
+    if (images.length == 0) return NotFoundError("page = " + page);
+    
+    return {'older': olderImage, 'current': currentImage, 'newer': newerImage};
+}
+
 getPhoto = async function(context) {
     let id = sanitizeInput(context.req.params.id);
     const image = await Image.findOne({_id: id}).exec();
@@ -72,6 +136,8 @@ deleteImage = async function(context) {
 module.exports = {
   createImage,
   getImages,
+  getImagePage,
   getPhoto,
-  deleteImage
+  deleteImage,
+  GoToEnum
 }
