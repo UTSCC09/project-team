@@ -56,58 +56,30 @@ getImagePage = async function (input, context) {
     // Validate location exists in db
     let id = sanitizeInput(context.req.params.id);
     const pin = await Pin.findOne({_id: id}).exec();
-    let page;
-    let ordering = -1;
-    switch(input.goto) {
-        case GoToEnum.newest:
-            page = 0;
-            break;
-        case GoToEnum.oldest:
-            page = 0;
-            ordering = 1;
-            break;
-        case GoToEnum.page:
-            page = input.page;
-            break;
-    }
-
-    let limitPage = page == 0 ? 2 : 3;
+    let ordering = input.goto == GoToEnum.newest ? -1 : 1;
 
     // Determine if there is a newer image
-    let hasNewerPage = page - 1 > 0;
-    let newerPage = hasNewerPage ? page - 1 : 0;
-    const images = await Image.find({pin: pin._id}).sort({created_at: ordering}).skip(newerPage).limit(limitPage).exec();
-    let currentImage = null;
-    let newerImage = null;
-    let olderImage = null;
-    console.log(images.length)
-    if (images.length == 3) {
-        newerImage = images[0];
-        currentImage = images[1];
-        olderImage = images[2];
-    }
-    if (images.length == 2) {
-        if (input.goto == GoToEnum.newest) {
-            currentImage = images[0];
-            olderImage = images[1];
-        } else if (input.goto == GoToEnum.oldest) {
-            currentImage = images[0];
-            newerImage = images[1];
-        } else if (hasNewerPage) {
-            newerImage = images[0];
-            currentImage = images[1];
-        } else {
-            currentImage = images[0];
-            olderImage = images[1];
-        }
-    }
-    if (images.length == 1) {
-        currentImage = images[0];
+    const image = await Image.findOne({pin: pin._id}).sort({created_at: ordering}).exec();
+    return image;
+}
+
+getAdajcentImage = async function (input, context) {
+    let currentImageId = sanitizeInput(input.imageId);
+    let pinId = sanitizeInput(context.req.params.id);
+    const currentImage = await Image.findOne({_id: currentImageId}).exec();
+    
+    let prevImage = await Image.findOne({pin: pinId}).where('created_at').gt(currentImage.created_at).exec();
+    if (prevImage == null) {
+        prevImage = await Image.findOne({pin: pinId}).sort({created_at: 1}).exec();
     }
 
-    if (images.length == 0) return NotFoundError("page = " + page);
+    let nextImage = await Image.findOne({pin: pinId}).where('created_at').lt(currentImage.created_at).exec();
+    if (nextImage == null) {
+        nextImage = await Image.findOne({pin: pinId}).sort({created_at: -1}).exec();
+    }
+
+    return {next: nextImage, previous: prevImage};
     
-    return {'older': olderImage, 'current': currentImage, 'newer': newerImage};
 }
 
 getPhoto = async function(context) {
@@ -133,6 +105,7 @@ module.exports = {
   createImage,
   getImages,
   getImagePage,
+  getAdajcentImage,
   getPhoto,
   deleteImage,
   GoToEnum
