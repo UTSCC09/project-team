@@ -40,9 +40,6 @@ const goToEnum = new GraphQLEnumType({
         },
         NEWEST: {
             value: resolver.GoToEnum.newest
-        },
-        PAGE: {
-            value: resolver.GoToEnum.page
         }
     }
 })
@@ -50,8 +47,7 @@ const goToEnum = new GraphQLEnumType({
 const imagePageInput = new GraphQLInputObjectType({
     name: 'ImagePageInput',
     fields: {
-        goto: {type: goToEnum},
-        page: {type: GraphQLFloat}
+        goto: {type: goToEnum}
     }
 })
 
@@ -85,8 +81,7 @@ const imageResultType = new GraphQLUnionType({
     name: 'ImageResult',
     types: [imageType, ErrorType],
     resolveType: (value) => {
-        if (value._id) return imageType.name;
-        if (value.message) return ErrorType.name;
+        return value.message ? ErrorType.name : imageType.name;
     }
 });
 
@@ -132,7 +127,7 @@ const queryType = new GraphQLObjectType({
         },
 
         getImagePage: {
-            type: imagePageResultType,
+            type: imageResultType,
             args: {
                 input: {type: imagePageInput}
             },
