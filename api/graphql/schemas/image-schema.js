@@ -51,6 +51,13 @@ const imagePageInput = new GraphQLInputObjectType({
     }
 })
 
+const imageAdjacentInput = new GraphQLInputObjectType({
+    name: 'ImageAdjacentInput',
+    fields: {
+        imageId: {type: GraphQLString}
+    }
+});
+
 const imageType = new GraphQLObjectType({
     name: 'Image',
     fields: {
@@ -68,12 +75,11 @@ const imageMultipleType = new GraphQLObjectType({
     }
 });
 
-const imagePageType = new GraphQLObjectType({
-    name: 'ImagePage',
+const imageAdjacentType = new GraphQLObjectType({
+    name: 'ImageAdjacent',
     fields: {
-        older: {type: imageType},
-        current: {type: imageType},
-        newer: {type: imageType}
+        previous: {type: imageType},
+        next: {type: imageType}
     }
 });
 
@@ -93,11 +99,11 @@ const imageMultipleResultType = new GraphQLUnionType({
     }
 })
 
-const imagePageResultType = new GraphQLUnionType({
+const imageAdjacentResultType = new GraphQLUnionType({
     name: 'ImagePageResult',
-    types: [imagePageType, ErrorType],
+    types: [imageAdjacentType, ErrorType],
     resolveType: (value) => {
-        return value.message ? ErrorType.name : imagePageType.name;
+        return value.message ? ErrorType.name : imageAdjacentType.name;
     }
 });
 
@@ -132,6 +138,14 @@ const queryType = new GraphQLObjectType({
                 input: {type: imagePageInput}
             },
             resolve: (_, {input}, context) => resolver.getImagePage(input, context)
+        },
+
+        getAdjacentImage: {
+            type: imageAdjacentResultType,
+            args: {
+                input: {type: imageAdjacentInput}
+            },
+            resolve: (_, {input}, context) => resolver.getAdajcentImage(input, context)
         }
     }
 })

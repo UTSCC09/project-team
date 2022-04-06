@@ -63,6 +63,25 @@ getImagePage = async function (input, context) {
     return image;
 }
 
+getAdajcentImage = async function (input, context) {
+    let currentImageId = sanitizeInput(input.imageId);
+    let pinId = sanitizeInput(context.req.params.id);
+    const currentImage = await Image.findOne({_id: currentImageId}).exec();
+    
+    let prevImage = await Image.findOne({pin: pinId}).where('created_at').gt(currentImage.created_at).exec();
+    if (prevImage == null) {
+        prevImage = await Image.findOne({pin: pinId}).sort({created_at: 1}).exec();
+    }
+
+    let nextImage = await Image.findOne({pin: pinId}).where('created_at').lt(currentImage.created_at).exec();
+    if (nextImage == null) {
+        nextImage = await Image.findOne({pin: pinId}).sort({created_at: -1}).exec();
+    }
+
+    return {next: nextImage, previous: prevImage};
+    
+}
+
 getPhoto = async function(context) {
     let id = sanitizeInput(context.req.params.id);
     const image = await Image.findOne({_id: id}).exec();
@@ -86,6 +105,7 @@ module.exports = {
   createImage,
   getImages,
   getImagePage,
+  getAdajcentImage,
   getPhoto,
   deleteImage,
   GoToEnum
