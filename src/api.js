@@ -175,7 +175,6 @@ const voiceSeach = function (pos, audio, callback) {
   let f = new File([audio.blob], 'test.wav', { lastModified: new Date().getTime(), type: audio.type });
   
   data.append('zero', f);
-  //let id = marker.id;
   performAxiosRequestFile('post', baseUrl + 'pin', data, callback); 
 }
 

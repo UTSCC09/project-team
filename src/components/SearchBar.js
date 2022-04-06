@@ -29,6 +29,7 @@ export default class SearchBar extends React.PureComponent{
     onStop(audioData){
       let t = this;
       t.setState({voiceSeach: false});
+      console.log(audioData);
       api.voiceSeach(this.props.pos, audioData, function (err, res) {
         if(err) return this.props.onError(err);
         if(res){
