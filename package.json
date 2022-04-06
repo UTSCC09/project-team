@@ -38,7 +38,6 @@
     "react-scripts": "^4.0.3",
     "react-streetview": "^1.1.1",
     "react-tag-autocomplete": "^6.3.0",
-    "sanitize-filename": "^1.6.3",
     "validator": "^13.7.0"
   },
   "scripts": {

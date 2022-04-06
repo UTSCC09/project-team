@@ -30,7 +30,7 @@ export default class SearchBar extends React.PureComponent{
       let t = this;
       t.setState({voiceSeach: false});
       console.log(audioData);
-      api.voiceSeach(this.props.pos, audioData, function (err, res) {
+      api.voiceSearch(this.props.pos, audioData, function (err, res) {
         if(err) return this.props.onError(err);
         if(res){
           console.log(res);
@@ -45,7 +45,7 @@ export default class SearchBar extends React.PureComponent{
         let t = this;
         console.log(e.target.value);
         if (e.target.value.length > 4) {
-            api.getLocationCoord(e.target.value, true, function (err, res) {
+            api.getLocationCoord(e.target.value.replace(/\W/g, ''), true, function (err, res) {
             if (err) return this.props.onError(err);
             if (res) {
                 console.log(res);

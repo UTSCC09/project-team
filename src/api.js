@@ -52,7 +52,6 @@ function getAxiosPromise(method, url, data) {
 
 function executePromises(promises, callback) {
   Promise.all(promises).then(function (res) {
-    console.log(res)
     callback(null, res);
   })
   .catch(function(err){
@@ -80,7 +79,6 @@ const searchTags = function (pos, tags, callback) {
 }
 
 const createPin = function (marker, callback) {
-  console.log(marker);
   let body = {"query": `mutation 
     { createPin(input: { 
       type: "FeatureCollection", 
@@ -159,19 +157,17 @@ const uploadImage = function (marker, callback) {
   data.append("operations", JSON.stringify({ query }));
   const map = {"zero":["variables.file"]}
   data.append('map', JSON.stringify(map));
-  console.log(marker.image);
   data.append('zero', marker.image);
   performAxiosRequest("post", baseUrl + `pin/${marker.id}/image/`, data, callback);
 }
 
-const voiceSeach = function (pos, audio, callback) {
+const voiceSearch = function (pos, audio, callback) {
   //return;
   let data = new FormData();
-  const query = `query($file:Upload!){searchByTag(input:{lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, speech:$file}) { ...on Pins{ tags pins{ _id type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message } }}`;
+  const query = `query($file:Upload!){searchByTag(input:{lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, speech:$file}) { ...on Pins{ tags pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message } }}`;
   data.append("operations", JSON.stringify({ query }));
   const map = {"zero":["variables.file"]}
   data.append('map', JSON.stringify(map));
-  console.log(audio.blob);
   let f = new File([audio.blob], 'test.wav', { lastModified: new Date().getTime(), type: audio.type });
   
   data.append('zero', f);
@@ -179,7 +175,6 @@ const voiceSeach = function (pos, audio, callback) {
 }
 
 const getImage = function (imgId, callback) {
-  console.log(imgId);
   performAxiosRequest("post", baseUrl + `image/${imgId}`, {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}, callback);
 }
 
@@ -226,12 +221,10 @@ const getImageTrio = function (pinId, imageId, callback) {
   performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, function (err, res) {
     if(err) return callback(err, null);
     if (res) {
-      console.log(res);
       if (!res.data.data.getAdjacentImage) {
         return getImage(imageId, function (imgErr, imgRes) {
           if(imgErr) return callback(imgErr, null);
           if(imgRes){
-            console.log(imgRes);
             return callback(null, imgRes);
           }
         });
@@ -243,12 +236,8 @@ const getImageTrio = function (pinId, imageId, callback) {
       let prev = getAxiosPromise('post', baseUrl + `image/${prevId}`, b);
       let next = getAxiosPromise('post', baseUrl + `image/${nextId}`, b);
       Promise.all([curr, next, prev]).then(function (imgRes) {
-        console.log(imgRes);
-        //let ids = [... new Set([imageId, prevId, nextId])]; //remove duplicates: https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
-        //let urls = [... new Set(imgRes.map(a => a.data.data.getPhoto.url))];
         let ids = {current: imageId, previous: prevId, next: nextId};
         let tmp = imgRes.map((a) => a.data.data.getPhoto.url);
-        console.log(tmp);
         let urls = {current: tmp[0], next: tmp[1], previous: tmp[2]};
         return callback(null, {ids: ids, urls: urls});
       })
@@ -263,11 +252,9 @@ const getNewestImage = function (pinId, callback) {
   getImagePage(pinId, 'NEWEST', function (err, res) {
     if(err) return callback(err, null)
     if (res) {
-      console.log(res);
       getImage(res.data.data.getImagePage._id, function (imgErr, imgRes) {
         if(imgErr)return callback(imgErr, null);
         if (imgRes) {
-          console.log(imgRes);
           return callback(null, imgRes);
         }
         
@@ -280,11 +267,9 @@ const getOldestImage = function(pinId, callback){
   getImagePage(pinId, 'OLDEST', function (err, res) {
     if(err) return callback(err, null)
     if (res) {
-      console.log(res);
       getImage(res.data.data.getImagePage._id, function (imgErr, imgRes) {
         if(imgErr)return callback(imgErr, null);
         if (imgRes) {
-          console.log(imgRes);
           return callback(null, imgRes);
         }
         
@@ -307,14 +292,11 @@ const getImageFromPinId = function (pinId, callback) {
 const getImagesOfPins = function (pins, callback) {
   let p = [];
   for (let pin of pins){
-    console.log(pins)
     let t = getAxiosPromise("post", baseUrl + `pin/${pin._id}/image`, {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"});
     p.push(t);
   }
 
-  console.log(p);
   Promise.all(p).then(function (vals) {
-    console.log(vals);
     let p2 =[];
       for (let i of vals){
         let t = getAxiosPromise("post", baseUrl + `image/${i.data.data.getImages.images[0]._id}`, {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"});
@@ -323,7 +305,6 @@ const getImagesOfPins = function (pins, callback) {
       Promise.all(p2).then(function (imgs) {
         let final = [];
         for (let img of imgs){
-          console.log(img)
           final.push({img: encodeURI(img.data.data.getPhoto.url)});
         }
         callback(null, final)
@@ -493,7 +474,7 @@ module.exports = {
   createPolygon,
   customSearch,
   getImageFromPinId,
-  voiceSeach,
+  voiceSearch,
   createRating,
   updateRating,
   getRatings,

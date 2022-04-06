@@ -17,7 +17,6 @@ import RegionInfo from './components/RegionInfo.js'
 import SearchBar from './components/SearchBar';
 import MapIcon from '@mui/icons-material/Map';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import sanitize from "sanitize-filename"
 import SourceIcon from '@mui/icons-material/Source';
 import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 import api from './api';
@@ -184,11 +183,14 @@ export default class App extends React.PureComponent {
      */
     defaultView(){
       this.setState({lookingAround: false});
-      let copy = this.state.map;
-      copy.removeLayer('add-3d-buildings');
-      copy.removeLayer('sky');
-      copy.setPitch(0);
-      this.setState({map: copy});
+      this.setState(prevState => ({
+        map: prevState.map.removeLayer('add-3d-buildings')
+      }), () => {
+          this.setState({map: this.state.map.removeLayer('sky')}, () => {
+            this.setState({map: this.state.map.setPitch(0)});
+          });
+        }
+      );
     }
     
 
@@ -204,16 +206,18 @@ export default class App extends React.PureComponent {
       let lng = this.state.currentMarker._lngLat.lng;
       let ltt = this.state.currentMarker._lngLat.lat;
       //add sky layer
+      this.setState(prevState => ({
+        map: prevState.map.addLayer({
+          'id': 'sky',
+          'type': 'sky',
+          'paint': {
+          'sky-type': 'atmosphere',
+          'sky-atmosphere-sun': [0.0, 0.0],
+          'sky-atmosphere-sun-intensity': 15
+          }
+        })
+      }));
       let copy = this.state.map;
-      copy.addLayer({
-        'id': 'sky',
-        'type': 'sky',
-        'paint': {
-        'sky-type': 'atmosphere',
-        'sky-atmosphere-sun': [0.0, 0.0],
-        'sky-atmosphere-sun-intensity': 15
-        }
-      });
       //move to the pin's location
       this.flyToCoord([lng, ltt], 16, 90);
       //source: https://docs.mapbox.com/mapbox-gl-js/example/3d-buildings/
