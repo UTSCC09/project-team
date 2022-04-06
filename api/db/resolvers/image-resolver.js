@@ -68,12 +68,12 @@ getAdajcentImage = async function (input, context) {
     let pinId = sanitizeInput(context.req.params.id);
     const currentImage = await Image.findOne({_id: currentImageId}).exec();
     
-    let prevImage = await Image.findOne({pin: pinId}).where('created_at').gt(currentImage.created_at).exec();
+    let prevImage = await Image.findOne({pin: pinId}).where('created_at').gt(currentImage.created_at).sort({created_at: 1}).exec();
     if (prevImage == null) {
         prevImage = await Image.findOne({pin: pinId}).sort({created_at: 1}).exec();
     }
 
-    let nextImage = await Image.findOne({pin: pinId}).where('created_at').lt(currentImage.created_at).exec();
+    let nextImage = await Image.findOne({pin: pinId}).where('created_at').lt(currentImage.created_at).sort({created_at: -1}).exec();
     if (nextImage == null) {
         nextImage = await Image.findOne({pin: pinId}).sort({created_at: -1}).exec();
     }
