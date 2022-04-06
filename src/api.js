@@ -242,6 +242,23 @@ const getImageTrio = function (order, callback) {
 
 }
 
+const getOldestImage = function(pinId, callback){
+  getImagePage(pinId, 'OLDEST', function (err, res) {
+    if(err) return callback(err, null)
+    if (res) {
+      console.log(res);
+      getImage(res.data.data.getImagePage.current._id, function (imgErr, imgRes) {
+        if(imgErr)return callback(imgErr, null);
+        if (imgRes) {
+          console.log(imgRes);
+          return callback(null, imgRes);
+        }
+        
+      });
+    }
+  });
+}
+
 const getPolygons = function (pos, callback) {
   let body= {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} }) { ...on Polygons{ polygons{ _id type owner features { type properties { name description } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest('post', baseUrl + 'polygon', body, callback);
@@ -447,5 +464,6 @@ module.exports = {
   updateRating,
   getRatings,
   getImagePage,
-  getImageTrio
+  getImageTrio,
+  getOldestImage
 }

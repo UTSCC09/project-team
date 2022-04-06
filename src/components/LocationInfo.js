@@ -36,7 +36,8 @@ export default function LocationInfo(props) {
   const [fileTooBig, setFileTooBig] = React.useState(false);
   const { onError, unrender, owner, close , deleteLocation, user, images, updateImages, marker } = props;
   const [order, setOrder] = React.useState(images);
-  const [displayImages, setDisplayImages] = React.useState([marker.currentImage]);
+  const [currImgIndex, setImgIndex] = React.useState(0);
+  const [displayImages, setDisplayImages] = React.useState(null);
   React.useEffect(() => {
     api.getRatings(marker.id, function (err, res) {
       if(err) return onError(err)
@@ -122,13 +123,15 @@ export default function LocationInfo(props) {
     
   }
   const toggleView = (e) => {
+    console.log(order);
+    console.log(displayImages);
     
     //will display latest image first
 
     //if no next => only image
-    /* if (!order.newer) {
-      console.log('this is the latest image');
-      api.getImageTrio(order, function (err, res) {
+    if (!order.older) {
+      console.log('this is the only image');
+      /* api.getImageTrio(order, function (err, res) {
         if(err)return onError(err);
         if (res) {
           console.log(res);
@@ -136,62 +139,53 @@ export default function LocationInfo(props) {
           setDisplayImages(urls);
           setStreetView(!streetView)
         }
-      });
-    }
-    else{
-      //next exists, so need to set 
-    } */
-
-    api.getImageTrio(order, function (err, res) {
-      if(err)return onError(err);
-      if (res) {
-        console.log(res);
-        let urls = res.map(a => a.data.data.getPhoto.url);
-        setDisplayImages(urls);
-        setStreetView(!streetView)
-      }
-    });
-    console.log(order);
-    console.log(displayImages);
-    
-    return;
-    //only one image
-    if (!order.older && !order.newer) return;
-    if(order.newer){
-      /* api.getImage(order.newer._id, function(newErr, newRes){
-        if(newErr) return onError(newErr);
-        if(newRes){
-          console.log(newRes);
-          let copy = [...displayImages];
-          copy.push(newRes.data.data.getPhoto.url);
-          if (!order.older) {
-            //get newest image
-            api.getImagePage(marker.id, 'NEWEST', function(newestErr, newestRes){
-              if(newestErr) return onError(newestErr);
-              if (newestRes) {
-                console.log(newestRes);
-                api.getImage(newestRes.data.data.getPhoto)
-              }
-            });
-          }
-            
-          setDisplayImages(copy);
-
-          setStreetView(!streetView);
-        }
       }); */
     }
-    else if (order.older) {
-      api.getImage(order.older._id, function (oldErr, oldRes) {
-        if(oldErr) return onError(oldErr);
-        if (oldRes) {
-          console.log(oldRes);
-          setStreetView(!streetView);
+    else{
+      //next exists, so need to set prev as oldest
+      api.getImage(order.current._id, function (err, res) {
+        if(err)return onError(err);
+        if (res) {
+          //get the oldest image, and prepend
+          let currImg = res.data.data.getPhoto.url;
+          api.getOldestImage(marker.id, function (oldestErr, oldestRes) {
+            if(oldestErr) return onError(oldestErr);
+            if (oldestRes) {
+              let oldestImg = oldestRes.data.data.getPhoto.url;
+              api.getImage(order.older._id, function (olderErr, olderRes) {
+                if(olderErr) return onError(olderErr);
+                if (olderRes) {
+                  let olderImg = olderRes.data.data.getPhoto.url;
+                  let imgs = [currImg, olderImg, oldestImg]
+                  setDisplayImages(imgs);
+                  setStreetView(!streetView);
+                }
+              });
+            }
+          });
         }
-      })
+      });
     }
-    
-    //api.getImage(marker.)
+  }
+  const right = () =>{
+    api.getImagePage(marker.id, )
+    return;
+  }
+  const left = () => {
+    return;
+  }
+  const click = (curr) =>{
+    let i = displayImages[curr];
+    //return setDisplayImages([i, 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_Toronto_Harbourfront7.jpg/480px-Toronto_-_ON_-_Toronto_Harbourfront7.jpg']);
+    //move right
+    if (curr > currImgIndex || (curr === 0 && currImgIndex === 2)) {
+      console.log('right');
+      right();
+    }
+    else{
+      console.log('left');
+      left();
+    }
   }
   const fileChange = (e) => {
     console.log(e);
@@ -293,7 +287,7 @@ export default function LocationInfo(props) {
           </div>
           :
           <div id='images'>
-              <MuiImageSlider images={displayImages} />
+              <MuiImageSlider onArrowClick={click} images={displayImages} />
           </div>
         }
         

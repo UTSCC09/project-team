@@ -103,12 +103,20 @@ export default class App extends React.PureComponent {
         this.updateMapStyle = this.updateMapStyle.bind(this);
         this.addToMap = this.addToMap.bind(this);
     }
+    /**
+     * Adds an object to the map
+     * @param {Object} obj the object to be added to the map
+     */
     addToMap(obj){
       let copy = this.state.map;
       obj.addTo(copy);
       this.setState({map:copy});
     }
 
+    /**
+     * Remove the region from the map (does not delete)
+     * @param {Number} regionId ID of the region to be removed
+     */
     unrenderRegion(regionId){
       let copy = [...this.state.renderedRegions];
       let index = this.state.renderedRegions.indexOf(this.state.renderedRegions);
@@ -116,10 +124,15 @@ export default class App extends React.PureComponent {
         copy.splice(index, 1);
         this.setState({renderedRegions: copy});
       }
-      this.setState({detailedRegion: false});
-      this.state.draw.delete(regionId);
+      let d = this.state.draw;
+      d.delete(regionId);
+      this.setState({detailedRegion: false, draw: d});
+      
       if (this.state.currentPopup) this.state.currentPopup.remove();
     }
+    /**
+     * Retreive information about pins within this region
+     */
     getPinsWithinRegion(){      
       let t = this;
       api.getPinsWithinPolygon(this.state.currentRegion.backId, function (err, res) {
@@ -155,6 +168,9 @@ export default class App extends React.PureComponent {
       });
     }
 
+    /**
+     * Temporarily display a timeout message
+     */
     noMatchesFound = () =>{
       this.setState({noMatches: true});
       setTimeout(() => {
@@ -162,6 +178,9 @@ export default class App extends React.PureComponent {
       }, 5000);
     }
 
+    /**
+     * Return to the default (top-down) view
+     */
     defaultView(){
       this.setState({lookingAround: false});
       let copy = this.state.map;
@@ -172,13 +191,18 @@ export default class App extends React.PureComponent {
     }
     
 
+    /**
+     * Enter 'look around' mode
+     * @returns A warning if 'look around' mode is unavailable
+     */
     lookAround(){
+      //only standard map style is supported
       if (this.state.checked && this.state.checked !== 0){
         return this.error('Please select the standard map style to look around', 'warning');
       }
       let lng = this.state.currentMarker._lngLat.lng;
       let ltt = this.state.currentMarker._lngLat.lat;
-      //add sky
+      //add sky layer
       let copy = this.state.map;
       copy.addLayer({
         'id': 'sky',
@@ -189,7 +213,7 @@ export default class App extends React.PureComponent {
         'sky-atmosphere-sun-intensity': 15
         }
       });
-      
+      //move to the pin's location
       this.flyToCoord([lng, ltt], 16, 90);
       //source: https://docs.mapbox.com/mapbox-gl-js/example/3d-buildings/
       const layers = this.state.map.getStyle().layers;
@@ -256,7 +280,6 @@ export default class App extends React.PureComponent {
                     let url = imgRes.data.data.getPhoto.url;
                     t.setState({displayImgs: [url]});
                     marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url))
-                    //marker.getPopup().addTo(t.state.map);
                     t.addToMap(marker.getPopup());
                     document.getElementById(marker.id).onclick = function () {
                       t.setState({detailedLocation: true, currentMarker: marker, currentMarkerImages: [url]});
@@ -272,10 +295,11 @@ export default class App extends React.PureComponent {
                         return t.error(err);
                       };
                       navigator.geolocation.getCurrentPosition(function (res) {
-                        t.state.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
-                        t.state.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+                        let copy = t.state.directions;
+                        copy.setOrigin([res.coords.longitude, res.coords.latitude]);
+                        copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
                         document.querySelector('.mapbox-directions-profile').style.display='block';
-                        t.setState({viewingDirections: true, loading: false});
+                        t.setState({viewingDirections: true, loading: false, directions: copy});
           
                       }, error, options);
                     }
@@ -289,18 +313,25 @@ export default class App extends React.PureComponent {
           })
     }
 
+    /**
+     * Create the given marker (in the backend)
+     * @param {Object} marker the new marker object to be created
+     * @param {Object} t this
+     */
     createMarker(marker, t){
       api.createPin(marker, function (err, res) {
         if (err) return t.error(err);
         if (res) {
           if(res.data.errors) return t.error(res.data.errors[0].message);
+          //set the properties
           marker.id=res.data.data.createPin._id;
           marker.owner = res.data.data.createPin.owner;
           marker.name = res.data.data.createPin.features.properties.name;
           marker.description = res.data.data.createPin.features.properties.description;
           marker.tags = res.data.data.createPin.features.properties.tags;
+          //create the popup
           marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, marker.tags[0], marker.description, res.data.data.createPin._id)))
-          
+          //upload the marker's image
           t.uploadImage(marker, res, t);
         }
       });
@@ -338,22 +369,26 @@ export default class App extends React.PureComponent {
             // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
             let diff = t.state.renderedRegions.filter(x => !res.data.data.getNear.polygons.includes(x));
             for (let x of diff){
-              t.state.draw.delete(x.id)
+              let d = t.state.draw;
+              d.delete(x.id)
               let copy = [...t.state.renderedRegions];
               copy.splice(copy.indexOf(x));
-              t.setState({renderedRegions: copy});
+              t.setState({renderedRegions: copy, draw: d});
               
 
             }
+
           }
-          t.state.draw.changeMode('static');
+          let copy = t.state.draw;
+          copy.changeMode('static');
           let polygons = res.data.data.getNear.polygons;
           for (let p of polygons){
             let f = t.state.renderedRegions.find(x => x.backId === p._id)
             if (f) continue;
             let newRegion = p.features.geometry;
             
-            let v = t.state.draw.add(newRegion);
+            let v = copy.add(newRegion);
+            t.setState({draw: copy});
             newRegion.id = v[0];
             newRegion.name = p.features.properties.name;
             newRegion.owner = p.owner;
@@ -363,15 +398,17 @@ export default class App extends React.PureComponent {
               renderedRegions: [...prevState.renderedRegions, newRegion]
             }));
           }
+          
         }
       });
 
     }
     timeoutDirections(){
-      this.state.directions.actions.clearOrigin();
-      this.state.directions.actions.clearDestination();
-      this.state.directions.removeRoutes();
-      this.setState({directionsTimedOut: true});
+      let copy = this.state.directions;
+      copy.actions.clearOrigin();
+      copy.actions.clearDestination();
+      copy.removeRoutes();
+      this.setState({directionsTimedOut: true, directions: copy});
       setTimeout(() => {
         this.setState({directionsTimedOut: false});
       }, 4000);
@@ -400,8 +437,9 @@ export default class App extends React.PureComponent {
               t.setState({loading: false}, t.timeoutDirections);
             };
             navigator.geolocation.getCurrentPosition(function (res) {
-              t.state.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
-              t.state.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+              let copy = t.state.directions;
+              copy.setOrigin([res.coords.longitude, res.coords.latitude]);
+              copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
               
               document.querySelector('.mapbox-directions-profile').style.display='block';
               t.setState({viewingDirections: true, loading: false});
@@ -421,17 +459,6 @@ export default class App extends React.PureComponent {
         if (markers) {
           if(markers.data.errors) return t.error(markers.data.errors[0].message);
           if (removeOld) {
-            // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
-            /* let diff = t.state.renderedMarkers.filter(x => !markers.data.data.getNear.pins.includes(x));
-            for (let x of diff){
-              
-              if (x._draggable || x._color === "#FF0000") continue;
-              x.remove();
-              let copy = [...t.state.renderedMarkers];
-              copy.splice(copy.indexOf(x));
-              t.setState({renderedMarkers: copy});
-              console.log(x);
-            } */
             for (let x of t.state.renderedMarkers){
               if (!markers.data.data.getNear.pins.find((y) => y._id === x.id)){
                 //need to remove x
@@ -512,7 +539,7 @@ export default class App extends React.PureComponent {
                           t.addToMap(marker.getPopup());
                           document.getElementById(marker.id).onclick = function () {
                             console.log(t.state.currentMarker);
-                            api.getImagePage(marker.id, 'OLDEST', function (pErr, pRes) {
+                            api.getImagePage(marker.id, 'NEWEST', function (pErr, pRes) {
                               if(pErr)return t.onError(pErr);
                               if (pRes) {
                                 console.log(pRes);
@@ -533,9 +560,9 @@ export default class App extends React.PureComponent {
                               t.setState({loading: false}, t.timeoutDirections);
                             };
                             navigator.geolocation.getCurrentPosition(function (res) {
-                              
-                              t.state.directions.setOrigin([res.coords.longitude, res.coords.latitude]);
-                              t.state.directions.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+                              let copy = t.state.directions;
+                              copy.setOrigin([res.coords.longitude, res.coords.latitude]);
+                              copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
                               
                               document.querySelector('.mapbox-directions-profile').style.display='block';                              
                               t.setState({viewingDirections: true, loading: false});
@@ -594,10 +621,8 @@ export default class App extends React.PureComponent {
           else r.remove();
         } 
       }
-      //if (!removeHighlighted) {
-        this.state.draw.deleteAll();
-        this.setState({renderedRegions: []})
-      //}
+      this.state.draw.deleteAll();
+      this.setState({renderedRegions: []})
       
       this.setState({renderedMarkers: keep});
       
@@ -702,7 +727,7 @@ export default class App extends React.PureComponent {
         let n = new mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(this.producePopup(clickedPolygon.name, '', clickedPolygon.description, clickedPolygon.id))
-          .addTo(this.state.map);
+        t.addToMap(n);
         document.getElementById(clickedPolygon.id).onclick = function (e) {
           //t.setState({detailedRegion: true, currentRegion: clickedPolygon});
           t.setState({currentRegion: clickedPolygon});
@@ -863,7 +888,18 @@ export default class App extends React.PureComponent {
       });
       
     }
+    /**
+     * Produces popups for regions and locations
+     * @param {String} name Location name
+     * @param {String} tag The primary tag of the location
+     * @param {String} desc Location's description
+     * @param {Number} id Location's ID
+     * @param {String} url The URL of the location's thumbnail
+     * @param {String} ratings Location's average rating
+     * @returns The popup element
+     */
     producePopup(name, tag, desc, id, url, ratings='-'){
+      //Saved location
       if (id && url) return `<div id="marker-card" class="card">
                   <div class="card-header"
                 style="background-image: url(${encodeURI(url)})"
@@ -890,6 +926,7 @@ export default class App extends React.PureComponent {
                       </div>
                   </div>
               </div>`
+      //new location (does not posses ID yet)
       if (url) return `<div id="marker-card" class="card">
             <div class="card-header"
           style="background-image: url(${url})"
@@ -914,6 +951,7 @@ export default class App extends React.PureComponent {
                 </div>
             </div>
         </div>`
+        //Region, only display name and description
         return `<div id="region-card" class="card">
                   <div class="card-body">
                       <h2 class="name">${name}</h2>
@@ -924,6 +962,13 @@ export default class App extends React.PureComponent {
                   </div>
               </div>` 
     }
+    /**
+     * Perform the fly to animation with the given specifications
+     * @param {Array} coord The coordinates to fly to
+     * @param {Number} zoom Zoom level on arrival
+     * @param {Number} pitch Tilt of view
+     * @param {Number} bearing Bearing of view
+     */
     flyToCoord(coord, zoom=13.6, pitch=0, bearing=0){
       this.state.map.flyTo({
         center: coord,
@@ -1134,6 +1179,10 @@ export default class App extends React.PureComponent {
       this.setState({highlightedMarkers: [], renderedMarkers: keep});
     }
 
+    /**
+     * Removes the specified marker from the rendered state
+     * @param {Object} old Marker to be removed
+     */
     removeMarkerFromRendered(old){
       let copy = [...this.state.renderedMarkers];
       let index = this.state.renderedMarkers.indexOf(old);
@@ -1141,11 +1190,15 @@ export default class App extends React.PureComponent {
         old.remove();
         copy.splice(index, 1);
         this.setState({renderedMarkers: copy});
-
       }
     }
 
-    voiceSearch(pins, tags, audio){
+    /**
+     * Display the results of the voice search
+     * @param {Array} pins Result of voice search
+     * @param {Array} tags List of tags associated with voice search
+     */
+    voiceSearch(pins, tags){
       if (this.state.audioTags && this.state.audioTags.length) {
         this.setState({audioTags: null}, function () {
           this.removeHighlighted();
@@ -1158,14 +1211,21 @@ export default class App extends React.PureComponent {
       this.displayCustomSearchResults(pins)
       
     }
+    /**
+     * Performs the search according to the query
+     * @param {Event} e The event
+     * @param {Object} custom Stores tags and other information associated with custom query
+     */
     performSearch(e, custom=null){
 
       let t= this;
+      //clear results of previous searches
       this.removeHighlighted();
-      if (this.state.flyTo.length) {
+      if (this.state.flyTo.length) { //Will fly to address
         if(this.state.addressSearchMarkers) this.removeMarkerFromRendered(this.state.addressSearchMarkers);
         let t = this;
         this.flyToCoord(this.state.flyTo);
+        //add temporary marker to specified address
         const marker = new mapboxgl.Marker({
           color: "#0000FF",
           draggable: false
@@ -1177,7 +1237,7 @@ export default class App extends React.PureComponent {
         }));
         this.setState({flyTo: [], searchTags: [], customSearchTags: null})
       }
-      else if (this.state.customSearch || custom) {
+      else if (this.state.customSearch || custom) { //written natural language query
         this.setState({displayTagSearchResults: false});
         if (this.state.customSearch) {
           api.customSearch({lat: this.state.lat, lng: this.state.lng}, this.state.customSearch.inputValue, function (err, res) {
@@ -1185,17 +1245,14 @@ export default class App extends React.PureComponent {
             if (res) {
               if(res.data.errors) return t.error(res.data.errors[0].message);
               t.setState({customSearchTags: res.data.data.searchByTag.tags});
-              t.removeHighlighted()
-
+              t.removeHighlighted();
+              //display the results
               t.displayCustomSearchResults(res.data.data.searchByTag.pins);
             }
           });
         }
-        
-        
-        
       }
-      else if(this.state.audioTags){
+      else if(this.state.audioTags){ //spoken query
           
         this.setState({customSearchTags: null});
         api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.audioTags, function (err, res) {
@@ -1206,7 +1263,7 @@ export default class App extends React.PureComponent {
           }
         });
       }
-      else if (!custom) {
+      else if (!custom) { //tag query 
         if (this.state.customSearchTags) {
           this.setState({customSearchTags: null}, function () {
             this.removeHighlighted();
@@ -1219,54 +1276,85 @@ export default class App extends React.PureComponent {
       
     }
 
+    /**
+     * Enter drawing mode
+     * @param {Event} e The event
+     */
     addRegion(e){
-      //e.preventDefault();
       this.setState({addingLocation:false, drawingRegion: true, renderedRegions: []});
+      //hide rendered regions
       this.state.draw.deleteAll();
+      //draw mode
       this.state.draw.changeMode('draw_polygon');
-      
-      return;
     }
 
+    /**
+     * Set the uploaded image
+     * @param {Event} e The event
+     */
     setImage(e){
       this.setState({image: e.target.files[0]});
     }
+    /**
+     * Updates the state of the application accoridng to the query object
+     * @param {Event} event The change event
+     * @param {Object} value The query object
+     */
     handleSearchChange(event, value){
       this.setState({audioTags: null});
-      if (value.place_name) {
+      if (value.place_name) { //geocoding query, fly to the location
         this.setState({customSearch: null});
         this.setState({flyTo: value.geometry.coordinates});
         
       }
-      else if (value.title) {
+      else if (value.title) { //written, natural language query
         this.setState({customSearch: value});
       }
-      else{
+      else{ //tag search
         this.setState({customSearch: null});
         this.setState({searchTags: value.length ? value : [], flyTo: []});
       }
       
     }
+    /**
+     * Sets the coordinates of location
+     * @param {Array} arr Array of location choices
+     * @param {String} name Name of the chosen location
+     */
     updateAddress(arr, name){
       if (name) {
         this.setState({newCoord: arr.find((x) => x.place_name === name).geometry.coordinates})
       }
     }
+    /**
+     * Remove the directions from the map
+     */
     cancelDirections(){
       this.setState({viewingDirections: false}, ()=> {
         document.querySelector('.mapbox-directions-profile').style.display='none';
-        this.state.directions.removeRoutes();        
-        this.state.directions.actions.clearOrigin();
-        this.state.directions.actions.clearDestination();
+        let copy = this.state.directions;
+        copy.removeRoutes();        
+        copy.actions.clearOrigin();
+        copy.actions.clearDestination();
+        this.setState({directions: copy});
         
       });
     }
+    /**
+     * Modify the map style
+     * @param {Number} index index of map style to change to
+     */
     updateMapStyle(index){
       this.setState({checked: index});
       const styles = ['streets-v11', "satellite-v9", 'dark-v10', 'satellite-streets-v11'];
-      this.state.map.setStyle('mapbox://styles/mapbox/' + styles[index]);
-      //this.state.map.setStyle(style);
+      let copy = this.state.map;
+      copy.setStyle('mapbox://styles/mapbox/' + styles[index]);
+      this.setState({map: copy});
     }
+    /**
+     * Renders the application
+     * @returns The Place-Holder app
+     */
     render() {
         const { lng, lat, zoom } = this.state;
         
@@ -1274,7 +1362,7 @@ export default class App extends React.PureComponent {
         let locationButton;
         let locationClick;
         let locationColor;
-        if(this.state.choosingType){//if (this.state.movingMarker) {
+        if(this.state.choosingType){
           locationButton = <DoneIcon />
           locationClick= this.doneMarker;
           locationColor='success';
