@@ -137,32 +137,12 @@ const customSearch = function(pos, query, callback){
 
 }
 
-const getImagePage = function(id, page, callback){
-  let goto = (page==='OLDEST' || page==='NEWEST')? page : 'PAGE';
-  let p = page==='PAGE'? page : -1;
-  console.log(goto);
-  console.log(p);
+const getImagePage = function(id, goto, callback){
+
   let q = `query {
-    getImagePage(input: {goto: ${goto}, page: ${p}}) {
-      ... on ImagePage {
-        older {
-          _id
-          title
-          image
-          pin
-        }
-        current {
-          _id
-          title
-          image
-          pin
-        }
-        newer {
-          _id
-          title
-          image
-          pin
-        }
+    getImagePage(input: {goto: ${goto} }) {
+      ... on Image {
+        _id
       }
       ... on Error {
         message
@@ -224,22 +204,77 @@ const getPins = function (pos, callback) {
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
 }
 
-const getImageTrio = function (order, callback) {
-  let body = {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}
-  let prev = order.older? getAxiosPromise('post', baseUrl + `image/${order.older._id}`, body) : null;
-  let curr = getAxiosPromise('post', baseUrl + `image/${order.current._id}`, body);
-  let next = order.newer ? getAxiosPromise('post', baseUrl + `image/${order.newer._id}`, body) : null;
-  let p = [];
-  if(prev) p.push(prev);
-  p.push(curr);
-  if(next) p.push(next);
-  Promise.all(p).then(function (res) {
-    callback(null, res);
-  })
-  .catch(function (err) {
-    callback(err, null);
-  })
+const getImageTrio = function (pinId, imageId, callback) {
+  let q = `query {
+    getAdjacentImage(input: {imageId: "${imageId}"}) {
+      ... on ImageAdjacent {
+        next {
+          _id
+          title
+          image
+          pin
+        }
+        previous {
+          _id
+          title
+          image
+          pin
+        }
+      }
+    }
+  }`;
+  let body = {'query': q};
+  performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, function (err, res) {
+    if(err) return callback(err, null);
+    if (res) {
+      console.log(res);
+      if (!res.data.data.getAdjacentImage) {
+        return getImage(imageId, function (imgErr, imgRes) {
+          if(imgErr) return callback(imgErr, null);
+          if(imgRes){
+            console.log(imgRes);
+            return callback(null, imgRes);
+          }
+        });
+      }
+      let prevId = res.data.data.getAdjacentImage.previous._id;
+      let nextId = res.data.data.getAdjacentImage.next._id;
+      let b = {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"};
+      let curr = getAxiosPromise('post', baseUrl + `image/${imageId}`, b);
+      let prev = getAxiosPromise('post', baseUrl + `image/${prevId}`, b);
+      let next = getAxiosPromise('post', baseUrl + `image/${nextId}`, b);
+      Promise.all([curr, next, prev]).then(function (imgRes) {
+        console.log(imgRes);
+        //let ids = [... new Set([imageId, prevId, nextId])]; //remove duplicates: https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
+        //let urls = [... new Set(imgRes.map(a => a.data.data.getPhoto.url))];
+        let ids = {current: imageId, previous: prevId, next: nextId};
+        let tmp = imgRes.map((a) => a.data.data.getPhoto.url);
+        console.log(tmp);
+        let urls = {current: tmp[0], next: tmp[1], previous: tmp[2]};
+        return callback(null, {ids: ids, urls: urls});
+      })
+      .catch(function (imgErr) {
+        return callback(imgErr, null);
+      });
+    }
+  });
+}
 
+const getNewestImage = function (pinId, callback) {
+  getImagePage(pinId, 'NEWEST', function (err, res) {
+    if(err) return callback(err, null)
+    if (res) {
+      console.log(res);
+      getImage(res.data.data.getImagePage._id, function (imgErr, imgRes) {
+        if(imgErr)return callback(imgErr, null);
+        if (imgRes) {
+          console.log(imgRes);
+          return callback(null, imgRes);
+        }
+        
+      });
+    }
+  });
 }
 
 const getOldestImage = function(pinId, callback){
@@ -247,7 +282,7 @@ const getOldestImage = function(pinId, callback){
     if(err) return callback(err, null)
     if (res) {
       console.log(res);
-      getImage(res.data.data.getImagePage.current._id, function (imgErr, imgRes) {
+      getImage(res.data.data.getImagePage._id, function (imgErr, imgRes) {
         if(imgErr)return callback(imgErr, null);
         if (imgRes) {
           console.log(imgRes);
@@ -465,5 +500,6 @@ module.exports = {
   getRatings,
   getImagePage,
   getImageTrio,
-  getOldestImage
+  getOldestImage,
+  getNewestImage
 }

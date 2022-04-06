@@ -304,7 +304,7 @@ export default class App extends React.PureComponent {
                       }, error, options);
                     }
                   }
-                })
+                });
 
                 
               }
@@ -504,8 +504,62 @@ export default class App extends React.PureComponent {
                 marker.getPopup().remove();
               } 
               else{
-                t.setState({currentMarker: marker})                
-                api.getImagePage(marker.id, 'OLDEST', function(pageErr, pageRes){
+                t.setState({currentMarker: marker});
+                api.getOldestImage(marker.id, function (imgErr, imgRes) {
+                  if(imgErr){
+                    return t.error(imgErr);
+                  }
+                  if(imgRes){
+                    t.setState({currentMarker: marker});
+                    if (imgRes.data.errors) {
+                      if (imgRes.data.errors[0].message === "Cannot read properties of null (reading '_id')") {
+                        t.unrenderMarker(marker);
+                        return t.error("The location you were trying to view has been deleted by its owner");
+                      }
+                      return t.error(imgRes.data.errors[0].message);
+                    }
+                    console.log(imgRes);
+                    let url = imgRes.data.data.getPhoto.url;
+                    marker.currentImage = url;
+                    marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url, marker.rating));
+                    t.addToMap(marker.getPopup());
+                    document.getElementById(marker.id).onclick = function () {
+                      console.log(t.state.currentMarker);
+                      api.getImagePage(marker.id, 'NEWEST', function (pErr, pRes) {
+                        if(pErr)return t.onError(pErr);
+                        if (pRes) {
+                          console.log(pRes);
+                          t.setState({detailedLocation: true, displayImgs: pRes.data.data.getImagePage});
+                        }
+                      })
+                      
+                    }
+                    document.getElementById('look-around-btn').onclick = function () {
+                      t.lookAround();
+                    }
+                    document.getElementById(marker.id + '_directions').onclick = function () {
+                      t.setState({loading: true});
+                      
+                      let options = {timeout: DIRECTION_TIMEOUT};
+                      let error = (err) => {
+                        t.error(err);
+                        t.setState({loading: false}, t.timeoutDirections);
+                      };
+                      navigator.geolocation.getCurrentPosition(function (res) {
+                        let copy = t.state.directions;
+                        copy.setOrigin([res.coords.longitude, res.coords.latitude]);
+                        copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
+                        
+                        document.querySelector('.mapbox-directions-profile').style.display='block';                              
+                        t.setState({viewingDirections: true, loading: false});
+          
+                      }, error, options);
+                    }
+                  }
+
+                });
+                return;               
+                api.getgeImagePage(marker.id, 'OLDEST', function(pageErr, pageRes){
                     if(pageErr){
                       return t.error(pageErr);
                     }
@@ -1555,11 +1609,6 @@ export default class App extends React.PureComponent {
                   onError={this.error}
                   unrender={this.unrenderMarker}
                   images={this.state.displayImgs}
-                  updateImages={(newImg)=>{
-                    let c = this.state.displayImgs;
-                    //c.unshift(newImg);
-                    this.setState({displayImgs:c});
-                  }}
                   ></LocationInfo>
                 :
                 null
