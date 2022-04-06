@@ -18,7 +18,6 @@ app.use(cors());
 app.use(express.static('static'));
 
 const {
-    GraphQLUpload,
     graphqlUploadExpress
 } = require('graphql-upload');
 app.use(graphqlUploadExpress());
