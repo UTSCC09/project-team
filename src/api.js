@@ -124,14 +124,16 @@ const searchTags = function (pos, tags, callback) {
  * @param {Function} callback executes with result
  */
 const createPin = function (marker, callback) {
+  let cleanName = marker.name.replaceAll('"', '');
+  let cleanDescription = marker.description.replaceAll('"', '');
   let body = {"query": `mutation 
     { createPin(input: { 
       type: "FeatureCollection", 
       features: { 
         type: "Feature", 
         properties: { 
-          name: "${marker.name}" 
-          description:"${marker.description}" 
+          name: "${cleanName}" 
+          description:"${cleanDescription}" 
           tags:${JSON.stringify(marker.tags)} } 
           geometry: { 
             type: "Point", 
@@ -147,14 +149,16 @@ const createPin = function (marker, callback) {
  * @param {Function} callback executes with result
  */
 const createPolygon = function (polygon, callback) {
-  let coord = JSON.stringify(polygon.geometry.coordinates[0])
+  let coord = JSON.stringify(polygon.geometry.coordinates[0]);
+  let cleanName = polygon.name.replaceAll('"', '');
+  let cleanDescription = polygon.description.replaceAll('"', '');
   let body = {"query": `mutation { createPolygon(input: { 
     type: "FeatureCollection", 
     features: { 
       type: "Feature", 
       properties: { 
-        name: "${polygon.name}" 
-        description: "${polygon.description}" } 
+        name: "${cleanName}" 
+        description: "${cleanDescription}" } 
         geometry: { 
           type: "Polygon", 
           coordinates: [ ${coord} ] } } })
@@ -226,7 +230,8 @@ const getImagePage = function(id, goto, callback){
  */
 const uploadImage = function (marker, callback) {
   let data = new FormData();
-  const query = `mutation($file:Upload!){createImage(input:{title: "${marker.name}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
+  let title = marker.name.replaceAll('"', '')
+  const query = `mutation($file:Upload!){createImage(input:{title: "${title}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
   data.append("operations", JSON.stringify({ query }));
   const map = {"zero":["variables.file"]}
   data.append('map', JSON.stringify(map));

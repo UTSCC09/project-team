@@ -101,7 +101,21 @@ export default class App extends React.PureComponent {
         this.updateMapStyle = this.updateMapStyle.bind(this);
         this.addToMap = this.addToMap.bind(this);
         this.handlePopup = this.handlePopup.bind(this);
+        this.directionError = this.directionError.bind(this);
     }
+    /**
+     * Specifically handle errors related to directions
+     * @param {Object} err The error
+     */
+    directionError(err) {
+      let message;
+      if (err.code === 1) message = "Please enable location services";
+      else if (err.code === 2) message = "Sorry, we were unable to locate you";
+      else return this.setState({loading: false}, this.timeoutDirections); //timeout 
+      this.error(message, 'warning');
+      this.setState({loading: false});
+      
+    };
     /**
      * Adds an object to the map
      * @param {Object} obj the object to be added to the map
@@ -300,10 +314,6 @@ export default class App extends React.PureComponent {
                     document.getElementById(marker.id + '_directions').onclick = function () {
                       t.setState({loading: true});
                       let options = {timeout: DIRECTION_TIMEOUT};
-                      let error = (err) => {
-                        t.setState({viewingDirections: false}, t.timeoutDirections)
-                        return t.error(err);
-                      };
                       navigator.geolocation.getCurrentPosition(function (res) {
                         let copy = t.state.directions;
                         copy.setOrigin([res.coords.longitude, res.coords.latitude]);
@@ -311,7 +321,7 @@ export default class App extends React.PureComponent {
                         document.querySelector('.mapbox-directions-profile').style.display='block';
                         t.setState({viewingDirections: true, loading: false, directions: copy});
           
-                      }, error, options);
+                      }, t.directionError, options);
                     }
                   }
                 });
@@ -485,10 +495,7 @@ export default class App extends React.PureComponent {
             t.setState({loading: true});
             
             let options = {timeout: DIRECTION_TIMEOUT};
-            let error = (err) => {
-              t.error(err);
-              t.setState({loading: false}, t.timeoutDirections);
-            };
+            
             navigator.geolocation.getCurrentPosition(function (res) {
               let copy = t.state.directions;
               copy.setOrigin([res.coords.longitude, res.coords.latitude]);
@@ -497,7 +504,7 @@ export default class App extends React.PureComponent {
               document.querySelector('.mapbox-directions-profile').style.display='block';                              
               t.setState({viewingDirections: true, loading: false});
 
-            }, error, options);
+            }, t.directionError, options);
           }
         }
 
