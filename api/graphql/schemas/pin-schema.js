@@ -171,6 +171,19 @@ const mutationType = new GraphQLObjectType({
     }
 });
 
+const idQueryType = new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+        createPin: {
+            type: pinResultType,
+            args: {
+                input: {type: pinInput}
+            },
+            resolve: (_, {input}, context) => resolver.createPin(input, context)
+        }
+    }
+});
+
 const idMutationType = new GraphQLObjectType({
     name: 'Mutation',
     fields: {
@@ -198,7 +211,7 @@ const idMutationType = new GraphQLObjectType({
 
 let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
 
-let idSchema = new GraphQLSchema({mutation: idMutationType})
+let idSchema = new GraphQLSchema({query: idQueryType, mutation: idMutationType})
 
 module.exports = {
     schema,
