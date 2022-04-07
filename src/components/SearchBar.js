@@ -12,7 +12,7 @@ import Box from '@mui/material/Box';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import { Typography } from '@mui/material';
 const filter = createFilterOptions();
-const tags = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
+const tags = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue', 'Store', 'Other'];
 export default class SearchBar extends React.PureComponent{
 
     constructor(props){

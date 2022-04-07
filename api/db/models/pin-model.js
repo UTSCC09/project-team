@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 // Allowed tags for pins
-const tagTypes = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
+const tagTypes = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue', 'Store', 'Other'];
 
 const propertySchema = new mongoose.Schema({
     name: {type: String, required: true},

@@ -1380,6 +1380,7 @@ export default class App extends React.PureComponent {
                 </Fab>
               }
               
+              
               {
                 this.state.searching?
                 
@@ -1424,7 +1425,7 @@ export default class App extends React.PureComponent {
               {
                 (this.state.signedIn && !this.state.searching)?
                 
-                <Fab color={locationColor} onClick={ locationClick } aria-label="add">
+                <Fab color={locationColor} disabled={this.state.drawingRegion} onClick={ locationClick } aria-label="add">
                   { locationButton }
                 </Fab>
                 
@@ -1439,6 +1440,7 @@ export default class App extends React.PureComponent {
                 :
                 null
               }
+              
               
               
               
@@ -1477,6 +1479,7 @@ export default class App extends React.PureComponent {
               }
               
               
+              
             </Box>
             <Box id='errors-and-warnings'>
               {
@@ -1505,6 +1508,12 @@ export default class App extends React.PureComponent {
                   </Alert>
                   :
                   null
+                }
+                {
+                this.state.drawingRegion?
+                <Alert severity="info">Double click the final vertex to complete your drawing</Alert>
+                :
+                null
                 }
             </Box>
             
