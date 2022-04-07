@@ -88,7 +88,6 @@ export default class App extends React.PureComponent {
         this.setImage = this.setImage.bind(this)
         this.uploadImage = this.uploadImage.bind(this);
         this.createRegion = this.createRegion.bind(this);
-        this.getImage = this.getImage.bind(this);
         this.deleteRegion = this.deleteRegion.bind(this);
         this.getPinsWithinRegion = this.getPinsWithinRegion.bind(this);
         this.searchForTags = this.searchForTags.bind(this);
@@ -270,7 +269,13 @@ export default class App extends React.PureComponent {
 
     }
 
-    uploadImage(marker, res, t){
+    /**
+     * Upload the image to the pin
+     * @param {Object} marker the pin to which the image belongs
+     * @param {Object} t "this"
+     */
+
+    uploadImage(marker, t){
         api.uploadImage(marker, function(upErr, res){
           if (upErr) return t.error(upErr);
             
@@ -337,13 +342,16 @@ export default class App extends React.PureComponent {
           //create the popup
           marker.setPopup(new mapboxgl.Popup().setHTML(t.producePopup(res.data.data.createPin.features.properties.name, marker.tags[0], marker.description, res.data.data.createPin._id)))
           //upload the marker's image
-          t.uploadImage(marker, res, t);
+          t.uploadImage(marker, t);
         }
       });
     }
+    /**
+     * Creates the polygon in the backend
+     * @param {Object} region the polygon to be created
+     * @param {Object} t this
+     */
     createRegion(region, t){
-      //let coord = JSON.stringify(region.geometry.coordinates[0])
-      //let body = {"query": `mutation { createPolygon(input: { type: \"FeatureCollection\", features: { type: \"Feature\", properties: { name: \"${region.name}\" description: \"${region.description}\" } geometry: { type: "Polygon", coordinates: [ ${coord} ] } } }) { ...on Polygon{ _id type features { type properties { name } geometry { type coordinates }} } ...on Error{ message } }}`}
       api.createPolygon(region, function (err, res) {
         if(err) return t.error(err);
         if (res) {
@@ -356,6 +364,11 @@ export default class App extends React.PureComponent {
       })
     }
 
+    /**
+     * Display the error/warning to the user
+     * @param {String} err the error
+     * @param {String} severity one of 'error' or 'warning
+     */
     error(err, severity='error'){
       console.error(err);
       this.setState({genericError: err, severity: severity});
@@ -364,6 +377,11 @@ export default class App extends React.PureComponent {
       }, 4000);
     }
 
+    /**
+     * Retreives and rendered polygons
+     * @param {Object} t 'this'
+     * @param {Boolean} removeOld If true, remove the previously rendered polygons
+     */
     getRegions(t, removeOld=false){
 
       api.getPolygons({lat: t.state.lat, lng: t.state.lng}, function (err, res) {
@@ -408,6 +426,9 @@ export default class App extends React.PureComponent {
       });
 
     }
+    /**
+     * Remove directions and indicate to user that none could be found
+     */
     timeoutDirections(){
       let copy = this.state.directions;
       copy.actions.clearOrigin();
@@ -419,44 +440,11 @@ export default class App extends React.PureComponent {
       }, 4000);
     }
 
-    getImage(marker, m, imgId, t){
-      api.getImagesFromIds(this.state.currentMarkerImages, function (err, res) {
-        if (err) return t.error(err);
-        if (res) {
-          
-          let url = res[0].data.data.getPhoto.url;
-          
-          marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url, marker.rating))
-          t.addToMap(marker.getPopup());
-          document.getElementById(marker.id).onclick = function () {
-            t.setState({detailedLocation: true});
-          }
-          document.getElementById('look-around-btn').onclick = function () {
-            t.lookAround();
-          }
-          document.getElementById(marker.id + '_directions').onclick = function () {
-            t.setState({loading: true});
-            let options = {timeout: DIRECTION_TIMEOUT};
-            let error = (err) => {
-              t.error(err);
-              t.setState({loading: false}, t.timeoutDirections);
-            };
-            navigator.geolocation.getCurrentPosition(function (res) {
-              let copy = t.state.directions;
-              copy.setOrigin([res.coords.longitude, res.coords.latitude]);
-              copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
-              
-              document.querySelector('.mapbox-directions-profile').style.display='block';
-              t.setState({viewingDirections: true, loading: false});
 
-            }, error, options);
-          }
-          t.setState({displayImgs: res.map((x) => x.data.data.getPhoto.url)});
-          
-        }
-      });
-    }
-
+    /**
+     * Add the marker's popup to the page and add button handlers
+     * @param {Object} marker the pin to which the pop up belongs
+     */
     handlePopup(marker){
       this.setState({currentMarker: marker});
       let t = this;
@@ -473,25 +461,26 @@ export default class App extends React.PureComponent {
             }
             return t.error(imgRes.data.errors[0].message);
           }
-          console.log(imgRes);
           let url = imgRes.data.data.getPhoto.url;
           marker.currentImage = url;
+          //produce the actual popup
           marker.getPopup().setHTML(t.producePopup(marker.name, marker.tags[0], marker.description, marker.id, url, marker.rating));
           t.addToMap(marker.getPopup());
+          //add handler for detailed view of marker
           document.getElementById(marker.id).onclick = function () {
-            console.log(t.state.currentMarker);
             api.getImagePage(marker.id, 'NEWEST', function (pErr, pRes) {
               if(pErr)return t.onError(pErr);
               if (pRes) {
-                console.log(pRes);
                 t.setState({detailedLocation: true, displayImgs: pRes.data.data.getImagePage});
               }
-            })
+            });
             
           }
+          //handler for look around
           document.getElementById('look-around-btn').onclick = function () {
             t.lookAround();
           }
+          //get directions to this pin
           document.getElementById(marker.id + '_directions').onclick = function () {
             t.setState({loading: true});
             
@@ -515,13 +504,19 @@ export default class App extends React.PureComponent {
       });
       
     }
-    getMarkers(t, removeOld=false, search=false){
+    /**
+     * Retreive and display nearby markers
+     * @param {Object} t This
+     * @param {Boolean} removeOld If true, removed the previously rendered markers
+     */
+    getMarkers(t, removeOld=false){
 
       api.getPins({lat: t.state.lat, lng:t.state.lng}, function (err, markers) {
         if (err) return t.error(err);
         if (markers) {
           if(markers.data.errors) return t.error(markers.data.errors[0].message);
           if (removeOld) {
+            //remove old markers
             for (let x of t.state.renderedMarkers){
               if (!markers.data.data.getNear.pins.find((y) => y._id === x.id)){
                 //need to remove x
@@ -530,14 +525,13 @@ export default class App extends React.PureComponent {
                 let copy = [...t.state.renderedMarkers];
                 copy.splice(copy.indexOf(x), 1);
                 t.setState({renderedMarkers: copy});
-                console.log(x);
               }
             } 
           }
 
           
           for (let m of markers.data.data.getNear.pins){
-
+            //already rendered, skip
             if (t.state.renderedMarkers.find((x) => x.id === m._id)) continue;
             
             const marker = new mapboxgl.Marker({
@@ -580,10 +574,14 @@ export default class App extends React.PureComponent {
       
     }
 
+    /**
+     * Removes the rendered markers and polygons from the map
+     * @param {Boolean} removeHighlighted If true, removes only highlighted pins
+     */
     removeRendered(removeHighlighted=false){
       let keep = [];
       for (let r of this.state.renderedMarkers){
-        if(!r._draggable){
+        if(!r._draggable){ //draggable markers have not been added, don't remove them
           if (r._color !== "#FF0000") {
             r.remove();
           }
@@ -598,26 +596,30 @@ export default class App extends React.PureComponent {
           else r.remove();
         } 
       }
+      //delete all polygons
       this.state.draw.deleteAll();
       this.setState({renderedRegions: []})
       
       this.setState({renderedMarkers: keep});
       
     }
-  
-    onAddition (tag) {
-      const tags = [].concat(this.state.tags, tag)
-      this.setState({ tags })
-    }
 
+    /**
+     * Update the name of the location being created
+     * @param {Event} event The change event
+     */
     handleLocationName(event){
       this.setState({locationName: event.target.value});
     }
+    /**
+     * Update the description of the location being created
+     * @param {Event} event The change event
+     */
     handleLocationDescription(event){
       this.setState({locationDescription: event.target.value});
     }
     accountSettings() {
-      this.setState({ accountForm: true })
+      this.setState({ accountForm: true });
     }
     cancelAccount () {
       this.setState( {accountForm: false} );
@@ -634,14 +636,18 @@ export default class App extends React.PureComponent {
       this.setState({ addingLocation: true });
     }
 
+    /**
+     * Mount the map
+     */
     componentDidMount() {
-        const { lng, lat, zoom } = this.state;
-        const map = new mapboxgl.Map({
-          container: this.mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v11',
-          center: [lng, lat],
-          zoom: zoom
-        });
+      const { lng, lat, zoom } = this.state;
+      const map = new mapboxgl.Map({
+        container: this.mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [lng, lat],
+        zoom: zoom
+      });
+      //update info while moving
       map.on('move', () => {
         this.setState({
           lng: map.getCenter().lng.toFixed(4),
@@ -652,34 +658,30 @@ export default class App extends React.PureComponent {
       let t = this;
       map.on('zoomstart', function () {
         t.setState({initialZoom: map.getZoom()});
-      })
+      });
+      //check if we need to fetch data
       map.on('zoomend', function () {
-        if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) {
-          
+        if (map.getZoom() >= 13.5 && t.state.initialZoom < 13.5) { //zoomed in => get data
           t.getMarkers(t);
-          
-          
           t.getRegions(t)
         }
 
-        if (map.getZoom() < 13.5 && t.state.initialZoom >= 13.5) {
+        if (map.getZoom() < 13.5 && t.state.initialZoom >= 13.5) { //zoomed out, remove everything
           t.removeRendered(!t.state.searching);
           t.state.currentPopup && t.state.currentPopup.remove();
         }
         
       });
-
-
-
-
-
       map.on('dragend', function () {
+        //update the rendered pins according to our location
         t.setState({noMatches: null});
         if (map.getZoom() >= 13.5) {
           t.getMarkers(t, true);
           t.getRegions(t, true);
         }
+        //update search results on move
         if (t.state.displayTagSearchResults && t.state.searching && !t.state.audioTags) {
+          
           t.searchForTags();
         }
         else if(t.state.searching && t.state.displayingCustomSearchResults){
@@ -689,14 +691,16 @@ export default class App extends React.PureComponent {
       })
       const lngTolerance = 0.0006;
       const latTolerance = 0.001;
+      //cancel search on click of map
       map.on('click', (e) => {this.setState({searching: false, searchTags: [], customSearchTags: null, displayingCustomSearchResults: false, audioTags: null, noMatches: null})})
+      //handle click on polygon
       map.on('click', 'gl-draw-polygon-fill-static.cold', (e) => {
-        
+        //find the clicked polygon
         let clickedPolygon = this.state.renderedRegions.find(x => x.id === e.features[0].properties.id);
         this.setState({currentRegion: clickedPolygon});
         for(let rendered of t.state.renderedMarkers){
           if (Math.abs(e.lngLat.lng - rendered._lngLat.lng) <= lngTolerance && Math.abs(e.lngLat.lat - rendered._lngLat.lat) <= latTolerance) {
-           //if(e.lngLat.lat === rendered._lngLat.lat && e.lngLat.lng === rendered._lngLat.lng){ 
+            //prevent clicking on marker and polygon
             return;
           }
         }
@@ -706,50 +710,47 @@ export default class App extends React.PureComponent {
           .setHTML(this.producePopup(clickedPolygon.name, '', clickedPolygon.description, clickedPolygon.id))
         t.addToMap(n);
         document.getElementById(clickedPolygon.id).onclick = function (e) {
-          //t.setState({detailedRegion: true, currentRegion: clickedPolygon});
           t.setState({currentRegion: clickedPolygon});
           t.getPinsWithinRegion();
         }
         this.setState({currentPopup: n});
         
       });
-      
+      //add read only mode for polygons
       let modes = MapboxDraw.modes;
       modes.static = StaticMode;
       const draw = new MapboxDraw({
         displayControlsDefault: false,
         modes: modes
       });
+      //create a new polygon
       map.on('draw.create', function (e) {
         e.features[0].name = t.state.locationName;
         e.features[0].description = t.state.locationDescription;
         e.features[0].owner = t.state.user;
         t.setState(prevState => ({
           newRegions: [...prevState.newRegions, e.features[0]]
-        }));
-        t.setState({drawingRegion: false});
+        }), ()=>{
+          t.setState({drawingRegion: false});
+        });
       });
       map.on('draw.modechange', function (e) {
         t.setState({drawingRegion: false});
       });
       map.on('draw.update', function(e) {
+        //update the polygons as they are modified
         let old = t.state.newRegions.find((x) => x.id === e.features[0].id);
         let idx = t.state.newRegions.indexOf(old);
         if (idx > -1){
-          let copy = [...t.state.newRegions]
-          //copy.splice(idx, 1);
-          
+          let copy = [...t.state.newRegions]          
           let newRegion = e.features[0];
           newRegion.name = old.name;
           newRegion.description = old.description;
           newRegion.owner = old.owner;
           copy[idx] = newRegion;
           t.setState({newRegions: copy});
-          /* t.setState(prevState => ({
-            newRegions: [...prevState.newRegions, newRegion]
-          })); */
         }
-      })
+      });
    
       map.addControl(draw);
       let directions = new MapboxDirections({
@@ -777,6 +778,7 @@ export default class App extends React.PureComponent {
     };
 
     signOut(event) {
+      //remove any unsaved regions
       for(let r of this.state.newRegions){
         this.state.draw.delete(r.id);
       }
@@ -795,8 +797,11 @@ export default class App extends React.PureComponent {
       this.setState({tags: value.length ? value : [], mainTag: value.length ? value[0] : []});
     }
 
+    /**
+     * Saves changes made in edit mode
+     * @param {Event} event change event
+     */
     doneMarker(event){
-
       for(let m of this.state.newMarkers){
         this.createMarker(m, this);
         this.setState(prevState => ({
@@ -805,7 +810,6 @@ export default class App extends React.PureComponent {
       }
       for (let r of this.state.newRegions){
         this.createRegion(r, this)
-        
       }
       
       this.state.draw && this.state.draw.changeMode('static');
@@ -842,7 +846,7 @@ export default class App extends React.PureComponent {
     unrenderMarker(marker){
       let copy = [...this.state.renderedMarkers];
       let index = this.state.renderedMarkers.indexOf(marker);
-      console.log(index);
+      
       if (index !== -1){
         copy.splice(index, 1);
         this.setState({renderedMarkers: copy, detailedLocation: false});
@@ -858,7 +862,6 @@ export default class App extends React.PureComponent {
           if(res.data.errors) return t.error(res.data.errors[0].message);
           t.unrenderMarker(t.state.currentMarker);
           t.setState({detailedLocation: false});
-          //t.state.currentMarker.remove();
           t.setState({currentMarker: null});
         }
 
@@ -983,8 +986,10 @@ export default class App extends React.PureComponent {
       marker.description = this.state.locationDescription;
       this.setState(prevState => ({
         newMarkers: [...prevState.newMarkers, marker]
-      }));
-      this.setState({currentMarker: marker});
+      }), ()=>{
+        this.setState({currentMarker: marker});
+      });
+      
       let m = this.state.map;
       let t = this;
       marker.togglePopup = function(){
@@ -1008,6 +1013,11 @@ export default class App extends React.PureComponent {
       this.setState({choosingType: true});
     }
 
+    /**
+     * Displays the custom search results
+     * @param {Array} pins Results of the search
+     * @returns error on error
+     */
     displayCustomSearchResults(pins){
       this.setState({displayingCustomSearchResults: true});
       if(!pins)return this.noMatchesFound();
@@ -1073,7 +1083,6 @@ export default class App extends React.PureComponent {
             }).setLngLat(match.features.geometry.coordinates)
               .setPopup(new mapboxgl.Popup().setHTML(""))
             let old = t.state.renderedMarkers.find((x) => x.id === match._id)
-            //if (old && old._color==='#FFFFFF') {
             if (old){
               old.remove();
               let copy = [...t.state.renderedMarkers];
@@ -1249,6 +1258,7 @@ export default class App extends React.PureComponent {
      */
     addRegion(e){
       this.setState({addingLocation:false, drawingRegion: true, renderedRegions: []});
+      this.state.currentPopup && this.state.currentPopup.remove();
       //hide rendered regions
       this.state.draw.deleteAll();
       //draw mode

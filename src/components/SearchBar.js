@@ -29,11 +29,10 @@ export default class SearchBar extends React.PureComponent{
     onStop(audioData){
       let t = this;
       t.setState({voiceSeach: false});
-      console.log(audioData);
+      
       api.voiceSearch(this.props.pos, audioData, function (err, res) {
         if(err) return this.props.onError(err);
         if(res){
-          console.log(res);
           t.props.displayVoiceSearch(res.data.data.searchByTag.pins, res.data.data.searchByTag.tags);
         }
       });
@@ -43,26 +42,22 @@ export default class SearchBar extends React.PureComponent{
     }
     updateResults(e){
         let t = this;
-        console.log(e.target.value);
         if (e.target.value.length > 4) {
+            //remove punctuation
             api.getLocationCoord(e.target.value.replace(/\W/g, ''), true, function (err, res) {
             if (err) return this.props.onError(err);
             if (res) {
-                console.log(res);
                 t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});
             }
-            })
+            });
         }
         else this.setState({matches: tags});
     }
     updateSearch(e, val){
         if (!val) return;
-        console.log(val);
 
         if (!val.title && tags.indexOf(val) < 0) {
-            console.log(this.state.completeMatchInfo.find((x) => x.place_name === val));
             let m = this.state.completeMatchInfo.find((x) => x.place_name === val);
-            console.log(m);
             if (m) this.props.searchChange(e, m)
         }
         else if (!val.title) this.props.searchChange(e, val);

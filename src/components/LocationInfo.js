@@ -42,10 +42,7 @@ export default function LocationInfo(props) {
     api.getRatings(marker.id, function (err, res) {
       if(err) return onError(err)
       if (res) {
-        console.log(res);
-        console.log(res.data.getRatings.ratings);
         let original = res.data.getRatings.ratings.find((x) => x.createdBy === user);
-        console.log(original);
         if (original) {
           setRating(original.stars);
         }
@@ -64,7 +61,6 @@ export default function LocationInfo(props) {
     api.uploadImage(copy, function (err, res) {
       if (err) return onError(err);
       if (res) {
-        console.log(res);
         if (res.data.errors) {
           setAddImage(false);
           if (res.data.errors[0].message === "Cannot read properties of null (reading '_id')") {
@@ -78,7 +74,6 @@ export default function LocationInfo(props) {
           if(imgErr) return onError(imgErr);
           if (imgRes) {
             let ids = [imgRes.ids.current, imgRes.ids.next, imgRes.ids.previous];
-            console.log(imgRes);
             if ([...new Set(ids)].length === 2) {
               setImageIds([imgRes.ids.current, imgRes.ids.next]);
               setDisplayImages([imgRes.urls.current, imgRes.urls.next]);
@@ -98,28 +93,19 @@ export default function LocationInfo(props) {
   }
 
   const updateRatings = (e, val) => {
-    console.log(user);
     setRating(val);
     api.getRatings(marker.id, function (getErr, getRes) {
       if (getErr) return onError(getErr);
       if (getRes) {
         let original = getRes.data.getRatings.ratings.find((x) => x.createdBy === user);
-        console.log(original);
         if (original) {
           api.updateRating(val, marker.id, function (upErr, upRes) {
             if(upErr) return onError(upErr);
-            if (upRes) {
-              
-              console.log(upRes);
-            }
-          })
+          });
         }
         else {
           api.createRating(val, marker.id, function (err, res) {
             if (err) return onError(err);
-            if (res) {
-              console.log(res);
-            }
           });
         }
         
@@ -130,13 +116,10 @@ export default function LocationInfo(props) {
   }
   const toggleView = (e) => {
     if(!streetView)return;
-    console.log(order);
-    console.log(displayImages);
     let imgId = order._id ? order._id : marker.imageId;
     api.getImageTrio(marker.id, imgId, function (err, res) {
       if(err)return onError(err);
       if (res) {
-        console.log(res);
         let dup = [...new Set([res.ids.current, res.ids.previous, res.ids.next])].length;
         if (dup === 1) {
           setImageIds([res.ids.current]);
@@ -161,14 +144,10 @@ export default function LocationInfo(props) {
   }
   const move = (curr) => {
     let id = imageIds[curr]
-    console.log(id);
     let index = imageIds.indexOf(id)
-    console.log(displayImages[index]);
-    console.log(displayImages[1]);
     api.getImageTrio(marker.id, id, function (err, res) {
       if(err)return onError(err);
       if (res) {
-        console.log(res);
         if (Object.keys(res.ids).length >= 3) {
           if (index === 1) {
             setImageIds([res.ids.previous, id, res.ids.next]);
@@ -193,15 +172,7 @@ export default function LocationInfo(props) {
             setImageIds([res.ids[1], id]);
             setDisplayImages([res.urls[1], displayImages[curr]]);
           }
-          
-          console.log(displayImages[0]);
-          console.log(displayImages[1]);
-          console.log(displayImages[2]);
-          console.log(displayImages);
         }
-        console.log(res.urls[0]);
-        console.log(res.urls[1]);
-        console.log(res.urls[2]);
       }
       
     });
@@ -210,11 +181,8 @@ export default function LocationInfo(props) {
 
   
   const fileChange = (e) => {
-    console.log(e);
     let bytes = e.target.files[0].size;
-    console.log(bytes);
     let size = bytes/1000000;
-    console.log(size);
     if (size<MAX_FILE_SIZE) {
       setFileTooBig(false);
       setFile(e.target.files[0]);
@@ -222,9 +190,6 @@ export default function LocationInfo(props) {
     else{
       setFileTooBig(true);
     }
-    
-    
-    //this.props.imageChange(e);
   }
   /*streetview https://github.com/alexus37/react-google-streetview */
   const signInPrompt = user ? '' : "\n(You'll need to sign in first.)";

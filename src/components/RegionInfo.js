@@ -21,7 +21,6 @@ export default function RegionInfo(props) {
   /* Card: https://mui.com/components/cards/#complex-interaction*/
   /*Ratings: https://mui.com/components/rating/ */
   const { owner, close , info, deleteRegion, user } = props;
-  console.log(info)
   
   return (
     <Card id='location-info' sx={{ maxWidth: 500, overflow: 'scroll', margin: 'auto' }}>

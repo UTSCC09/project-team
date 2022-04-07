@@ -21,13 +21,8 @@ export default class addLocationForm extends React.PureComponent{
     }
     
     fileChange(e){
-      //console.log(e.files[0].size / 1024 / 1024);
-      console.log(e.target.files[0]);
       let bytes = e.target.files[0].size;
-
-      console.log(bytes);
       let size = bytes/1000000;
-      console.log(size);
       if (size < MAX_FILE_SIZE) {
         this.setState({file: true, fileTooBig: false});
         this.props.imageChange(e);
@@ -40,24 +35,20 @@ export default class addLocationForm extends React.PureComponent{
     attemptSubmit(e){
       e.preventDefault();
       this.setState({submitAttempt: true});
-      console.log(this.state.submitAttempt && !this.state.file)
       if(this.state.file){
-        console.log('sbumitting')
         this.props.submit(e);
 
       } 
     }
     updateResults(e){
       let t = this;
-      console.log(e.target.value);
       if (e.target.value.length > 4) {
         api.getLocationCoord(e.target.value, true, function (err, res) {
           if (err) return this.props.onError(err);
           if (res) {
-            console.log(res);
             t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});
           }
-        })
+        });
         
       }
     }
@@ -147,8 +138,6 @@ export default class addLocationForm extends React.PureComponent{
                     options={this.state.matches} 
                     onChange={
                       (e, val) => {
-                        console.log(this.state.completeMatchInfo)
-                        console.log(e)
                         this.props.updateAddress(this.state.completeMatchInfo, val)
                       }
                     }
