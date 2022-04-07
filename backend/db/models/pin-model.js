@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+// Allowed tags for pins
 const tagTypes = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue'];
 
 const propertySchema = new mongoose.Schema({
@@ -25,8 +26,10 @@ const pinSchema = new mongoose.Schema({
     features: {type: featureSchema, required: true},
     user: {type: Schema.Types.ObjectId, ref: 'User', required: true},
     owner: {type: String, required: true},
-});
+},
+{timestamps: {createdAt: 'created_at', updatedAt: 'updated_at'}});
 
+// Create index for pin coordinates so it can be queried
 pinSchema.index({"features.geometry": '2dsphere'}, {unique: false})
 
 module.exports = mongoose.model('Pin', pinSchema);

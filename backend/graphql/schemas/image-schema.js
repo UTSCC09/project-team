@@ -6,7 +6,8 @@ const {
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLUnionType,
-    buildSchema
+    buildSchema,
+    GraphQLEnumType
 } = require('graphql');
 
 const {
@@ -31,6 +32,32 @@ const imageInput = new GraphQLInputObjectType({
     }
 });
 
+const goToEnum = new GraphQLEnumType({
+    name: 'GoToEnum',
+    values: {
+        OLDEST: {
+            value: resolver.GoToEnum.oldest
+        },
+        NEWEST: {
+            value: resolver.GoToEnum.newest
+        }
+    }
+})
+
+const imagePageInput = new GraphQLInputObjectType({
+    name: 'ImagePageInput',
+    fields: {
+        goto: {type: goToEnum}
+    }
+})
+
+const imageAdjacentInput = new GraphQLInputObjectType({
+    name: 'ImageAdjacentInput',
+    fields: {
+        imageId: {type: GraphQLString}
+    }
+});
+
 const imageType = new GraphQLObjectType({
     name: 'Image',
     fields: {
@@ -48,12 +75,19 @@ const imageMultipleType = new GraphQLObjectType({
     }
 });
 
+const imageAdjacentType = new GraphQLObjectType({
+    name: 'ImageAdjacent',
+    fields: {
+        previous: {type: imageType},
+        next: {type: imageType}
+    }
+});
+
 const imageResultType = new GraphQLUnionType({
     name: 'ImageResult',
     types: [imageType, ErrorType],
     resolveType: (value) => {
-        if (value._id) return imageType.name;
-        if (value.message) return ErrorType.name;
+        return value.message ? ErrorType.name : imageType.name;
     }
 });
 
@@ -64,6 +98,14 @@ const imageMultipleResultType = new GraphQLUnionType({
         return value.message? ErrorType.name : imageMultipleType.name;
     }
 })
+
+const imageAdjacentResultType = new GraphQLUnionType({
+    name: 'ImagePageResult',
+    types: [imageAdjacentType, ErrorType],
+    resolveType: (value) => {
+        return value.message ? ErrorType.name : imageAdjacentType.name;
+    }
+});
 
 const photoType = new GraphQLObjectType({
     name: 'Photo',
@@ -89,6 +131,22 @@ const queryType = new GraphQLObjectType({
             args: {},
             resolve: (_, {input}, context) => resolver.getImages(context)
         },
+
+        getImagePage: {
+            type: imageResultType,
+            args: {
+                input: {type: imagePageInput}
+            },
+            resolve: (_, {input}, context) => resolver.getImagePage(input, context)
+        },
+
+        getAdjacentImage: {
+            type: imageAdjacentResultType,
+            args: {
+                input: {type: imageAdjacentInput}
+            },
+            resolve: (_, {input}, context) => resolver.getAdajcentImage(input, context)
+        }
     }
 })
 

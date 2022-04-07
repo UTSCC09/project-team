@@ -37,8 +37,7 @@
     "react-mapbox-gl-draw": "^2.0.4",
     "react-scripts": "^4.0.3",
     "react-streetview": "^1.1.1",
-    "react-tag-autocomplete": "^6.3.0",
-    "sanitize-filename": "^1.6.3"
+    "react-tag-autocomplete": "^6.3.0"
   },
   "scripts": {
     "start": "react-scripts start",

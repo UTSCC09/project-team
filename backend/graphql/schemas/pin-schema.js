@@ -6,7 +6,7 @@ const {
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLUnionType,
-    buildSchema
+    GraphQLNonNull
 } = require('graphql');
 const resolver = require('../../db/resolvers/pin-resolver');
 const {ErrorType, stringResultType} = require('./error-schema');
@@ -18,14 +18,14 @@ const {
 const idInput = new GraphQLInputObjectType({
     name: 'IdInput',
     fields: {
-        _id: {type: GraphQLString},
+        _id: {type: new GraphQLNonNull(GraphQLString)},
     }
 });
 
 const geometryInput = new GraphQLInputObjectType({
     name: 'GeometryInput',
     fields: {
-        type: {type: GraphQLString},
+        type: {type: new GraphQLNonNull(GraphQLString)},
         coordinates: {type: new GraphQLList(GraphQLFloat)}
     }
 });
@@ -33,7 +33,7 @@ const geometryInput = new GraphQLInputObjectType({
 const propertyInput = new GraphQLInputObjectType({
     name: 'PropertyInput',
     fields: {
-        name: {type: GraphQLString},
+        name: {type: new GraphQLNonNull(GraphQLString)},
         description: {type: GraphQLString},
         tags: {type: new GraphQLList(GraphQLString)}
     }
@@ -42,7 +42,7 @@ const propertyInput = new GraphQLInputObjectType({
 const featureInput = new GraphQLInputObjectType({
     name: 'FeatureInput',
     fields: {
-        type: {type: GraphQLString},
+        type: {type: new GraphQLNonNull(GraphQLString)},
         properties: {type: propertyInput},
         geometry: {type: geometryInput}
     }
@@ -51,7 +51,7 @@ const featureInput = new GraphQLInputObjectType({
 const pinInput = new GraphQLInputObjectType({
     name: 'PinInput',
     fields: {
-        type: {type: GraphQLString},
+        type: {type: new GraphQLNonNull(GraphQLString)},
         features: {type: featureInput}
     }
 });
@@ -59,7 +59,7 @@ const pinInput = new GraphQLInputObjectType({
 const tagInput = new GraphQLInputObjectType({
     name: 'TagInput',
     fields: {
-        tag: {type: GraphQLString},
+        tag: {type: new GraphQLNonNull(GraphQLString)},
     }
 });
 
@@ -67,9 +67,9 @@ const tagInput = new GraphQLInputObjectType({
 const searchInput = new GraphQLInputObjectType({
     name: 'SearchInput',
     fields: {
-        lat: {type: GraphQLFloat},
-        lon: {type: GraphQLFloat},
-        radius: {type: GraphQLFloat},
+        lat: {type: new GraphQLNonNull(GraphQLFloat)},
+        lon: {type: new GraphQLNonNull(GraphQLFloat)},
+        radius: {type: new GraphQLNonNull(GraphQLFloat)},
         tags: {type: new GraphQLList(GraphQLString)},
         message: {type: GraphQLString},
         speech: {type: GraphQLUpload},
@@ -134,7 +134,6 @@ const pinMultipleResultType = new GraphQLUnionType({
     name: 'PinMultipleResult',
     types: [pinMultipleType, ErrorType],
     resolveType: (value) => {
-        console.log(value);
         return value.message? ErrorType.name : pinMultipleType.name;
     }
 })
@@ -149,11 +148,6 @@ const queryType = new GraphQLObjectType({
             },
             resolve: (_, {input}, context) => resolver.getNear(input, context)
         },
-        listPins: {
-            type: pinMultipleResultType,
-            args: {},
-            resolve: (_, {input}, context) => resolver.listPins(context)
-        },
         searchByTag: {
             type: pinMultipleResultType,
             args: {
@@ -161,17 +155,6 @@ const queryType = new GraphQLObjectType({
             },
             resolve: (_, {input}, context) => resolver.searchPinByTag(input, context)
         }
-    }
-});
-
-const idQueryType = new GraphQLObjectType({
-    name: 'Query',
-    fields:{
-        getPin: {
-            type: pinResultType,
-            args: {},
-            resolve: (_, {input}, context) => resolver.getPin(context)
-        },
     }
 });
 
@@ -185,6 +168,19 @@ const mutationType = new GraphQLObjectType({
             },
             resolve: (_, {input}, context) => resolver.createPin(input, context)
         },
+    }
+});
+
+const idQueryType = new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+        createPin: {
+            type: pinResultType,
+            args: {
+                input: {type: pinInput}
+            },
+            resolve: (_, {input}, context) => resolver.createPin(input, context)
+        }
     }
 });
 
