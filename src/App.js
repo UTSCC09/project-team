@@ -16,14 +16,11 @@ import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
 import RegionInfo from './components/RegionInfo.js'
 import SearchBar from './components/SearchBar';
 import MapIcon from '@mui/icons-material/Map';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SourceIcon from '@mui/icons-material/Source';
 import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 import api from './api';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
-import { Typography, IconButton, AccordionSummary, AccordionDetails, 
-  Accordion, FormGroup, Checkbox, CircularProgress,  Alert, AlertTitle,
-  Fab, Box, FormControlLabel} from '@mui/material';
+import { Typography, IconButton, CircularProgress,  Alert, AlertTitle, Fab, Box} from '@mui/material';
 const DIRECTION_TIMEOUT = 6000;
 //import Directions from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
@@ -1149,11 +1146,15 @@ export default class App extends React.PureComponent {
           else keep.push(h);
         }
         else if (this.state.customSearchTags) {
-          let intersection = this.state.customSearchTags.filter(value => h.tags.includes(value));
-          if (h._color === "#FF0000" && !intersection.length) {
-            h.remove();
+          if(h.tags){
+            let intersection = this.state.customSearchTags.filter(value => h.tags.includes(value));
+            if (h._color === "#FF0000" && !intersection.length) {
+              h.remove();
+            }
+            else keep.push(h);
           }
           else keep.push(h);
+          
         }
         
         
