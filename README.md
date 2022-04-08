@@ -30,6 +30,18 @@ Authentication and sessions are done using the `express-session` library and pas
 Do note that the pin-resolver.js in particular uses a third party api called `node-wit` which is used to handle search requests for pins that the Wit Ai account for the app is trained to answer.
 
 ### Frontend
+The frontend is built on React (JavaScript) and uses [Material UI]([https://mui.com) components. The frontend relies on the [MapBox-GL-JS](https://docs.mapbox.com/mapbox-gl-js/guides/) API which provides the map object as well as the marker and polygon objects and their associated controls (directions, popups, etc).
+The [Mapbox Geocoding API](https://docs.mapbox.com/api/search/geocoding/) is used to generate search suggestions and retreive the coordinates of addresses.
+The [React Google Street-View library](https://www.npmjs.com/package/react-google-streetview) is used to generate the street-view for the pins.
+The [Audio React Recorder](https://www.npmjs.com/package/audio-react-recorder) package is used to collect spoken input to send to the backend.
+The [MUI-Image Slider](https://www.npmjs.com/package/mui-image-slider) package is used to display and page through the pin's images.
+The fronted API utilizes the promise based [axios](https://www.npmjs.com/package/axios) package to send requests to the backend.
+The fronted is split into multiple components, with `App.js` containing the main base of the app including the maps, markers, polygons, and popups.
+`Searchbar.js` contains the search bar components and its controls, and handles all search requests. Loging in and signing up, as well as creating new locations and regions, are each handled by their respective form components. `LocationInfo` displays the detailed view of the location and handles the pagination of the images, the streetview, and adding new images. Similarily, `RegionInfo` displays information relevent to a polygon and the pins within it using the `QuiltedImageList` to display images of interior pins.
+
+
+
+
 
 ## Deployment
 
@@ -52,7 +64,7 @@ Once the app is deployed there is manual regression testing to ensure all the cu
 **Task:** What is the top 3 most challenging things that you have learned/developed for you app? Please restrict your answer to only three items. 
 
 1. Setting up the Docker containers on Digital Ocean droplet to reverse proxy with nginx
-2.
+2. Capturing audio input on the fronted and properly formatting it to be sent to the backend
 3. 
 
 ## Contributions
@@ -60,6 +72,11 @@ Once the app is deployed there is manual regression testing to ensure all the cu
 **Task:** Describe the contribution of each team member to the project. Please provide the full name of each team member (but no student number). 
 
 - John Guirgis 
+  - Developed most of the fronted including frontend components
+  - Developed the frontend API and connected backend to frontend
+  - Integrated the various libraries and APIs into the frontend
+  - Designed and styled the UI
+  - Created the project video
 - Peter Lang 
 - Kent Leng
     - Deployed the web app onto Digital Ocean droplet
