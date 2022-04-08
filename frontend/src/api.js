@@ -1,5 +1,5 @@
 const { default: axios } = require("axios");
-const MAPBOT_ACCESS_TOKEN = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
+const MAPBOT_ACCESS_TOKEN = process.env.REACT_APP_MAPBOT_ACCESS_TOKEN;
 /**
  * Perform a request with callbacks
  * @param {String} method method to perform

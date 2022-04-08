@@ -26,7 +26,7 @@ import { Typography, IconButton, AccordionSummary, AccordionDetails,
   Fab, Box, FormControlLabel} from '@mui/material';
 const DIRECTION_TIMEOUT = 6000;
 //import Directions from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
-mapboxgl.accessToken = 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg';
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOXGL_TOKEN;
 
 export default class App extends React.PureComponent {
   // setting up mapbox with React: https://docs.mapbox.com/help/tutorials/use-mapbox-gl-js-with-react/
