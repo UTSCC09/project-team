@@ -6,7 +6,7 @@ https://place-holder.live/
 
 ## Project Video URL 
 
-**Task:** Provide the link to your youtube video. Please make sure the link works. 
+https://youtu.be/PklQZB_9jc4
 
 ## Project Description
 
