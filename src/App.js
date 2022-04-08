@@ -98,7 +98,6 @@ export default class App extends React.PureComponent {
         this.unrenderRegion = this.unrenderRegion.bind(this);
         this.unrenderMarker = this.unrenderMarker.bind(this);
         this.flyToCoord = this.flyToCoord.bind(this);
-        this.updateMapStyle = this.updateMapStyle.bind(this);
         this.addToMap = this.addToMap.bind(this);
         this.handlePopup = this.handlePopup.bind(this);
         this.directionError = this.directionError.bind(this);
@@ -1324,17 +1323,7 @@ export default class App extends React.PureComponent {
         
       });
     }
-    /**
-     * Modify the map style
-     * @param {Number} index index of map style to change to
-     */
-    updateMapStyle(index){
-      this.setState({checked: index});
-      const styles = ['streets-v11', "satellite-v9", 'dark-v10', 'satellite-streets-v11'];
-      let copy = this.state.map;
-      copy.setStyle('mapbox://styles/mapbox/' + styles[index]);
-      this.setState({map: copy});
-    }
+
     /**
      * Renders the application
      * @returns The Place-Holder app
@@ -1463,24 +1452,6 @@ export default class App extends React.PureComponent {
                 </IconButton>
                 :
                 <div>
-                {
-                  this.state.viewingDirections?
-                  null
-                  :
-                  <Accordion >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} >
-                    <Typography>Map Style</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <FormGroup >
-                      <FormControlLabel control={<Checkbox onChange={() => {this.updateMapStyle(0)}} checked={this.state.checked === 0} />} label="Standard" />
-                      <FormControlLabel control={<Checkbox checked={this.state.checked === 1} onChange={() => {this.updateMapStyle(1)}} />} label="Satellite" />
-                      <FormControlLabel control={<Checkbox checked={this.state.checked === 2} onChange={() => {this.updateMapStyle(2)}} />} label="Dark" />
-                      <FormControlLabel control={<Checkbox checked={this.state.checked === 3} onChange={() => {this.updateMapStyle(3)}} />} label="Satellite-Streets" />
-                    </FormGroup>
-                  </AccordionDetails>
-                </Accordion>
-                }
                 </div>
                 
               }
