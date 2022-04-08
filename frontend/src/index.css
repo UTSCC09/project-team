@@ -1,0 +1,411 @@
+.map-container {
+    height: 100vh;
+    width: 100vw;
+}
+.MuiBox-root {
+    z-index: 1;
+    position: absolute;
+    top: 0;
+}
+
+.sidebar {
+    background-color: rgba(35, 55, 75, 0.9);
+    color: #fff;
+    padding: 6px 12px;
+    font-family: monospace;
+    z-index: 1;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin: 12px;
+    border-radius: 4px;
+}
+
+.clear{
+  z-index: 1;
+  position: absolute;
+  bottom: 0;
+  left: 600px;
+}
+
+#location-info{
+  max-height: 95vh;
+  margin-top: 10px;
+}
+
+#street {
+  height: 500px;
+}
+#account-form-containter{
+  margin-top: 10%;
+}
+.user-form {
+  margin: auto;
+  width: 300px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 15px 25px rgba(0,0,0,.6);
+}
+#new-image-form{
+  margin-top: 10%;
+}
+
+#map-style-control{
+  position: absolute;
+  right: 5px;
+  top: 5px;
+
+}
+/* <a href="https://www.flaticon.com/free-icons/look" title="look icons">Look icons created by Freepik - Flaticon</a> */
+#look-around-btn{
+  background-image: url('./media/big-binocoulars.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  margin: auto;
+  border: none;
+  background-color: white;
+  margin-top: 7px;
+  height: 25px;
+  width: 25px;
+}
+
+.actions{
+  display: flex;
+  justify-content: space-between;
+}
+#map-style-control:hover{
+  opacity: 100%;
+}
+/*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay*/
+#overlay {
+    position: absolute;
+    display: block;
+    height: 100%;
+    width: 100%;
+    overflow: scroll;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 2;
+    cursor: pointer;
+    text-align: center;
+  }
+  .account-form-title {
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 100px;
+    height: 50px;
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 0px;
+
+  }
+  #search-btns-container{
+    margin-top: 5px;
+  }
+  .voice{
+    z-index: 99;
+  }
+  #types{
+    float: right;
+    margin-top: 0;
+  }
+  #location-btn {
+    float: right;
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+  #errors-and-warnings{
+    position: absolute;
+    top: 75px;
+
+  }
+  /* fonts (Lemon milk) for login/signup: https://www.fontspace.com/popular/fonts?p=5 */
+  #login {
+      background-image: url("./media/login.png");
+  }
+  #add-image {
+    background-image: url("./media/text-1648257313193.png");
+    width: 200px;
+  }
+  #new-image-form{
+    overflow: auto;
+  }
+  #add-location-from{
+    margin-top: 5px;
+  }
+  #signup {
+      background-image: url("./media/signup.png");
+      width: 125px;
+  }
+  #new-location {
+      background-image: url("./media/newlocation.png");
+      width: 250px;
+      margin-top: 20px;
+  }
+  #new-region {
+    background-image: url("./media/newRegion.png");
+    width: 250px;
+    margin-top: 20px;
+  }
+  .popup-image {
+      max-width: 100px;
+      max-height: 100px;
+  }
+  #form-title-container{
+      overflow: auto;
+      position: relative;
+      margin-top: 5px;
+  }
+  #create-account {
+      text-transform: none;
+  }
+  #account-form-buttons{
+      display: flex;
+      flex-direction: column;
+  }
+  #submit-cancel{
+      display: flex;
+      flex-direction: row;
+      margin: auto;
+  }
+  #form-button{
+      margin: auto;
+  }
+
+  @import url(https://fonts.googleapis.com/css?family=Exo+2:300,400,700);
+body{
+  padding:0;
+  margin:0;
+  font-size:14px;
+  font-family: "Exo 2", sans-serif;
+  color: #333;
+}
+.mapboxgl-popup-content{
+    padding: 0;
+    box-shadow: none;
+    background: none;
+}
+.mapboxgl-popup-close-button{
+    visibility: hidden;
+}
+/* icon from <a href="https://www.flaticon.com/free-icons/direction" title="direction icons">Direction icons created by bqlqn - Flaticon</a> */
+.directions{
+  display: inline-block;
+  background: url('./media/traffic-sign.png') no-repeat;
+  background-size: contain;
+  width: 20px;
+  height: 20px;
+  margin-left:10px;
+  margin-top:10px;
+  float: left;
+  border: none;
+  cursor: pointer;
+
+}
+.mapbox-directions-component-keyline{
+  display: none;
+}
+
+#region-card{
+  min-width: 175px;
+  height: 300px; 
+  width: auto;
+}
+#region-card .card-body{
+  height: 250px;
+}
+#region-card .location-summary{
+  height: 200px;
+}
+#region-card .location-summary{
+  height: 150px;
+  margin-bottom: 5px;
+}
+#marker-card .location-summary {
+  height: 250px;
+}
+#marker-card .card-footer{
+  height: 70px;
+}
+#marker-card {
+  height: 500px;
+}
+#region-card .name{
+  padding-top: 10px;
+}
+#search-container{
+  display: flex;
+}
+.search-btn {
+  margin: 10px;
+}
+.card{
+  position: relative;
+  width: 300px; /* Remove for full width */
+  height: 380px; /* Remove for full width */
+  margin:30px auto;
+  margin-top: 0;
+  margin-bottom: 0;
+  box-shadow: 0 0 100px rgba(0,0,0, .3);
+  background-color: white;
+}
+.card-header{
+  position: relative;
+  height: 220px;
+  background-size: cover;
+  background-position: top;
+}
+
+.card-header-bar{
+  position: absolute;
+  top:0;
+  width: 100%;
+  z-index: 1;
+  width: 100%;
+}
+
+.sr-only{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip: rect(0,0,0,0);
+  border: none;
+  overflow: hidden;
+}
+.btn-message{
+  display: inline-block;
+  background: url(https://res.cloudinary.com/dj14cmwoz/image/upload/v1491077483/profile-card/images/message.svg) no-repeat;
+  width: 19.37px;
+  height: 16.99px;
+  margin-right:10px;
+  margin-top:10px;
+  float: right;
+}
+.btn-menu{
+  display: inline-block;
+  background: url("./media/more.png"); /*<a href="https://www.flaticon.com/free-icons/more" title="more icons">More icons created by Smartline - Flaticon</a>*/
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 20px;
+  height: 20px;
+  margin-right:10px;
+  margin-top:10px;
+  float: right;
+  border: none;
+  cursor: pointer;
+}
+
+
+svg .polygon{
+  fill: #fff;
+}
+.card-header-slanted-edge{
+  position: absolute;
+  bottom: -3px;
+  z-index: 1;
+  width: 100%;
+  right:0;
+  left:0;
+}
+
+.btn-follow{
+  position: absolute;
+  top: -15px;
+  right: 25px;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(to left, #2D77C1, #68FAC2);
+  border-radius:100%;
+  box-shadow: 0 10px 15px rgba(110,221,235, .53);
+}
+
+.btn-follow:after{
+  content: '';
+  position:absolute;
+  background: url(https://res.cloudinary.com/dj14cmwoz/image/upload/v1491077480/profile-card/images/add.svg) no-repeat;
+  width:17px;
+  height: 17px;
+  left: 50%;
+  top:50%;
+  transform: translate(-50%, -50%);
+}
+
+.card-body{
+  text-align:center;
+  padding-left: 10px;
+}
+
+.name{
+  font-size: 20px;
+  margin-right: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 auto;
+}
+
+.main-tag{
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 5px;
+  margin-right: 10px;
+  margin-bottom: 5px;
+  color: #919191;
+}
+
+.location-summary{
+  font-size: 14px;
+  color: #7B7B7B;
+  font-weight: 300;
+  height: 50px;
+  overflow: scroll;
+  margin: 5px auto;
+  margin-right: 10px;
+  line-height: 20px;
+}
+
+.social-accounts img{
+  width: 15px;
+}
+
+.social-accounts a{
+  margin-left: 10px;
+}
+.social-accounts a:first-child{
+  margin-left: 0;
+}
+
+.card-footer{
+  /*position:fixed; /* Full card width/height */
+  position: absolute; /* Fixed card width/height */
+
+  left: 0;
+  width: 100%;
+  bottom: 20px;
+}
+.stat{
+  box-sizing: border-box;
+  width: calc(100% / 3);
+  /*float: left;*/
+  margin: auto;
+  margin-top: 5px;
+  text-align: center;
+}
+.stat .label{
+  display: block;
+  text-transform: uppercase;
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #95989A;
+}
+
+.stat .value{
+  display: block;
+  font-weight: 700;
+  font-size:20px;
+  margin-top: 5px;
+}
+  

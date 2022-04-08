@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:1.21.0-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d
+      - ./certbot/www:/var/www/certbot/
+      - ./certbot/conf:/etc/nginx/ssl/
+    depends_on:
+      - nodejs
+    networks:
+      - app-network
+  frontend:
+    build: frontend
+    container_name: frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - app-network
+    depends_on:
+      - backend
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot/
+      - ./certbot/conf:/etc/letsencrypt/
+  backend:
+    build: backend
+    container_name: backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_USERNAME=$MONGO_USERNAME
+      - MONGO_PASSWORD=$MONGO_PASSWORD
+      - MONGO_HOSTNAME=db
+      - MONGO_PORT=$MONGO_PORT
+      - MONGO_DB=$MONGO_DB
+    volumes:
+      - ./backend:/usr/src/app
+      - backend_images:/usr/src/app/node_modules
+      - /usr/src/app/static/images
+    networks:
+      - app-network
+    depends_on:
+      - db
+  db:
+    image: mongo:4.1.8-xenial
+    container_name: db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
+    volumes:  
+      - dbdata:/data/db   
+    networks:
+      - app-network 
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+  backend_images:
+  node_modules:
+  certbot-etc:
+  certbot-var:
