@@ -1,4 +1,4 @@
-# __your_project_name__
+# Place-Holder
 
 ## Project URL
 
@@ -28,6 +28,8 @@ The backened server is hosted using NodeJS and Express that uses GraphQL to reso
 Authentication and sessions are done using the `express-session` library and passwords are hashed using `bcrypt`. Furthermore, request inputs received are all sanitized first using the `validator` library before it is handled by the resolvers.
 
 Do note that the pin-resolver.js in particular uses a third party api called `node-wit` which is used to handle search requests for pins that the Wit Ai account for the app is trained to answer.
+
+### Frontend
 
 ## Deployment
 
