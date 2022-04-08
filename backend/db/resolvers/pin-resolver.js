@@ -11,7 +11,7 @@ const {Wit, log} = require('node-wit');
 
 // Create wit.ai client for ML component
 const client = new Wit({
-  accessToken: "2EHFQJNOAPLROBR7OVCXGRUUR33W7IMH",
+  accessToken: process.env.WIT_ACCESS_TOKEN,
   logger: new log.Logger(log.DEBUG), // optional
 });
 
