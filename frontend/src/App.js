@@ -918,9 +918,6 @@ export default class App extends React.PureComponent {
             <div class="card-header"
           style="background-image: url(${url})"
             >
-                  <div class="card-header-bar">
-                    <a href="#" class="btn-message"><span class="sr-only">Message</span></a>
-                  </div>
             </div>
 
             <div class="card-body">
