@@ -89,4 +89,4 @@ Once the app is deployed there is manual regression testing to ensure all the cu
 
 There was an email notice that the Digital Ocean Droplet will go under maintenace on April 13 00:00 UTC for 2 hours. It lists that the Droplet-dependant services will be down such as Load Balancers, Managed Databases, and Kubernetes. However, since all of these features are either not used or implemented on the apps end the web app should not be affected. 
 
-When testing the app, please have your microphone and location services enabled. It is also preferred to use the built-in computer microphone rather than an external one when performing the voice searches.
+When testing the app, please have your microphone and location services enabled. It is also preferred to use the built-in computer microphone rather than an external one when performing the voice searches. Also, for better efficiency, ratings for locations are retreived once when the pin is rendered, so if you rate a location, the updated rating will not appear until the pin is re-rendered (eg. by dragging away and back)
