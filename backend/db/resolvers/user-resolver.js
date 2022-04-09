@@ -1,6 +1,6 @@
 const User = require('../models/user-model');
 const cookie = require('cookie');
-const { DupelicateError, AuthenticationError, UserInputError } = require('../../graphql/schemas/error-schema')
+const { DupelicateError, AuthenticationError, UserInputError } = require('../../graphql/schemas/error-schema');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const {checkInput} = require('../../util');
@@ -46,7 +46,7 @@ signin = async function (input, context) {
         maxAge: 60 * 60 * 24 * 7
     }));
     return ({'username': user.username, 'password': input.password});
-}
+};
 
 // Destroy user session
 signout = function (input, context) {
@@ -57,10 +57,10 @@ signout = function (input, context) {
           maxAge: 60 * 60 * 24 * 7 // 1 week in number of seconds
     }));
     return ({"return": "terminated"});
-}
+};
 
 module.exports = {
   createUser,
   signin,
   signout
-}
+};

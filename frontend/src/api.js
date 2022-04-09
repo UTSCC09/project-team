@@ -19,7 +19,7 @@ function send(method, url, data, callback) {
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(JSON.stringify(data));
   }
-};
+}
 /**
  * Perform request with promises
  * @param {String} method method to perform
@@ -36,7 +36,7 @@ function performAxiosRequest(method, url, data, callback) {
     callback(null, res);
   })
   .catch(function (err) {
-    callback(err, null)
+    callback(err, null);
   });
 }
 /**
@@ -56,7 +56,7 @@ function performAxiosRequestFile(method, url, data, callback) {
     callback(null, res);
   })
   .catch(function (err) {
-    callback(err, null)
+    callback(err, null);
   });
 }
 /**
@@ -84,7 +84,7 @@ function executePromises(promises, callback) {
   })
   .catch(function(err){
     callback(err, null);
-  })
+  });
 }
 
 const baseUrl = 'https://place-holder.live/api/';
@@ -98,7 +98,7 @@ const searchRadius = 10000;
 const deletePin = function(pinId, callback){
   let body = {"query": `mutation { deletePin { ...on Return{ return } ...on Error{ message } } }`};
   performAxiosRequest("post", baseUrl + 'pin/' + pinId, body, callback);
-}
+};
 /**
  * Deletes a polygon
  * @param {Number} polyId the id of the polygon to be deleted
@@ -107,7 +107,7 @@ const deletePin = function(pinId, callback){
 const deletePolygon = function (polyId, callback) {
   let body = {"query": `mutation { deletePolygon { ...on Return{ return } ...on Error{ message } } }`};
   performAxiosRequest("post", baseUrl + `polygon/${polyId}`, body, callback);
-}
+};
 /**
  * Searches for pins with the given tags around a position
  * @param {Array} pos The coordinates of thecentre of the search radius
@@ -117,7 +117,7 @@ const deletePolygon = function (polyId, callback) {
 const searchTags = function (pos, tags, callback) {
   let body = {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${searchRadius} tags: ${JSON.stringify(tags)}}) { ...on Pins{ pins{ _id owner type features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin/', body, callback);
-}
+};
 /**
  * Creates a pin
  * @param {Object} marker the pin object to be created
@@ -126,23 +126,23 @@ const searchTags = function (pos, tags, callback) {
 const createPin = function (marker, callback) {
   let cleanName = marker.name.replaceAll('"', '');
   let cleanDescription = marker.description.replaceAll('"', '');
-  let body = {"query": `mutation 
-    { createPin(input: { 
-      type: "FeatureCollection", 
-      features: { 
-        type: "Feature", 
-        properties: { 
-          name: "${cleanName}" 
-          description:"${cleanDescription}" 
-          tags:${JSON.stringify(marker.tags)} } 
-          geometry: { 
-            type: "Point", 
-            coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } }) 
-            { ...on Pin{ _id type owner features { 
-              type properties { name description tags } 
-              geometry { type coordinates } } } ...on Error{ message } }}`}
+  let body = {"query": `mutation
+    { createPin(input: {
+      type: "FeatureCollection",
+      features: {
+        type: "Feature",
+        properties: {
+          name: "${cleanName}"
+          description:"${cleanDescription}"
+          tags:${JSON.stringify(marker.tags)} }
+          geometry: {
+            type: "Point",
+            coordinates: [ ${marker._lngLat.lng}, ${marker._lngLat.lat} ] } } })
+            { ...on Pin{ _id type owner features {
+              type properties { name description tags }
+              geometry { type coordinates } } } ...on Error{ message } }}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
-}
+};
 /**
  * Creates a polygon
  * @param {Object} polygon the polygon object to be created
@@ -152,30 +152,30 @@ const createPolygon = function (polygon, callback) {
   let coord = JSON.stringify(polygon.geometry.coordinates[0]);
   let cleanName = polygon.name.replaceAll('"', '');
   let cleanDescription = polygon.description.replaceAll('"', '');
-  let body = {"query": `mutation { createPolygon(input: { 
-    type: "FeatureCollection", 
-    features: { 
-      type: "Feature", 
-      properties: { 
-        name: "${cleanName}" 
-        description: "${cleanDescription}" } 
-        geometry: { 
-          type: "Polygon", 
+  let body = {"query": `mutation { createPolygon(input: {
+    type: "FeatureCollection",
+    features: {
+      type: "Feature",
+      properties: {
+        name: "${cleanName}"
+        description: "${cleanDescription}" }
+        geometry: {
+          type: "Polygon",
           coordinates: [ ${coord} ] } } })
-           { ...on Polygon{ _id type features { 
-             type properties { name } geometry { type coordinates }} } 
+           { ...on Polygon{ _id type features {
+             type properties { name } geometry { type coordinates }} }
              ...on Error{ message } }}`};
   performAxiosRequest('post', baseUrl + 'polygon', body, callback);
-}
+};
 /**
  * Retreives the pins within the given polygon
  * @param {Number} regionId ID of polygon to search within
  * @param {Function} callback executes with result
  */
 const getPinsWithinPolygon = function (regionId, callback) {
-  let body = {"query": "query { getPinsWithin  { ...on Pins { pins { _id type features { type properties { name tags } geometry { type coordinates } } } } ...on Error{message} }}"}
-  performAxiosRequest("post", baseUrl + `polygon/${regionId}`, body, callback)
-}
+  let body = {"query": "query { getPinsWithin  { ...on Pins { pins { _id type features { type properties { name tags } geometry { type coordinates } } } } ...on Error{message} }}"};
+  performAxiosRequest("post", baseUrl + `polygon/${regionId}`, body, callback);
+};
 /**
  * Retreives the coordinates of the queried location
  * @param {String} q the query
@@ -184,7 +184,7 @@ const getPinsWithinPolygon = function (regionId, callback) {
  */
 const getLocationCoord = function (q, autocomplete, callback) {
   performAxiosRequest("get", `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?autocomplete=${autocomplete}&access_token=${MAPBOT_ACCESS_TOKEN}`, null, callback);
-}
+};
 /**
  * Perform a search for the custom query
  * @param {Array} pos centre of searching radius
@@ -192,16 +192,16 @@ const getLocationCoord = function (q, autocomplete, callback) {
  * @param {Function} callback executes with result
  */
 const customSearch = function(pos, query, callback){
-  let body = {'query': `query { 
-    searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng}, 
-      radius: ${searchRadius}, message: "${query}" } ) 
-      { ...on Pins{ tags 
-        pins{ _id owner type features { 
-          type properties { name description tags } 
+  let body = {'query': `query {
+    searchByTag(input: { lat: ${pos.lat}, lon: ${pos.lng},
+      radius: ${searchRadius}, message: "${query}" } )
+      { ...on Pins{ tags
+        pins{ _id owner type features {
+          type properties { name description tags }
           geometry { type coordinates } } } } ...on Error{ message }} }`};
   performAxiosRequest('post', baseUrl + 'pin', body, callback);
 
-}
+};
 /**
  * Gets the oldest/newest image associated with the given pin
  * @param {Number} id of pin
@@ -222,7 +222,7 @@ const getImagePage = function(id, goto, callback){
   }`;
   let body = {'query': q};
   performAxiosRequest('post', baseUrl + `pin/${id}/image/`, body, callback);
-}
+};
 /**
  * Uploads an image to the marker
  * @param {Object} marker the marker object to 'attach' the image to
@@ -230,14 +230,14 @@ const getImagePage = function(id, goto, callback){
  */
 const uploadImage = function (marker, callback) {
   let data = new FormData();
-  let title = marker.name.replaceAll('"', '')
+  let title = marker.name.replaceAll('"', '');
   const query = `mutation($file:Upload!){createImage(input:{title: "${title}", image:$file}) { ...on Image{ _id, title, image, pin } ...on Error{ message } }}`;
   data.append("operations", JSON.stringify({ query }));
-  const map = {"zero":["variables.file"]}
+  const map = {"zero":["variables.file"]};
   data.append('map', JSON.stringify(map));
   data.append('zero', marker.image);
   performAxiosRequest("post", baseUrl + `pin/${marker.id}/image/`, data, callback);
-}
+};
 /**
  * Sends the recorded voice query and retreives the results
  * @param {Array} pos the centre of the search radius
@@ -248,13 +248,13 @@ const voiceSearch = function (pos, audio, callback) {
   let data = new FormData();
   const query = `query($file:Upload!){searchByTag(input:{lat: ${pos.lat}, lon: ${pos.lng}, radius: ${searchRadius}, speech:$file}) { ...on Pins{ tags pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } ...on Error{ message } }}`;
   data.append("operations", JSON.stringify({ query }));
-  const map = {"zero":["variables.file"]}
+  const map = {"zero":["variables.file"]};
   data.append('map', JSON.stringify(map));
   let f = new File([audio.blob], 'test.wav', { lastModified: new Date().getTime(), type: audio.type });
-  
+
   data.append('zero', f);
-  performAxiosRequestFile('post', baseUrl + 'pin', data, callback); 
-}
+  performAxiosRequestFile('post', baseUrl + 'pin', data, callback);
+};
 /**
  * Retreives the specified image
  * @param {Number} imgId id of image to be retreived
@@ -262,7 +262,7 @@ const voiceSearch = function (pos, audio, callback) {
  */
 const getImage = function (imgId, callback) {
   performAxiosRequest("post", baseUrl + `image/${imgId}`, {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}, callback);
-}
+};
 /**
  * Retreives numerous images given their IDs
  * @param {Array} idArr IDs of images to be retreived
@@ -274,7 +274,7 @@ const getImagesFromIds = function(idArr, callback){
     p.push(getAxiosPromise('post', baseUrl + `image/${img._id}`, {"query":"query { getPhoto { ...on Photo{ url } ...on Error{ message } }}"}));
   }
   executePromises(p, callback);
-}
+};
 
 /**
  * Retreives pins near the given point
@@ -283,16 +283,16 @@ const getImagesFromIds = function(idArr, callback){
  */
 const getPins = function (pos, callback) {
   let body = {"query": `query
-   { 
-     getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []}) 
-     { 
-       ...on Pins{ 
-         pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } } 
+   {
+     getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} tags: []})
+     {
+       ...on Pins{
+         pins{ _id type owner features { type properties { name description tags } geometry { type coordinates } } } }
          ...on Error{ message }}}`};
   performAxiosRequest("post", baseUrl + 'pin', body, callback);
-}
+};
 /**
- * Returns the image corresponding to the given ID, 
+ * Returns the image corresponding to the given ID,
  * along with those that come after and before it
  * @param {Number} pinId ID of pin associated with images
  * @param {Number} imageId ID of the current image
@@ -346,7 +346,7 @@ const getImageTrio = function (pinId, imageId, callback) {
       });
     }
   });
-}
+};
 /**
  * Retreives the newest image associated with the given pin
  * @param {Number} pinId ID of pin associated with image
@@ -354,18 +354,18 @@ const getImageTrio = function (pinId, imageId, callback) {
  */
 const getNewestImage = function (pinId, callback) {
   getImagePage(pinId, 'NEWEST', function (err, res) {
-    if(err) return callback(err, null)
+    if(err) return callback(err, null);
     if (res) {
       getImage(res.data.data.getImagePage._id, function (imgErr, imgRes) {
         if(imgErr)return callback(imgErr, null);
         if (imgRes) {
           return callback(null, imgRes);
         }
-        
+
       });
     }
   });
-}
+};
 /**
  * Rereives the oldest image associated with the given pin
  * @param {Number} pinId ID os pin associated with image
@@ -373,18 +373,18 @@ const getNewestImage = function (pinId, callback) {
  */
 const getOldestImage = function(pinId, callback){
   getImagePage(pinId, 'OLDEST', function (err, res) {
-    if(err) return callback(err, null)
+    if(err) return callback(err, null);
     if (res) {
       getImage(res.data.data.getImagePage._id, function (imgErr, imgRes) {
         if(imgErr)return callback(imgErr, null);
         if (imgRes) {
           return callback(null, imgRes);
         }
-        
+
       });
     }
   });
-}
+};
 /**
  * Retreives polygons near the given point
  * @param {Array} pos the centre of the radius to retreive polygons within
@@ -393,7 +393,7 @@ const getOldestImage = function(pinId, callback){
 const getPolygons = function (pos, callback) {
   let body= {"query": `query { getNear(input: {lat: ${pos.lat} lon: ${pos.lng} radius: ${renderRadius} }) { ...on Polygons{ polygons{ _id type owner features { type properties { name description } geometry { type coordinates } } } } ...on Error{ message }}}`};
   performAxiosRequest('post', baseUrl + 'polygon', body, callback);
-}
+};
 /**
  * Return the IDs of the images associated with the specified pin
  * @param {Number} pinId ID of pin associated with image
@@ -402,7 +402,7 @@ const getPolygons = function (pos, callback) {
 const getImageFromPinId = function (pinId, callback) {
   let body = {"query": "query { getImages { ...on Images{ images{_id, title, image, pin} } ...on Error { message } }}"};
   performAxiosRequest('post', baseUrl + `pin/${pinId}/image`, body, callback);
-}
+};
 
 /**
  * Gets the images of the specified pins (actual URLs not just IDs)
@@ -427,7 +427,7 @@ const getImagesOfPins = function (pins, callback) {
         for (let img of imgs){
           final.push({img: encodeURI(img.data.data.getPhoto.url)});
         }
-        callback(null, final)
+        callback(null, final);
       })
       .catch(function (imgErr) {
         callback(imgErr, null);
@@ -436,7 +436,7 @@ const getImagesOfPins = function (pins, callback) {
   .catch(function (err) {
     callback(err, null);
   });
-}
+};
 /**
  * Retreive the ratings of the specified pin
  * @param {Number} id ID of pin to get the ratings for
@@ -463,10 +463,10 @@ const getRatings = function (id, callback) {
         lId: id
       }
     }
-  }
+  };
 
   send("post", baseUrl + 'rating', body, callback);
-}
+};
 /**
  * Creates a new rating of the specified location
  * @param {Number} stars the rating
@@ -500,7 +500,7 @@ const createRating = function (stars, lId, callback) {
   };
 
   send("post", baseUrl + 'rating', body, callback);
-}
+};
 /**
  * Updates a location's rating (when a user has already created a rating)
  * @param {Number} stars the rating
@@ -534,15 +534,15 @@ const updateRating = function (stars, lId, callback) {
   };
 
   send("post", baseUrl + 'rating', body, callback);
-}
+};
 /**
  * Registers a user
- * @param {String} username 
- * @param {String} password 
+ * @param {String} username
+ * @param {String} password
  * @param {Function} callback executes with result
  */
 const registerUser = function (username, password, callback) {
-  let query = `mutation createUser($input: UserInput) { 
+  let query = `mutation createUser($input: UserInput) {
     createUser(input: $input) {
       ... on User {
         username
@@ -565,11 +565,11 @@ const registerUser = function (username, password, callback) {
   };
 
   send('POST', baseUrl + 'user', body, callback);
-}
+};
 /**
  * Authenitcates a user
- * @param {String} username 
- * @param {String} password 
+ * @param {String} username
+ * @param {String} password
  * @param {String} callback executes with result
  */
 const signIn = async function (username, password, callback) {
@@ -596,7 +596,7 @@ const signIn = async function (username, password, callback) {
   };
 
   send('POST', baseUrl + 'user', body, callback);
-}
+};
 
 
 module.exports = {
@@ -625,4 +625,4 @@ module.exports = {
   getImageTrio,
   getOldestImage,
   getNewestImage
-}
+};

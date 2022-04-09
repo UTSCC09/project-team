@@ -136,7 +136,7 @@ const pinMultipleResultType = new GraphQLUnionType({
     resolveType: (value) => {
         return value.message? ErrorType.name : pinMultipleType.name;
     }
-})
+});
 
 const queryType = new GraphQLObjectType({
     name: 'Query',
@@ -211,10 +211,10 @@ const idMutationType = new GraphQLObjectType({
 
 let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
 
-let idSchema = new GraphQLSchema({query: idQueryType, mutation: idMutationType})
+let idSchema = new GraphQLSchema({query: idQueryType, mutation: idMutationType});
 
 module.exports = {
     schema,
     pinMultipleResultType,
     idSchema
-}
+};

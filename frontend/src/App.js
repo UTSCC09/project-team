@@ -2,18 +2,18 @@ import React from 'react';
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import SearchIcon from "@mui/icons-material/Search";
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import AddLocationIcon from '@mui/icons-material/AddLocation'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AddLocationIcon from '@mui/icons-material/AddLocation';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DoneIcon from '@mui/icons-material/Done';
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import PinDropIcon from '@mui/icons-material/PinDrop';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
-import AddLocationForm from './components/AddLocationForm.js'
-import UserForm from './components/UserForm.js'
-import LocationInfo from './components/LocationInfo.js'
-import StaticMode from '@mapbox/mapbox-gl-draw-static-mode'
-import RegionInfo from './components/RegionInfo.js'
+import AddLocationForm from './components/AddLocationForm.js';
+import UserForm from './components/UserForm.js';
+import LocationInfo from './components/LocationInfo.js';
+import StaticMode from '@mapbox/mapbox-gl-draw-static-mode';
+import RegionInfo from './components/RegionInfo.js';
 import SearchBar from './components/SearchBar';
 import MapIcon from '@mui/icons-material/Map';
 import SourceIcon from '@mui/icons-material/Source';
@@ -66,10 +66,10 @@ export default class App extends React.PureComponent {
         this.mapContainer = React.createRef();
         this.accountSettings = this.accountSettings.bind(this);
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
-        this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this)
+        this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this);
         this.onLoginFormSubmit = this.onLoginFormSubmit.bind(this);
-        this.cancelAccount = this.cancelAccount.bind(this)
-        this.toggleAccount = this.toggleAccount.bind(this)
+        this.cancelAccount = this.cancelAccount.bind(this);
+        this.toggleAccount = this.toggleAccount.bind(this);
         this.signOut = this.signOut.bind(this);
         this.addMarker = this.addMarker.bind(this);
         this.addLocation = this.addLocation.bind(this);
@@ -82,7 +82,7 @@ export default class App extends React.PureComponent {
         this.createMarker = this.createMarker.bind(this);
         this.getMarkers = this.getMarkers.bind(this);
         this.getRegions = this.getRegions.bind(this);
-        this.setImage = this.setImage.bind(this)
+        this.setImage = this.setImage.bind(this);
         this.uploadImage = this.uploadImage.bind(this);
         this.createRegion = this.createRegion.bind(this);
         this.deleteRegion = this.deleteRegion.bind(this);
@@ -107,11 +107,11 @@ export default class App extends React.PureComponent {
       let message;
       if (err.code === 1) message = "Please enable location services";
       else if (err.code === 2) message = "Sorry, we were unable to locate you";
-      else return this.setState({loading: false}, this.timeoutDirections); //timeout 
+      else return this.setState({loading: false}, this.timeoutDirections); //timeout
       this.error(message, 'warning');
       this.setState({loading: false});
-      
-    };
+
+    }
     /**
      * Adds an object to the map
      * @param {Object} obj the object to be added to the map
@@ -136,13 +136,13 @@ export default class App extends React.PureComponent {
       let d = this.state.draw;
       d.delete(regionId);
       this.setState({detailedRegion: false, draw: d});
-      
+
       if (this.state.currentPopup) this.state.currentPopup.remove();
     }
     /**
      * Retreive information about pins within this region
      */
-    getPinsWithinRegion(){      
+    getPinsWithinRegion(){
       let t = this;
       api.getPinsWithinPolygon(this.state.currentRegion.backId, function (err, res) {
         if (err) return t.error(err);
@@ -165,7 +165,7 @@ export default class App extends React.PureComponent {
               t.setState({detailedRegion: true, enclosedPins: res.data.data.getPinsWithin.pins, enclosedImages: imgRes});
             }
           });
-          
+
           for(let p of res.data.data.getPinsWithin.pins){
             regionTags = regionTags.concat(p.features.properties.tags);
             //remove duplicates
@@ -201,7 +201,7 @@ export default class App extends React.PureComponent {
         }
       );
     }
-    
+
 
     /**
      * Enter 'look around' mode
@@ -234,7 +234,7 @@ export default class App extends React.PureComponent {
       const labelLayerId = layers.find(
       (layer) => layer.type === 'symbol' && layer.layout['text-field']
       ).id;
-      
+
       // The 'building' layer in the Mapbox Streets
       // vector tileset contains building height data
       // from OpenStreetMap.
@@ -248,7 +248,7 @@ export default class App extends React.PureComponent {
           'minzoom': 15,
           'paint': {
           'fill-extrusion-color': '#aaa',
-          
+
           // Use an 'interpolate' expression to
           // add a smooth transition effect to
           // the buildings as the user zooms in.
@@ -288,7 +288,7 @@ export default class App extends React.PureComponent {
     uploadImage(marker, t){
         api.uploadImage(marker, function(upErr, res){
           if (upErr) return t.error(upErr);
-            
+
           if (res)
             {
               marker.imageId = res.data.data.createImage._id;
@@ -316,16 +316,16 @@ export default class App extends React.PureComponent {
                         copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
                         document.querySelector('.mapbox-directions-profile').style.display='block';
                         t.setState({viewingDirections: true, loading: false, directions: copy});
-          
+
                       }, t.directionError, options);
                     }
                   }
                 });
 
-                
+
               }
           }
-            
+
           })
     }
 
@@ -403,7 +403,7 @@ export default class App extends React.PureComponent {
               let copy = [...t.state.renderedRegions];
               copy.splice(copy.indexOf(x));
               t.setState({renderedRegions: copy, draw: d});
-              
+
 
             }
 
@@ -415,7 +415,7 @@ export default class App extends React.PureComponent {
             let f = t.state.renderedRegions.find(x => x.backId === p._id)
             if (f) continue;
             let newRegion = p.features.geometry;
-            
+
             let v = copy.add(newRegion);
             t.setState({draw: copy});
             newRegion.id = v[0];
@@ -427,7 +427,7 @@ export default class App extends React.PureComponent {
               renderedRegions: [...prevState.renderedRegions, newRegion]
             }));
           }
-          
+
         }
       });
 
@@ -480,7 +480,7 @@ export default class App extends React.PureComponent {
                 t.setState({detailedLocation: true, displayImgs: pRes.data.data.getImagePage});
               }
             });
-            
+
           }
           //handler for look around
           document.getElementById('look-around-btn').onclick = function () {
@@ -489,15 +489,15 @@ export default class App extends React.PureComponent {
           //get directions to this pin
           document.getElementById(marker.id + '_directions').onclick = function () {
             t.setState({loading: true});
-            
+
             let options = {timeout: DIRECTION_TIMEOUT};
-            
+
             navigator.geolocation.getCurrentPosition(function (res) {
               let copy = t.state.directions;
               copy.setOrigin([res.coords.longitude, res.coords.latitude]);
               copy.setDestination([marker._lngLat.lng, marker._lngLat.lat]);
-              
-              document.querySelector('.mapbox-directions-profile').style.display='block';                              
+
+              document.querySelector('.mapbox-directions-profile').style.display='block';
               t.setState({viewingDirections: true, loading: false});
 
             }, t.directionError, options);
@@ -505,7 +505,7 @@ export default class App extends React.PureComponent {
         }
 
       });
-      
+
     }
     /**
      * Retreive and display nearby markers
@@ -529,14 +529,14 @@ export default class App extends React.PureComponent {
                 copy.splice(copy.indexOf(x), 1);
                 t.setState({renderedMarkers: copy});
               }
-            } 
+            }
           }
 
-          
+
           for (let m of markers.data.data.getNear.pins){
             //already rendered, skip
             if (t.state.renderedMarkers.find((x) => x.id === m._id)) continue;
-            
+
             const marker = new mapboxgl.Marker({
               color: "#FFFFFF",
               draggable: false
@@ -562,7 +562,7 @@ export default class App extends React.PureComponent {
 
               if(marker.getPopup().isOpen()){
                 marker.getPopup().remove();
-              } 
+              }
               else{
                 t.handlePopup(marker);
               }
@@ -570,11 +570,11 @@ export default class App extends React.PureComponent {
             t.setState(prevState => ({
               renderedMarkers: [...prevState.renderedMarkers, marker]
             }));
-            
+
           }
         }
       });
-      
+
     }
 
     /**
@@ -590,21 +590,21 @@ export default class App extends React.PureComponent {
           }
           else if (removeHighlighted) r.remove();
           else keep.push(r)
-          
+
         }
         else if (r._color === "#FF0000"){
           if (this.state.searching) {
             keep.push(r);
           }
           else r.remove();
-        } 
+        }
       }
       //delete all polygons
       this.state.draw.deleteAll();
       this.setState({renderedRegions: []})
-      
+
       this.setState({renderedMarkers: keep});
-      
+
     }
 
     /**
@@ -673,7 +673,7 @@ export default class App extends React.PureComponent {
           t.removeRendered(!t.state.searching);
           t.state.currentPopup && t.state.currentPopup.remove();
         }
-        
+
       });
       map.on('dragend', function () {
         //update the rendered pins according to our location
@@ -684,7 +684,7 @@ export default class App extends React.PureComponent {
         }
         //update search results on move
         if (t.state.displayTagSearchResults && t.state.searching && !t.state.audioTags) {
-          
+
           t.searchForTags();
         }
         else if(t.state.searching && t.state.displayingCustomSearchResults){
@@ -707,7 +707,7 @@ export default class App extends React.PureComponent {
             return;
           }
         }
-        
+
         let n = new mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(this.producePopup(clickedPolygon.name, '', clickedPolygon.description, clickedPolygon.id))
@@ -717,7 +717,7 @@ export default class App extends React.PureComponent {
           t.getPinsWithinRegion();
         }
         this.setState({currentPopup: n});
-        
+
       });
       //add read only mode for polygons
       let modes = MapboxDraw.modes;
@@ -745,7 +745,7 @@ export default class App extends React.PureComponent {
         let old = t.state.newRegions.find((x) => x.id === e.features[0].id);
         let idx = t.state.newRegions.indexOf(old);
         if (idx > -1){
-          let copy = [...t.state.newRegions]          
+          let copy = [...t.state.newRegions]
           let newRegion = e.features[0];
           newRegion.name = old.name;
           newRegion.description = old.description;
@@ -754,7 +754,7 @@ export default class App extends React.PureComponent {
           t.setState({newRegions: copy});
         }
       });
-   
+
       map.addControl(draw);
       let directions = new MapboxDirections({
         accessToken: 'pk.eyJ1Ijoiam9obmd1aXJnaXMiLCJhIjoiY2wwNnMzdXBsMGR2YTNjcnUzejkxMHJ2OCJ9.l5e_mV0U2tpgICFgkHoLOg',
@@ -763,17 +763,17 @@ export default class App extends React.PureComponent {
         style: 'mapbox://styles/mapbox/streets-v11',
         interactive: false,
         controls: {profileSwitcher: true}
-        
-      });     
+
+      });
       directions.onClick = function () {
         //prevent click to add waypoints
         return;
       }
       map.addControl(directions);
-      
-    
+
+
       this.setState({map: map, directions: directions, draw: draw});
-      
+
     }
 
     onLoginFormSubmit(user){
@@ -786,7 +786,7 @@ export default class App extends React.PureComponent {
         this.state.draw.delete(r.id);
       }
       this.setState({signedIn: false, user: null});
-      
+
     }
     handleClickShowPassword (){
       this.setState((prevState) => ({
@@ -814,12 +814,12 @@ export default class App extends React.PureComponent {
       for (let r of this.state.newRegions){
         this.createRegion(r, this)
       }
-      
+
       this.state.draw && this.state.draw.changeMode('static');
       if (this.state.zoom > 13.5) {
         this.getRegions(this);
       }
-      
+
       for (let m of this.state.newMarkers){
         m.setDraggable(false);
       }
@@ -842,14 +842,14 @@ export default class App extends React.PureComponent {
         }
       });
       return;
-      
+
     }
 
 
     unrenderMarker(marker){
       let copy = [...this.state.renderedMarkers];
       let index = this.state.renderedMarkers.indexOf(marker);
-      
+
       if (index !== -1){
         copy.splice(index, 1);
         this.setState({renderedMarkers: copy, detailedLocation: false});
@@ -869,7 +869,7 @@ export default class App extends React.PureComponent {
         }
 
       });
-      
+
     }
     /**
      * Produces popups for regions and locations
@@ -940,7 +940,7 @@ export default class App extends React.PureComponent {
                   <div class="card-footer">
                       <button id=${id} class="btn-menu"></button>
                   </div>
-              </div>` 
+              </div>`
     }
     /**
      * Perform the fly to animation with the given specifications
@@ -962,8 +962,8 @@ export default class App extends React.PureComponent {
       let currTags = this.state.tags;
       let coord = this.state.newCoord;
       this.setState({addingLocation: false, movingMarker: true, tags: [], newCoord: null});
-      
-      
+
+
       let tag = this.state.mainTag
       let name = this.state.locationName;
       let desc = this.state.locationDescription;
@@ -989,26 +989,26 @@ export default class App extends React.PureComponent {
       }), ()=>{
         this.setState({currentMarker: marker});
       });
-      
+
       let m = this.state.map;
       let t = this;
       marker.togglePopup = function(){
         if(marker.getPopup().isOpen()){
           marker.getPopup().remove();
-        } 
+        }
         else{
           t.state.currentMarker = marker;
           marker.getPopup().addTo(m);
         }
       }
-      
+
 
       this.setState(prevState => ({
         renderedMarkers: [...prevState.renderedMarkers, marker]
       }));
 
     }
-    
+
     locationOptions(){
       this.setState({choosingType: true});
     }
@@ -1022,14 +1022,14 @@ export default class App extends React.PureComponent {
       this.setState({displayingCustomSearchResults: true});
       if(!pins)return this.noMatchesFound();
       let t = this;
-      
+
       for (let pin of pins){
         let marker = new mapboxgl.Marker({
           color: "#FF0000",
           draggable: false
         }).setLngLat(pin.features.geometry.coordinates)
           .setPopup(new mapboxgl.Popup().setHTML(""));
-        
+
         let old = t.state.renderedMarkers.find((x) => x.id === pin._id);
         if (old) {
           old.remove();
@@ -1043,11 +1043,11 @@ export default class App extends React.PureComponent {
         marker.owner = pin.owner;
         marker.id = pin._id;
         marker.togglePopup = function(){
-          
+
 
           if(marker.getPopup().isOpen()){
             marker.getPopup().remove();
-          } 
+          }
           else{
             t.handlePopup(marker);
           }
@@ -1100,7 +1100,7 @@ export default class App extends React.PureComponent {
 
               if(marker.getPopup().isOpen()){
                 marker.getPopup().remove();
-              } 
+              }
               else{
                 t.handlePopup(marker);
               }
@@ -1115,8 +1115,8 @@ export default class App extends React.PureComponent {
             t.setState(prevState => ({
               highlightedMarkers: [...prevState.highlightedMarkers, marker]
             }));
-            
-            
+
+
           }
         }
       });
@@ -1151,10 +1151,10 @@ export default class App extends React.PureComponent {
             else keep.push(h);
           }
           else keep.push(h);
-          
+
         }
-        
-        
+
+
       }
       this.setState({highlightedMarkers: [], renderedMarkers: keep});
     }
@@ -1189,7 +1189,7 @@ export default class App extends React.PureComponent {
       });
       this.setState({audioTags: tags});
       this.displayCustomSearchResults(pins)
-      
+
     }
     /**
      * Performs the search according to the query
@@ -1233,7 +1233,7 @@ export default class App extends React.PureComponent {
         }
       }
       else if(this.state.audioTags){ //spoken query
-          
+
         this.setState({customSearchTags: null});
         api.searchTags({lat: this.state.lat, lng: this.state.lng}, this.state.audioTags, function (err, res) {
           if (err) return t.error(err);
@@ -1243,7 +1243,7 @@ export default class App extends React.PureComponent {
           }
         });
       }
-      else if (!custom) { //tag query 
+      else if (!custom) { //tag query
         if (this.state.customSearchTags) {
           this.setState({customSearchTags: null}, function () {
             this.removeHighlighted();
@@ -1253,7 +1253,7 @@ export default class App extends React.PureComponent {
           this.searchForTags();
         });
       }
-      
+
     }
 
     /**
@@ -1286,7 +1286,7 @@ export default class App extends React.PureComponent {
       if (value.place_name) { //geocoding query, fly to the location
         this.setState({customSearch: null});
         this.setState({flyTo: value.geometry.coordinates});
-        
+
       }
       else if (value.title) { //written, natural language query
         this.setState({customSearch: value});
@@ -1295,7 +1295,7 @@ export default class App extends React.PureComponent {
         this.setState({customSearch: null});
         this.setState({searchTags: value.length ? value : [], flyTo: []});
       }
-      
+
     }
     /**
      * Sets the coordinates of location
@@ -1314,11 +1314,11 @@ export default class App extends React.PureComponent {
       this.setState({viewingDirections: false}, ()=> {
         document.querySelector('.mapbox-directions-profile').style.display='none';
         let copy = this.state.directions;
-        copy.removeRoutes();        
+        copy.removeRoutes();
         copy.actions.clearOrigin();
         copy.actions.clearDestination();
         this.setState({directions: copy});
-        
+
       });
     }
 
@@ -1328,8 +1328,8 @@ export default class App extends React.PureComponent {
      */
     render() {
         const { lng, lat, zoom } = this.state;
-        
-        
+
+
         let locationButton;
         let locationClick;
         let locationColor;
@@ -1349,11 +1349,11 @@ export default class App extends React.PureComponent {
         /* input fields: https://mui.com/components/text-fields/ */
         return (
           <div>
-            
+
             <div className="sidebar">
               Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
             </div>
-            
+
             {
               this.state.lookingAround?
               null
@@ -1361,11 +1361,11 @@ export default class App extends React.PureComponent {
               <Box className='action' sx={{ "& > :not(style)": { m: 1 } }}>
               {
                 this.state.searching?
-                
-                <SearchBar displayVoiceSearch={this.voiceSearch} 
-                  pos={{lat: this.state.lat, lng: this.state.lng}} 
-                  searchChange = {this.handleSearchChange.bind(this)} 
-                  search={this.performSearch.bind(this)}> 
+
+                <SearchBar displayVoiceSearch={this.voiceSearch}
+                  pos={{lat: this.state.lat, lng: this.state.lng}}
+                  searchChange = {this.handleSearchChange.bind(this)}
+                  search={this.performSearch.bind(this)}>
                   onError={this.error}
                 </SearchBar>
                 :
@@ -1373,14 +1373,14 @@ export default class App extends React.PureComponent {
                   <SearchIcon />
                 </Fab>
               }
-              
-              
+
+
               {
                 this.state.searching?
-                
+
                 null
                 :
-                
+
                 this.state.signedIn?
                 <div id='location-btn'>
                 {
@@ -1393,13 +1393,13 @@ export default class App extends React.PureComponent {
                 }
                 </div>
 
-                
+
                 :
                 <Fab onClick={ this.accountSettings } color="secondary" aria-label="account">
                   <AccountCircleIcon />
                 </Fab>
               }
-              
+
               {
                 (this.state.signedIn && this.state.choosingType && !this.state.searching)?
                   <div id='types'>
@@ -1411,18 +1411,18 @@ export default class App extends React.PureComponent {
                           <HighlightAltIcon />
                     </Fab>
                   </div>
-                
+
                     :
                   null
               }
 
               {
                 (this.state.signedIn && !this.state.searching)?
-                
+
                 <Fab color={locationColor} disabled={this.state.drawingRegion} onClick={ locationClick } aria-label="add">
                   { locationButton }
                 </Fab>
-                
+
                 :
                 null
               }
@@ -1434,14 +1434,14 @@ export default class App extends React.PureComponent {
                 :
                 null
               }
-              
-              
-              
-              
+
+
+
+
           </Box>
             }
-            
-            
+
+
             <Box id='map-style-control'>
               {
                 this.state.lookingAround?
@@ -1451,11 +1451,11 @@ export default class App extends React.PureComponent {
                 :
                 <div>
                 </div>
-                
+
               }
-              
-              
-              
+
+
+
             </Box>
             <Box id='errors-and-warnings'>
               {
@@ -1492,7 +1492,7 @@ export default class App extends React.PureComponent {
                 null
                 }
             </Box>
-            
+
             {
               (this.state.loading || this.state.detailedRegion || this.state.detailedLocation || this.state.addingLocation || this.state.accountForm) ?
               <div id='overlay' >
@@ -1510,7 +1510,7 @@ export default class App extends React.PureComponent {
 
               {
                 this.state.detailedLocation?
-                <LocationInfo deleteLocation={this.deleteLocation.bind(this)} 
+                <LocationInfo deleteLocation={this.deleteLocation.bind(this)}
                   marker={this.state.currentMarker}
                   close={this.closingLocation} owner={this.state.currentMarker.owner}
                   user={this.state.user}
@@ -1523,24 +1523,24 @@ export default class App extends React.PureComponent {
               }
               {
                 this.state.addingLocation?
-                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation === 'region'} cancel={() => {this.setState({addingLocation: false}); }} 
-                  submit={this.state.addingLocation === 'region' ? this.addRegion : this.addMarker} 
-                  tags={this.state.tags} 
+                <AddLocationForm updateAddress={this.updateAddress.bind(this)} imageChange={this.setImage} region={this.state.addingLocation === 'region'} cancel={() => {this.setState({addingLocation: false}); }}
+                  submit={this.state.addingLocation === 'region' ? this.addRegion : this.addMarker}
+                  tags={this.state.tags}
                   onError={this.error}
-                  categoryChange={this.handleCategoryChange.bind(this)} 
-                  changeLocationDescription={this.handleLocationDescription} 
+                  categoryChange={this.handleCategoryChange.bind(this)}
+                  changeLocationDescription={this.handleLocationDescription}
                   changeLocationName={this.handleLocationName}></AddLocationForm>
                 :
                 null
               }
 
-              
+
               {
                 this.state.accountForm?
 
-                <UserForm 
-                  cancel={this.cancelAccount} 
-                  onLoginFormSubmit={this.onLoginFormSubmit} 
+                <UserForm
+                  cancel={this.cancelAccount}
+                  onLoginFormSubmit={this.onLoginFormSubmit}
                   createAccount={true}>
                   onError={this.error}
                 </UserForm>
@@ -1555,7 +1555,7 @@ export default class App extends React.PureComponent {
 
               }
 
-              
+
             </div>
             :
             null

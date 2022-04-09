@@ -5,7 +5,7 @@ const Pin = require('../models/pin-model');
 const Image = require('../models/image-model');
 
 const {isAuthenticated, isAuthorized, capitalizeFirst, sanitizeInput} = require('../../util');
-const {DupelicateError, UserInputError} = require('../../graphql/schemas/error-schema')
+const {DupelicateError, UserInputError} = require('../../graphql/schemas/error-schema');
 
 const {Wit, log} = require('node-wit');
 
@@ -45,7 +45,7 @@ addTag = async function (input , context) {
     pin.save();
 
     return pin;
-}
+};
 
 // Delete tag from a pin
 // Only authenticated users can perform this action
@@ -61,7 +61,7 @@ deleteTag = async function (input, context) {
     pin.save();
 
     return pin;
-}
+};
 
 // Get all pins within a certain radius given a set of tags
 getNear = async function (input) {
@@ -102,7 +102,7 @@ deletePin = async function(input, context) {
     }
 
     return null;
-}
+};
 
 // Get all pins in a certain radius given parameters
 // Parameters can be: natural language string, audio file
@@ -110,7 +110,7 @@ searchPinByTag = async function(input, context) {
     const text = input.message;
     const speech = input.speech;
 
-    let data = null
+    let data = null;
     // If an audio file was sent, extract data from file
     if (speech) {
         // Read data from read audio file
@@ -154,7 +154,7 @@ searchPinByTag = async function(input, context) {
     else {
         return UserInputError(text);
     }
-}
+};
 
 // Search helper
 searchPins = async function(radius, lat, lon, tags) {
@@ -182,7 +182,7 @@ searchPins = async function(radius, lat, lon, tags) {
     // Limit to only 50 most frequent pins
     pins = await pins.sort({updated_at: -1}).limit(50).exec();
     return pins;
-}
+};
 
 module.exports = {
   createPin,
@@ -191,4 +191,4 @@ module.exports = {
   addTag,
   deleteTag,
   searchPinByTag
-}
+};

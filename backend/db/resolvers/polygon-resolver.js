@@ -58,7 +58,7 @@ getPinsWithin = async function(input, context) {
     // Limit to only 50 most frequent pins
     pins = await pins.sort({updated_at: -1}).limit(50).exec();
     return {'pins': pins};
-}
+};
 
 // Delete a polygon
 // Only polygon creator can perform this action
@@ -76,11 +76,11 @@ deletePolygon = async function(input, context) {
 
     Polygon.deleteOne({_id: polygon._id}).exec();
     return null;
-}
+};
 
 module.exports = {
   createPolygon,
   getPinsWithin,
   deletePolygon,
   getNear
-}
+};

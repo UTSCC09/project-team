@@ -15,12 +15,12 @@ import MuiImageSlider from 'mui-image-slider';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button'
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import api from '../api'
-import FormControl from '@mui/material/FormControl'
+import api from '../api';
+import FormControl from '@mui/material/FormControl';
 import CloseIcon from '@mui/icons-material/Close';
 const MAX_FILE_SIZE = 8; //mb
 /* https://mui.com/components/cards/#complex-interaction*/
@@ -40,22 +40,22 @@ export default function LocationInfo(props) {
   const [imageIds, setImageIds] = React.useState(null);
   React.useEffect(() => {
     api.getRatings(marker.id, function (err, res) {
-      if(err) return onError(err)
+      if(err) return onError(err);
       if (res) {
         let original = res.data.getRatings.ratings.find((x) => x.createdBy === user);
         if (original) {
           setRating(original.stars);
         }
       }
-    })
+    });
   }, [marker.id, onError, user]);
 
   const addImage = (e) => {
     e.preventDefault();
-    
-    let img = {}
+
+    let img = {};
     img.file = file;
-    
+
     let copy = marker;
     copy.image = file;
     api.uploadImage(copy, function (err, res) {
@@ -69,7 +69,7 @@ export default function LocationInfo(props) {
           }
           return onError(res.data.errors[0].message);
         }
-        
+
         api.getImageTrio(marker.id, res.data.data.createImage._id, function (imgErr, imgRes) {
           if(imgErr) return onError(imgErr);
           if (imgRes) {
@@ -85,12 +85,12 @@ export default function LocationInfo(props) {
             setOrder({_id: imgRes.ids.current});
           }
         });
-        
+
         setAddImage(false);
         setFile(null);
       }
-    })
-  }
+    });
+  };
 
   const updateRatings = (e, val) => {
     setRating(val);
@@ -108,12 +108,12 @@ export default function LocationInfo(props) {
             if (err) return onError(err);
           });
         }
-        
+
       }
     });
-    
-    
-  }
+
+
+  };
   const toggleView = (e) => {
     if(!streetView)return;
     let imgId = order._id ? order._id : marker.imageId;
@@ -136,15 +136,15 @@ export default function LocationInfo(props) {
           setDisplayImages([res.urls.current, res.urls.next, res.urls.previous]);
         }
         setOrder({_id: res.ids.current});
-        
+
         setStreetView(!streetView);
       }
-      
+
     });
-  }
+  };
   const move = (curr) => {
-    let id = imageIds[curr]
-    let index = imageIds.indexOf(id)
+    let id = imageIds[curr];
+    let index = imageIds.indexOf(id);
     api.getImageTrio(marker.id, id, function (err, res) {
       if(err)return onError(err);
       if (res) {
@@ -165,7 +165,7 @@ export default function LocationInfo(props) {
         else{
           if (index === 0) {
             setImageIds(id, res.ids[1]);
-            setDisplayImages(displayImages[curr], res.urls[1])
+            setDisplayImages(displayImages[curr], res.urls[1]);
           }
           else if (index === 1) {
             //1 is prev/next
@@ -174,12 +174,12 @@ export default function LocationInfo(props) {
           }
         }
       }
-      
+
     });
-  }
+  };
 
 
-  
+
   const fileChange = (e) => {
     let bytes = e.target.files[0].size;
     let size = bytes/1000000;
@@ -190,7 +190,7 @@ export default function LocationInfo(props) {
     else{
       setFileTooBig(true);
     }
-  }
+  };
   /*streetview https://github.com/alexus37/react-google-streetview */
   const signInPrompt = user ? '' : "\n(You'll need to sign in first.)";
   return (
@@ -199,7 +199,7 @@ export default function LocationInfo(props) {
       addingImage?
       <form id='new-image-form' className='user-form' onSubmit={addImage}>
           <div className='account-form-title' id='add-image'></div>
-        
+
         <FormControl required={true} sx={{ m: 1, width: 231}} >
           <input
             accept=".png,.jpg,.jpeg"
@@ -212,7 +212,7 @@ export default function LocationInfo(props) {
             <Button variant="outlined" component="span">
               Upload an image
             </Button>
-          </label> 
+          </label>
         </FormControl>
         {
           fileTooBig?
@@ -251,10 +251,10 @@ export default function LocationInfo(props) {
         />
         <Typography sx={{marginLeft: '5px', width: '10px'}} variant="h6" color="text.secondary">
           Tags:
-        </Typography> 
+        </Typography>
         <Stack direction="row" sx={{overflow: 'scroll', marginTop:'7px', marginBottom:'2px'}} spacing={1}>
           {marker.tags.map((tag) =>  <Chip key={tag} label={tag} variant="outlined" />)}
-        
+
         </Stack>
 
         <FormGroup sx={{marginLeft: '5%'}} >
@@ -263,13 +263,13 @@ export default function LocationInfo(props) {
                 else setStreetView(true);
               }} checked={streetView} />} label="Street View" />
         </FormGroup>
-        
-        
+
+
 
         {
           streetView?
           <div id='street'>
-            
+
             <Streetview streetViewPanoramaOptions={{position: marker._lngLat,
             pov: { heading: 0, pitch: 0 },
             zoom: 1,}} apiKey={'AIzaSyDkrJcHAWMRsbbL9i5rzvysM3wyoEl6zQc'}>
@@ -282,9 +282,9 @@ export default function LocationInfo(props) {
               }} images={displayImages} />
           </div>
         }
-        
-        
-        
+
+
+
         <CardContent>
           <Typography paragraph variant="body2" color="text.secondary">
             {marker.description}
@@ -316,7 +316,7 @@ export default function LocationInfo(props) {
             null
 
           }
-          
+
         </CardActions>
       </Card>
 

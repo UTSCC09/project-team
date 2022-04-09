@@ -13,23 +13,23 @@ const ErrorType = new GraphQLObjectType({
 
 const NotFoundError = function (missingValue) {
   return { message: missingValue + ' not found' };
-}
+};
 
 const DupelicateError = function (dupelicateValue) {
   return { message: dupelicateValue + ' already exists' };
-}
+};
 
 const AuthorizationError = function () {
   return { message: "User not authorized" };
-}
+};
 
 const AuthenticationError = function () {
   return { message: "Authentication failed" };
-}
+};
 
 const UserInputError = function (inputValue) {
     return {message: inputValue + ' not accepted'};
-}
+};
 
 const stringType = new GraphQLObjectType({
     name: "Return",
@@ -54,4 +54,4 @@ module.exports = {
   DupelicateError,
   UserInputError,
   stringResultType
-}
+};

@@ -42,14 +42,14 @@ const goToEnum = new GraphQLEnumType({
             value: resolver.GoToEnum.newest
         }
     }
-})
+});
 
 const imagePageInput = new GraphQLInputObjectType({
     name: 'ImagePageInput',
     fields: {
         goto: {type: goToEnum}
     }
-})
+});
 
 const imageAdjacentInput = new GraphQLInputObjectType({
     name: 'ImageAdjacentInput',
@@ -97,7 +97,7 @@ const imageMultipleResultType = new GraphQLUnionType({
     resolveType: (value) => {
         return value.message? ErrorType.name : imageMultipleType.name;
     }
-})
+});
 
 const imageAdjacentResultType = new GraphQLUnionType({
     name: 'ImagePageResult',
@@ -148,7 +148,7 @@ const queryType = new GraphQLObjectType({
             resolve: (_, {input}, context) => resolver.getAdajcentImage(input, context)
         }
     }
-})
+});
 
 const photoQueryType = new GraphQLObjectType({
     name: 'Query',
@@ -159,7 +159,7 @@ const photoQueryType = new GraphQLObjectType({
             resolve: (_, {input}, context) => resolver.getPhoto(context)
         }
     }
-})
+});
 
 const mutationType = new GraphQLObjectType({
     name: 'Mutation',
@@ -177,7 +177,7 @@ const mutationType = new GraphQLObjectType({
             resolve: (_, {input}, context) => resolver.deleteImage(context)
         }
     }
-})
+});
 
 let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
 
@@ -186,4 +186,4 @@ let photoSchema = new GraphQLSchema({query: photoQueryType});
 module.exports = {
     schema,
     photoSchema
-}
+};

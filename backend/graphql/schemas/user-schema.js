@@ -63,10 +63,10 @@ const mutationType = new GraphQLObjectType({
             resolve: (_, {input}, context) => resolver.createUser(input, context)
         },
     }
-})
+});
 
 let schema = new GraphQLSchema({query: queryType, mutation: mutationType});
 
 module.exports = {
     schema
-}
+};

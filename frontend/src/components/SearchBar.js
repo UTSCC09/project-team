@@ -3,10 +3,10 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import SavedSearchIcon from '@mui/icons-material/SavedSearch';
 import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
-import api from '../api'
+import api from '../api';
 import IconButton from '@mui/material/IconButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
-import AudioReactRecorder, { RecordState } from 'audio-react-recorder'
+import AudioReactRecorder, { RecordState } from 'audio-react-recorder';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Box from '@mui/material/Box';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
@@ -21,7 +21,7 @@ export default class SearchBar extends React.PureComponent{
             matches: tags,
             completeMatchInfo: [],
             recordState: null
-        }
+        };
         this.updateResults = this.updateResults.bind(this);
         this.onStop = this.onStop.bind(this);
         this.start = this.start.bind(this);
@@ -29,7 +29,7 @@ export default class SearchBar extends React.PureComponent{
     onStop(audioData){
       let t = this;
       t.setState({voiceSeach: false});
-      
+
       api.voiceSearch(this.props.pos, audioData, function (err, res) {
         if(err) return this.props.onError(err);
         if(res){
@@ -58,7 +58,7 @@ export default class SearchBar extends React.PureComponent{
 
         if (!val.title && tags.indexOf(val) < 0) {
             let m = this.state.completeMatchInfo.find((x) => x.place_name === val);
-            if (m) this.props.searchChange(e, m)
+            if (m) this.props.searchChange(e, m);
         }
         else if (!val.title) this.props.searchChange(e, val);
         else {
@@ -67,15 +67,15 @@ export default class SearchBar extends React.PureComponent{
 
     }
     render() {
-        const { recordState } = this.state
+        const { recordState } = this.state;
         return (
         <div id="search-container">
-          
+
               {
                 this.state.voiceSearch?
                 <div>
                   <AudioReactRecorder backgroundColor={'white'} canvasWidth={300} canvasHeight={75} state={recordState} onStop={this.onStop} />
-                  
+
                 </div>
                 :
                 <Autocomplete
@@ -87,7 +87,7 @@ export default class SearchBar extends React.PureComponent{
                     filterSelectedOptions
                     filterOptions={(options, params) => {
                         const filtered = filter(options, params);
-                
+
                         const { inputValue } = params;
                         // Suggest the creation of a new value
                         const isExisting = options.some((option) => inputValue === option.title);
@@ -97,23 +97,23 @@ export default class SearchBar extends React.PureComponent{
                             title: `${inputValue}`,
                           });
                         }
-                
+
                         return filtered;
                       }}
                     renderInput={(params) => (
                       <TextField
-                      
+
                         {...params}
                         placeholder="What are you looking for?"
                         onChange={this.updateResults}
-                        
+
                       />
-                    
+
                     )}
                   />
               }
-            
-              
+
+
               {
                 this.state.voiceSearch?
                 <Box backgroundColor='white' sx={{p: 2, borderRadius:'10px'}}>
@@ -137,7 +137,7 @@ export default class SearchBar extends React.PureComponent{
                         </IconButton>
                       }
                       </div>
-                    
+
                       :
                       <div>
                         <Typography variant='caption'>Click on the green mic and start speaking</Typography>
@@ -147,7 +147,7 @@ export default class SearchBar extends React.PureComponent{
                       </div>
 
                   }
-                      
+
                 </Box>
                 :
                   <div id='search-btns-container' sx={{m: 1}}>
@@ -159,7 +159,7 @@ export default class SearchBar extends React.PureComponent{
                     </IconButton>
                   </div>
               }
-              
+
             </div>
         );
     }

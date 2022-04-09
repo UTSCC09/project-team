@@ -120,7 +120,7 @@ const polygonMultipleResultType = new GraphQLUnionType({
     resolveType: (value) => {
         return value.message? ErrorType.name : polygonMultipleType.name;
     }
-})
+});
 
 const queryType = new GraphQLObjectType({
     name: 'Query',
@@ -177,4 +177,4 @@ let idSchema = new GraphQLSchema({query: idQueryType, mutation: idMutationType})
 module.exports = {
     schema,
     idSchema
-}
+};
