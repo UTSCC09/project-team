@@ -1,9 +1,9 @@
 import React from 'react';
 import { Autocomplete } from '@mui/material';
-import FormControl from '@mui/material/FormControl'
+import FormControl from '@mui/material/FormControl';
 import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
-import api from '../api'
+import api from '../api';
 import { Button } from '@mui/material';
 const MAX_FILE_SIZE = 8; //mb
 export default class addLocationForm extends React.PureComponent{
@@ -15,11 +15,11 @@ export default class addLocationForm extends React.PureComponent{
         submitAttempt: false,
         matches: [],
         completeMatchInfo: []
-      }
+      };
       this.fileChange = this.fileChange.bind(this);
       this.attemptSubmit = this.attemptSubmit.bind(this);
     }
-    
+
     fileChange(e){
       let bytes = e.target.files[0].size;
       let size = bytes/1000000;
@@ -30,7 +30,7 @@ export default class addLocationForm extends React.PureComponent{
       else{
         this.setState({fileTooBig: true});
       }
-      
+
     }
     attemptSubmit(e){
       e.preventDefault();
@@ -38,7 +38,7 @@ export default class addLocationForm extends React.PureComponent{
       if(this.state.file){
         this.props.submit(e);
 
-      } 
+      }
     }
     updateResults(e){
       let t = this;
@@ -49,17 +49,17 @@ export default class addLocationForm extends React.PureComponent{
             t.setState({matches: res.data.features.map(a => a.place_name), completeMatchInfo: res.data.features});
           }
         });
-        
+
       }
     }
-    
-    
+
+
     render() {
         const categories = ['Attraction', 'Government', 'Restaurant', 'Bank', 'Hotel', 'Event Venue', 'Store', 'Other'];
         /*autocomplete: https://mui.com/components/autocomplete/#multiple-values */
         /* file upload: https://stackoverflow.com/questions/40589302/how-to-enable-file-upload-on-reacts-material-ui-simple-input */
         return (
-            
+
             <div>
               {
                 this.props.region?
@@ -79,8 +79,8 @@ export default class addLocationForm extends React.PureComponent{
                     rows={4}
                   />
                   </FormControl>
-                  
-                  
+
+
                   <Button type='submit' className='form-button' variant="contained" sx={{
                     marginBottom: "10px",
                   }}>
@@ -92,7 +92,7 @@ export default class addLocationForm extends React.PureComponent{
                   }}>
                     Cancel
                   </Button>
-                        
+
                 </form>
                 :
                 <form sx={{marginTop: '5px'}} className='user-form' id='add-location-form' onSubmit={this.attemptSubmit} >
@@ -111,9 +111,9 @@ export default class addLocationForm extends React.PureComponent{
                     rows={4}
                   />
                   </FormControl>
-                  
+
                   <FormControl required={true} sx={{ m: 1, width: 231}}>
-                  
+
                   <Autocomplete
                     multiple
                     id="tags-outlined"
@@ -134,8 +134,8 @@ export default class addLocationForm extends React.PureComponent{
                   </FormControl>
 
                   <FormControl sx={{ m: 1, width: 231}}>
-                    <Autocomplete 
-                    options={this.state.matches} 
+                    <Autocomplete
+                    options={this.state.matches}
                     onChange={
                       (e, val) => {
                         this.props.updateAddress(this.state.completeMatchInfo, val)
@@ -159,7 +159,7 @@ export default class addLocationForm extends React.PureComponent{
                     <Button variant="outlined" component="span">
                       Upload an image
                     </Button>
-                  </label> 
+                  </label>
                   </FormControl>
                   {
                     (this.state.submitAttempt && !this.state.file)?
@@ -168,7 +168,7 @@ export default class addLocationForm extends React.PureComponent{
                     </Alert>
                     :
                     null
-                    
+
                   }
                   {
                     this.state.fileTooBig?
@@ -180,8 +180,8 @@ export default class addLocationForm extends React.PureComponent{
                   }
 
 
-                  
-                  
+
+
                   <Button type='submit' className='form-button' variant="contained" sx={{
                     marginBottom: "10px",
                   }}>
@@ -193,11 +193,11 @@ export default class addLocationForm extends React.PureComponent{
                           }}>
                             Cancel
                   </Button>
-                        
+
                 </form>
               }
-                
-                
+
+
             </div>
         )
     }

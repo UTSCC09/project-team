@@ -1,10 +1,10 @@
 import React from 'react';
 import { OutlinedInput, InputAdornment, IconButton, Button } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import FormControl from '@mui/material/FormControl';
 import Alert from '@mui/material/Alert';
 import InputLabel from '@mui/material/InputLabel';
-import FormHelperText from '@mui/material/FormHelperText'
+import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
 import api from '../api';
 export default class UserForm extends React.PureComponent{
@@ -15,22 +15,22 @@ export default class UserForm extends React.PureComponent{
             createAccount: this.props.createAccount,
             showPassword: false,
             errorMessage: ''
-        }
+        };
         this.handleClickShowPassword = this.handleClickShowPassword.bind(this);
-        this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this)
+        this.handleMouseDownPassword = this.handleMouseDownPassword.bind(this);
         this.toggleAccount = this.toggleAccount.bind(this);
         this.handleOnSubmit = this.handleOnSubmit.bind(this);
-        
-        
+
+
     }
     handleClickShowPassword (){
         this.setState((prevState) => ({
             showPassword: !prevState.showPassword
-        }))
-    };
+        }));
+    }
     handleMouseDownPassword(event){
         event.preventDefault();
-    };
+    }
     toggleAccount () {
         this.setState((prevState) => ({
           createAccount: !prevState.createAccount
@@ -45,7 +45,7 @@ export default class UserForm extends React.PureComponent{
       if (this.state.createAccount) {
         const confirmPassword = event.target.confirmPassword.value;
         if (confirmPassword !== password) {
-          this.setState((prevState) => ({ errorMessage: "Password and confirm password don't match"}))
+          this.setState((prevState) => ({ errorMessage: "Password and confirm password don't match"}));
           return;
         }
         else if (password.length < 8) {
@@ -59,7 +59,7 @@ export default class UserForm extends React.PureComponent{
         else {
           api.registerUser(username, password, (err, user) => {
             if (err) this.props.onError(err);
-            if (user.data.createUser.message != null) { 
+            if (user.data.createUser.message != null) {
               this.setState((prevState) => ({
                 errorMessage: user.data.createUser.message
               }));
@@ -118,7 +118,7 @@ export default class UserForm extends React.PureComponent{
         let formTitle;
         let submitFormBtn;
         let confirmPasswordElement
-        if (this.state.createAccount) {   
+        if (this.state.createAccount) {
             submitFormBtn = <Button type='submit' className='form-button' variant="contained" sx={{
               marginRight: "5px",
             }}>
@@ -147,14 +147,14 @@ export default class UserForm extends React.PureComponent{
                }
              />
              <FormHelperText id="confirm-password-helper">Re-enter your password</FormHelperText>
-           </FormControl> 
-           
-           
+           </FormControl>
+
+
            toggleForm = <Button id='create-account' variant='text' size='small' onClick={this.toggleAccount}>Already have an account? Sign in.</Button>;
 
         }
         else{
-          
+
           submitFormBtn = <Button type='submit' className='form-button' variant="contained" sx={{
             marginRight: "5px",
           }}>
@@ -175,9 +175,9 @@ export default class UserForm extends React.PureComponent{
               { usernameHelper }
             </FormControl>
 
-              
+
               { passwordElement }
-            
+
               {
                 this.state.createAccount?
                 confirmPasswordElement
@@ -191,7 +191,7 @@ export default class UserForm extends React.PureComponent{
                 </Alert>
                 :
                 null
-                
+
               }
 
               <div id='account-form-buttons'>
